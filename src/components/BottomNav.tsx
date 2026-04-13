@@ -1,4 +1,4 @@
-import { Film, Music, Quote } from "lucide-react";
+import { Film, Music, Quote, Lightbulb } from "lucide-react";
 
 type Tab = "reels" | "music" | "quotes";
 
@@ -12,7 +12,7 @@ const BottomNav = ({
   const tabs: { id: Tab; label: string; icon: typeof Film }[] = [
     { id: "reels", label: "Videos", icon: Film },
     { id: "music", label: "Music", icon: Music },
-    { id: "quotes", label: "Quotes", icon: Quote },
+    { id: "quotes", label: "Quotes", icon: Lightbulb },
   ];
 
   return (
