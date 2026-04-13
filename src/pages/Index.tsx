@@ -4,6 +4,7 @@ import BottomNav from "@/components/BottomNav";
 import ReelsTab from "@/components/ReelsTab";
 import MusicTab from "@/components/MusicTab";
 import QuotesTab from "@/components/QuotesTab";
+import { AuthProvider } from "@/hooks/useAuth";
 
 type Tab = "reels" | "music" | "quotes";
 
@@ -20,12 +21,14 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {activeTab === "reels" && <ReelsTab />}
-      {activeTab === "music" && <MusicTab />}
-      {activeTab === "quotes" && <QuotesTab />}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
-    </div>
+    <AuthProvider>
+      <div className="min-h-screen bg-background">
+        {activeTab === "reels" && <ReelsTab />}
+        {activeTab === "music" && <MusicTab />}
+        {activeTab === "quotes" && <QuotesTab />}
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+    </AuthProvider>
   );
 };
 
