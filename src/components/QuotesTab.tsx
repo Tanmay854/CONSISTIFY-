@@ -1,133 +1,80 @@
-import { useState } from "react";
-import { Heart, Share2, Bookmark, RefreshCw } from "lucide-react";
+import energy1 from "@/assets/quotes/energy-1.jpg";
+import inspirational1 from "@/assets/quotes/inspirational-1.jpg";
+import energy2 from "@/assets/quotes/energy-2.jpg";
+import focus1 from "@/assets/quotes/focus-1.jpg";
+import inspirational2 from "@/assets/quotes/inspirational-2.jpg";
+import focus2 from "@/assets/quotes/focus-2.jpg";
 
-interface QuoteData {
+interface QuoteCard {
   id: number;
-  text: string;
-  author: string;
+  title: string;
   category: string;
+  duration: string;
+  image: string;
+  isPro?: boolean;
 }
 
-const quotesData: QuoteData[] = [
-  { id: 1, text: "The only way to do great work is to love what you do.", author: "Steve Jobs", category: "Work" },
-  { id: 2, text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt", category: "Belief" },
-  { id: 3, text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius", category: "Persistence" },
-  { id: 4, text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill", category: "Courage" },
-  { id: 5, text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein", category: "Opportunity" },
-  { id: 6, text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt", category: "Dreams" },
-  { id: 7, text: "What you get by achieving your goals is not as important as what you become by achieving your goals.", author: "Zig Ziglar", category: "Growth" },
-  { id: 8, text: "The only impossible journey is the one you never begin.", author: "Tony Robbins", category: "Action" },
-  { id: 9, text: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis", category: "Destiny" },
+const quotesData: QuoteCard[] = [
+  { id: 1, title: "Last Tear", category: "ENERGY", duration: "4:42", image: energy1, isPro: true },
+  { id: 2, title: "Hope", category: "INSPIRATIONAL", duration: "3:17", image: inspirational1, isPro: true },
+  { id: 3, title: "Against All Odds", category: "ENERGY", duration: "4:12", image: energy2 },
+  { id: 4, title: "Who We Want to Be", category: "FOCUS", duration: "6:35", image: focus1 },
+  { id: 5, title: "My Moment", category: "INSPIRATIONAL", duration: "1:46", image: inspirational2, isPro: true },
+  { id: 6, title: "Into the Wind", category: "FOCUS", duration: "1:08", image: focus2, isPro: true },
 ];
 
-const gradients = [
-  "from-amber-950/60 to-background",
-  "from-orange-950/50 to-background",
-  "from-yellow-950/40 to-background",
-  "from-rose-950/40 to-background",
-  "from-emerald-950/40 to-background",
-];
+const QuoteGridCard = ({ quote }: { quote: QuoteCard }) => (
+  <div className="relative rounded-2xl overflow-hidden aspect-[4/5]">
+    <img
+      src={quote.image}
+      alt={quote.title}
+      className="absolute inset-0 w-full h-full object-cover"
+      loading="lazy"
+    />
+    {/* Dark overlay for text readability */}
+    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-background/30" />
+
+    {/* Top badges */}
+    <div className="absolute top-3 left-3 flex items-center gap-2">
+      {quote.isPro && (
+        <span className="bg-primary/90 text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
+          Pro
+        </span>
+      )}
+      <span className="text-foreground text-xs font-semibold">{quote.duration}</span>
+    </div>
+
+    {/* Bottom text */}
+    <div className="absolute bottom-4 left-0 right-0 text-center px-3">
+      <p className="text-foreground/70 text-[10px] tracking-[0.2em] uppercase font-medium">
+        {quote.category}
+      </p>
+      <h3 className="text-foreground font-bold text-base mt-1 leading-tight">
+        {quote.title}
+      </h3>
+      <div className="w-6 h-[2px] bg-foreground/30 mx-auto mt-2 rounded-full" />
+    </div>
+  </div>
+);
 
 const QuotesTab = () => {
-  const [liked, setLiked] = useState<Set<number>>(new Set());
-  const [saved, setSaved] = useState<Set<number>>(new Set());
-
   return (
-    <div className="min-h-screen pb-24 pt-4">
+    <div className="min-h-screen pb-24 pt-4 bg-background">
       {/* Header */}
-      <div className="px-5 pt-4 pb-6">
+      <div className="px-4 pt-4 pb-4">
         <h2 className="text-foreground font-semibold text-2xl">Quotes</h2>
         <p className="text-muted-foreground text-sm mt-1">Daily wisdom for your soul</p>
       </div>
 
-      {/* Featured quote */}
-      <div className="mx-5 mb-6 p-8 rounded-2xl bg-gradient-to-br from-primary/15 to-card border border-primary/20 relative overflow-hidden">
-        <div className="absolute top-4 right-4">
-          <span className="text-[10px] tracking-widest uppercase text-primary font-medium">Quote of the Day</span>
-        </div>
-        <div className="mt-4">
-          <span className="font-display text-5xl text-primary/30 leading-none">"</span>
-          <p className="font-display text-xl leading-relaxed text-foreground -mt-6 ml-6">
-            {quotesData[0].text}
-          </p>
-          <p className="text-muted-foreground text-sm mt-4 ml-6">— {quotesData[0].author}</p>
-        </div>
-        <div className="flex items-center gap-4 mt-6 ml-6">
-          <button
-            onClick={() =>
-              setLiked((p) => {
-                const n = new Set(p);
-                n.has(0) ? n.delete(0) : n.add(0);
-                return n;
-              })
-            }
-          >
-            <Heart size={20} className={liked.has(0) ? "fill-red-500 text-red-500" : "text-muted-foreground"} />
-          </button>
-          <button>
-            <Share2 size={20} className="text-muted-foreground" />
-          </button>
-          <button
-            onClick={() =>
-              setSaved((p) => {
-                const n = new Set(p);
-                n.has(0) ? n.delete(0) : n.add(0);
-                return n;
-              })
-            }
-          >
-            <Bookmark size={20} className={saved.has(0) ? "fill-primary text-primary" : "text-muted-foreground"} />
-          </button>
-        </div>
-      </div>
-
-      {/* Quote cards */}
-      <div className="px-5 space-y-3">
-        {quotesData.slice(1).map((quote, i) => (
+      {/* Grid */}
+      <div className="px-3 grid grid-cols-2 gap-3">
+        {quotesData.map((quote, i) => (
           <div
             key={quote.id}
-            className="animate-float-up p-5 rounded-xl bg-card border border-border"
-            style={{ animationDelay: `${i * 0.06}s` }}
+            className="animate-float-up"
+            style={{ animationDelay: `${i * 0.08}s` }}
           >
-            <span className="text-[10px] tracking-widest uppercase text-primary/70 font-medium">
-              {quote.category}
-            </span>
-            <p className="text-foreground text-sm leading-relaxed mt-2 font-display italic">
-              "{quote.text}"
-            </p>
-            <div className="flex items-center justify-between mt-3">
-              <p className="text-muted-foreground text-xs">— {quote.author}</p>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() =>
-                    setLiked((p) => {
-                      const n = new Set(p);
-                      n.has(quote.id) ? n.delete(quote.id) : n.add(quote.id);
-                      return n;
-                    })
-                  }
-                >
-                  <Heart
-                    size={14}
-                    className={liked.has(quote.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}
-                  />
-                </button>
-                <button
-                  onClick={() =>
-                    setSaved((p) => {
-                      const n = new Set(p);
-                      n.has(quote.id) ? n.delete(quote.id) : n.add(quote.id);
-                      return n;
-                    })
-                  }
-                >
-                  <Bookmark
-                    size={14}
-                    className={saved.has(quote.id) ? "fill-primary text-primary" : "text-muted-foreground"}
-                  />
-                </button>
-              </div>
-            </div>
+            <QuoteGridCard quote={quote} />
           </div>
         ))}
       </div>
