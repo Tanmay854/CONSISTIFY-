@@ -10,7 +10,7 @@ const BottomNav = ({
   onTabChange: (tab: Tab) => void;
 }) => {
   const tabs: { id: Tab; label: string; icon: typeof Film }[] = [
-    { id: "reels", label: "Reels", icon: Film },
+    { id: "reels", label: "Videos", icon: Film },
     { id: "music", label: "Music", icon: Music },
     { id: "quotes", label: "Quotes", icon: Quote },
   ];

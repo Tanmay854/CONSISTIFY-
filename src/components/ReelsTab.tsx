@@ -141,7 +141,7 @@ const ReelsTab = () => {
       >
         {/* Header */}
         <div className="fixed top-0 left-0 right-0 z-30 px-4 pt-4 pb-2 bg-gradient-to-b from-background via-background/80 to-transparent flex items-center justify-between">
-          <h2 className="text-foreground font-semibold text-lg">Reels</h2>
+          <h2 className="text-foreground font-semibold text-lg">Videos</h2>
           <div className="flex items-center gap-2">
             {user && isAdmin && (
               <button
