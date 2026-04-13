@@ -4,6 +4,12 @@ import energy2 from "@/assets/quotes/energy-2.jpg";
 import focus1 from "@/assets/quotes/focus-1.jpg";
 import inspirational2 from "@/assets/quotes/inspirational-2.jpg";
 import focus2 from "@/assets/quotes/focus-2.jpg";
+import motivation1 from "@/assets/quotes/motivation-1.jpg";
+import motivation2 from "@/assets/quotes/motivation-2.jpg";
+import strength1 from "@/assets/quotes/strength-1.jpg";
+import strength2 from "@/assets/quotes/strength-2.jpg";
+import peace1 from "@/assets/quotes/peace-1.jpg";
+import peace2 from "@/assets/quotes/peace-2.jpg";
 
 interface QuoteCard {
   id: number;
@@ -21,6 +27,12 @@ const quotesData: QuoteCard[] = [
   { id: 4, title: "Who We Want to Be", category: "FOCUS", duration: "6:35", image: focus1 },
   { id: 5, title: "My Moment", category: "INSPIRATIONAL", duration: "1:46", image: inspirational2, isPro: true },
   { id: 6, title: "Into the Wind", category: "FOCUS", duration: "1:08", image: focus2, isPro: true },
+  { id: 7, title: "Rise Above", category: "MOTIVATION", duration: "3:55", image: motivation1 },
+  { id: 8, title: "Unbreakable", category: "STRENGTH", duration: "5:20", image: strength1, isPro: true },
+  { id: 9, title: "The Long Road", category: "MOTIVATION", duration: "2:34", image: motivation2 },
+  { id: 10, title: "Inner Light", category: "PEACE", duration: "4:08", image: peace1 },
+  { id: 11, title: "Still Standing", category: "STRENGTH", duration: "3:42", image: strength2, isPro: true },
+  { id: 12, title: "City Dreams", category: "PEACE", duration: "2:15", image: peace2 },
 ];
 
 const QuoteGridCard = ({ quote }: { quote: QuoteCard }) => (
