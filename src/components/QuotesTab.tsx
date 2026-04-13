@@ -53,7 +53,6 @@ const QuoteGridCard = ({ quote }: { quote: QuoteCard }) => (
           Pro
         </span>
       )}
-      <span className="text-foreground text-xs font-semibold">{quote.duration}</span>
     </div>
 
     {/* Bottom text */}
