@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Plus } from "lucide-react";
+import { Plus, LogIn, Shield, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import AddReelDialog from "./AddReelDialog";
+import AuthSheet from "./AuthSheet";
+import AdminPanel from "./AdminPanel";
 
 interface Reel {
   id: string;
@@ -32,10 +35,8 @@ const gradients = [
 ];
 
 const getEmbedUrl = (url: string) => {
-  // YouTube
   const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([^&?/]+)/);
   if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${ytMatch[1]}&controls=0&modestbranding=1&rel=0&showinfo=0`;
-  // Direct video URL
   return url;
 };
 
@@ -47,7 +48,6 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
 
   return (
     <div className="relative h-screen w-full snap-start flex items-center justify-center overflow-hidden">
-      {/* Background */}
       {hasVideo && isYoutube && isActive ? (
         <iframe
           src={getEmbedUrl(reel.video_url)}
@@ -69,10 +69,8 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
         <div className={`absolute inset-0 bg-gradient-to-b ${gradient}`} />
       )}
 
-      {/* Overlay */}
       <div className="absolute inset-0 bg-background/40" />
 
-      {/* Particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[...Array(6)].map((_, i) => (
           <div
@@ -83,7 +81,6 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
         ))}
       </div>
 
-      {/* Content */}
       <div className="relative z-10 px-8 max-w-md mx-auto text-center">
         {isActive && (
           <>
@@ -107,9 +104,12 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
 };
 
 const ReelsTab = () => {
+  const { user, canUpload, isAdmin, signOut } = useAuth();
   const [activeIndex, setActiveIndex] = useState(0);
   const [reels, setReels] = useState<Reel[]>(defaultReels);
   const [showAdd, setShowAdd] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchReels = useCallback(async () => {
@@ -142,12 +142,39 @@ const ReelsTab = () => {
         {/* Header */}
         <div className="fixed top-0 left-0 right-0 z-30 px-4 pt-4 pb-2 bg-gradient-to-b from-background via-background/80 to-transparent flex items-center justify-between">
           <h2 className="text-foreground font-semibold text-lg">Reels</h2>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center"
-          >
-            <Plus size={18} className="text-primary-foreground" />
-          </button>
+          <div className="flex items-center gap-2">
+            {user && isAdmin && (
+              <button
+                onClick={() => setShowAdmin(true)}
+                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
+              >
+                <Shield size={16} className="text-primary" />
+              </button>
+            )}
+            {user && canUpload && (
+              <button
+                onClick={() => setShowAdd(true)}
+                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center"
+              >
+                <Plus size={18} className="text-primary-foreground" />
+              </button>
+            )}
+            {user ? (
+              <button
+                onClick={signOut}
+                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
+              >
+                <LogOut size={16} className="text-muted-foreground" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowAuth(true)}
+                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
+              >
+                <LogIn size={16} className="text-foreground" />
+              </button>
+            )}
+          </div>
         </div>
 
         {reels.map((reel, index) => (
@@ -156,6 +183,8 @@ const ReelsTab = () => {
       </div>
 
       <AddReelDialog open={showAdd} onClose={() => setShowAdd(false)} onAdded={fetchReels} />
+      <AuthSheet open={showAuth} onClose={() => setShowAuth(false)} />
+      <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
     </>
   );
 };
