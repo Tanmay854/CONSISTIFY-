@@ -9,8 +9,21 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
   if (!open) return null;
 
+  const isValidUrl = (url: string): boolean => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!title.trim() || !videoUrl.trim()) return;
+    if (!isValidUrl(videoUrl.trim())) {
+      alert("Please enter a valid URL starting with https://");
+      return;
+    }
     setLoading(true);
     await supabase.from("reels").insert({ title: title.trim(), video_url: videoUrl.trim() });
     setLoading(false);

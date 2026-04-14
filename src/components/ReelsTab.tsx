@@ -34,15 +34,31 @@ const gradients = [
   "from-emerald-900/50 via-background to-background",
 ];
 
-const getEmbedUrl = (url: string) => {
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([^&?/]+)/);
-  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${ytMatch[1]}&controls=0&modestbranding=1&rel=0&showinfo=0`;
+const isValidUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+};
+
+const getYoutubeId = (url: string): string | null => {
+  const ytMatch = url.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+  return ytMatch ? ytMatch[1] : null;
+};
+
+const getEmbedUrl = (url: string): string | null => {
+  if (!isValidUrl(url)) return null;
+  const ytId = getYoutubeId(url);
+  if (ytId) return `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&showinfo=0`;
   return url;
 };
 
 const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; index: number }) => {
-  const hasVideo = reel.video_url && reel.video_url.length > 0;
-  const isYoutube = hasVideo && /youtube|youtu\.be/.test(reel.video_url);
+  const hasVideo = reel.video_url && reel.video_url.length > 0 && isValidUrl(reel.video_url);
+  const ytId = hasVideo ? getYoutubeId(reel.video_url) : null;
+  const isYoutube = !!ytId;
   const isDirectVideo = hasVideo && !isYoutube;
   const gradient = gradients[index % gradients.length];
 
