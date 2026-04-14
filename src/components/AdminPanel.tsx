@@ -16,29 +16,28 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
     setMessage(null);
     setLoading(true);
 
-    // Find user by email from profiles
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, display_name")
-      .eq("display_name", email);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setMessage("You must be logged in.");
+        setLoading(false);
+        return;
+      }
 
-    // Try matching by the email stored in display_name (auto-set on signup)
-    if (!profiles || profiles.length === 0) {
-      setMessage("User not found. They must sign up first.");
-      setLoading(false);
-      return;
-    }
+      const response = await supabase.functions.invoke("admin-grant-role", {
+        body: { email, role },
+      });
 
-    const userId = profiles[0].user_id;
-    const { error } = await supabase
-      .from("user_roles")
-      .insert({ user_id: userId, role });
-
-    if (error) {
-      setMessage(error.message.includes("duplicate") ? "User already has this role" : error.message);
-    } else {
-      setMessage(`Granted "${role}" role to ${email}`);
-      setEmail("");
+      if (response.error) {
+        setMessage(response.error.message || "Failed to grant role.");
+      } else if (response.data?.error) {
+        setMessage(response.data.error);
+      } else {
+        setMessage(`Granted "${role}" role to ${email}`);
+        setEmail("");
+      }
+    } catch {
+      setMessage("An error occurred.");
     }
     setLoading(false);
   };
