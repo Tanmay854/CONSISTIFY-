@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      music: {
+        Row: {
+          artist: string
+          audio_url: string | null
+          category: string
+          created_at: string
+          duration: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          artist?: string
+          audio_url?: string | null
+          category?: string
+          created_at?: string
+          duration?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          artist?: string
+          audio_url?: string | null
+          category?: string
+          created_at?: string
+          duration?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -32,6 +62,33 @@ export type Database = {
           display_name?: string | null
           id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      quotes: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          image_url: string
+          is_pro: boolean
+          title: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          image_url: string
+          is_pro?: boolean
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_pro?: boolean
+          title?: string
         }
         Relationships: []
       }
