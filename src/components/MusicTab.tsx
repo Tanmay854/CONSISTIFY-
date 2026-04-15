@@ -102,14 +102,10 @@ const getTrackColor = (id: string) => {
 };
 
 const MusicTab = () => {
-  const { user, canUpload, isAdmin, signOut } = useAuth();
   const [activeCategory, setActiveCategory] = useState("All");
   const [playing, setPlaying] = useState<string | null>(null);
   const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set());
   const [tracks, setTracks] = useState<Track[]>([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   const fetchTracks = useCallback(async () => {
@@ -147,32 +143,9 @@ const MusicTab = () => {
     <>
       <div className="min-h-screen pb-40 pt-4">
         {/* Header */}
-        <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-          <div>
-            <h2 className="text-foreground font-bold text-2xl">Music</h2>
-            <p className="text-muted-foreground text-xs mt-0.5">Fuel your journey</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {user && isAdmin && (
-              <button onClick={() => setShowAdmin(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                <Shield size={16} className="text-primary" />
-              </button>
-            )}
-            {user && canUpload && (
-              <button onClick={() => setShowAdd(true)} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <Plus size={18} className="text-primary-foreground" />
-              </button>
-            )}
-            {user ? (
-              <button onClick={signOut} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                <LogOut size={16} className="text-muted-foreground" />
-              </button>
-            ) : (
-              <button onClick={() => setShowAuth(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                <LogIn size={16} className="text-foreground" />
-              </button>
-            )}
-          </div>
+        <div className="px-5 pt-4 pb-2">
+          <h2 className="text-foreground font-bold text-2xl">Music</h2>
+          <p className="text-muted-foreground text-xs mt-0.5">Fuel your journey</p>
         </div>
 
         {/* Category chips - Spotify style */}
@@ -347,9 +320,6 @@ const MusicTab = () => {
         </>
       )}
 
-      <AddMusicDialog open={showAdd} onClose={() => setShowAdd(false)} onAdded={fetchTracks} />
-      <AuthSheet open={showAuth} onClose={() => setShowAuth(false)} />
-      <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
     </>
   );
 };
