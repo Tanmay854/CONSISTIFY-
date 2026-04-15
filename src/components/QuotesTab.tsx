@@ -1,9 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, LogIn, LogOut, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import AuthSheet from "./AuthSheet";
-import AdminPanel from "./AdminPanel";
 
 interface QuoteCard {
   id: string;
@@ -94,11 +90,7 @@ const AddQuoteDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: ()
 };
 
 const QuotesTab = () => {
-  const { user, canUpload, isAdmin, signOut } = useAuth();
   const [quotes, setQuotes] = useState<QuoteCard[]>([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
   const [page, setPage] = useState(0);
   const [selectedQuote, setSelectedQuote] = useState<QuoteCard | null>(null);
 
@@ -116,32 +108,9 @@ const QuotesTab = () => {
     <>
       <div className="min-h-screen pb-24 pt-4 bg-background">
         {/* Header */}
-        <div className="px-4 pt-4 pb-3 flex items-center justify-between">
-          <div>
-            <h2 className="text-foreground font-bold text-2xl">Photos</h2>
-            <p className="text-muted-foreground text-xs mt-0.5">Daily wisdom for your soul</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {user && isAdmin && (
-              <button onClick={() => setShowAdmin(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                <Shield size={16} className="text-primary" />
-              </button>
-            )}
-            {user && canUpload && (
-              <button onClick={() => setShowAdd(true)} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <Plus size={18} className="text-primary-foreground" />
-              </button>
-            )}
-            {user ? (
-              <button onClick={signOut} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                <LogOut size={16} className="text-muted-foreground" />
-              </button>
-            ) : (
-              <button onClick={() => setShowAuth(true)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                <LogIn size={16} className="text-foreground" />
-              </button>
-            )}
-          </div>
+        <div className="px-4 pt-4 pb-3">
+          <h2 className="text-foreground font-bold text-2xl">Photos</h2>
+          <p className="text-muted-foreground text-xs mt-0.5">Daily wisdom for your soul</p>
         </div>
 
         {/* 2x2 Photo Grid */}
@@ -217,9 +186,6 @@ const QuotesTab = () => {
         </div>
       )}
 
-      <AddQuoteDialog open={showAdd} onClose={() => setShowAdd(false)} onAdded={fetchQuotes} />
-      <AuthSheet open={showAuth} onClose={() => setShowAuth(false)} />
-      <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
     </>
   );
 };
