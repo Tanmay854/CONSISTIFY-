@@ -120,12 +120,8 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
 };
 
 const ReelsTab = () => {
-  const { user, canUpload, isAdmin, signOut } = useAuth();
   const [activeIndex, setActiveIndex] = useState(0);
   const [reels, setReels] = useState<Reel[]>(defaultReels);
-  const [showAdd, setShowAdd] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchReels = useCallback(async () => {
@@ -156,41 +152,8 @@ const ReelsTab = () => {
         className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
       >
         {/* Header */}
-        <div className="fixed top-0 left-0 right-0 z-30 px-4 pt-4 pb-2 bg-gradient-to-b from-background via-background/80 to-transparent flex items-center justify-between">
+        <div className="fixed top-0 left-0 right-0 z-20 px-4 pt-4 pb-2 bg-gradient-to-b from-background via-background/80 to-transparent">
           <h2 className="text-foreground font-semibold text-lg">Videos</h2>
-          <div className="flex items-center gap-2">
-            {user && isAdmin && (
-              <button
-                onClick={() => setShowAdmin(true)}
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
-              >
-                <Shield size={16} className="text-primary" />
-              </button>
-            )}
-            {user && canUpload && (
-              <button
-                onClick={() => setShowAdd(true)}
-                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center"
-              >
-                <Plus size={18} className="text-primary-foreground" />
-              </button>
-            )}
-            {user ? (
-              <button
-                onClick={signOut}
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
-              >
-                <LogOut size={16} className="text-muted-foreground" />
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowAuth(true)}
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
-              >
-                <LogIn size={16} className="text-foreground" />
-              </button>
-            )}
-          </div>
         </div>
 
         {reels.map((reel, index) => (
@@ -198,9 +161,6 @@ const ReelsTab = () => {
         ))}
       </div>
 
-      <AddReelDialog open={showAdd} onClose={() => setShowAdd(false)} onAdded={fetchReels} />
-      <AuthSheet open={showAuth} onClose={() => setShowAuth(false)} />
-      <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
     </>
   );
 };
