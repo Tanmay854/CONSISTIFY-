@@ -1,44 +1,42 @@
 import { useState, useEffect } from "react";
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
+  const [showText, setShowText] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setFadeOut(true), 2400);
-    const finishTimer = setTimeout(() => onFinish(), 2900);
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(finishTimer);
-    };
+    const t1 = setTimeout(() => setShowText(true), 400);
+    const t2 = setTimeout(() => setShowDisclaimer(true), 1200);
+    const t3 = setTimeout(() => setFadeOut(true), 3500);
+    const t4 = setTimeout(() => onFinish(), 4200);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [onFinish]);
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-background ${
-        fadeOut ? "animate-splash-fade-out" : ""
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-black transition-opacity duration-700 ${
+        fadeOut ? "opacity-0" : "opacity-100"
       }`}
     >
-      {/* Background glow */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[400px] h-[400px] rounded-full bg-primary/10 blur-[100px] animate-pulse-glow" />
-      </div>
+      {/* Main title */}
+      <h1
+        className={`text-5xl md:text-7xl font-black text-white tracking-tight transition-all duration-700 ${
+          showText ? "opacity-100 scale-100" : "opacity-0 scale-90"
+        }`}
+        style={{ fontFamily: "'Arial Black', 'Helvetica Neue', sans-serif" }}
+      >
+        Discipline
+      </h1>
 
-      {/* Logo */}
-      <div className="animate-splash-logo">
-        <h1 className="font-display text-6xl md:text-8xl font-bold gradient-gold tracking-tight">
-          Motivation
-        </h1>
-      </div>
-
-      {/* Tagline */}
-      <p className="animate-splash-tagline text-muted-foreground text-lg mt-4 tracking-widest uppercase text-sm">
-        Ignite Your Inner Fire
+      {/* Disclaimer */}
+      <p
+        className={`absolute bottom-[30%] text-xs md:text-sm text-white/50 px-8 text-center transition-opacity duration-700 ${
+          showDisclaimer ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        Disclaimer - this app only helps to start, not reaching your destination
       </p>
-
-      {/* Bottom decorative line */}
-      <div className="absolute bottom-12 animate-splash-tagline">
-        <div className="w-16 h-[2px] bg-primary/40 rounded-full" />
-      </div>
     </div>
   );
 };
