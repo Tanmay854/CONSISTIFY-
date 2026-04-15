@@ -13,6 +13,8 @@ interface QuoteCard {
   is_pro: boolean;
 }
 
+const PAGE_SIZE = 4;
+
 const AddQuoteDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () => void; onAdded: () => void }) => {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("ENERGY");
@@ -91,29 +93,14 @@ const AddQuoteDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: ()
   );
 };
 
-const QuoteGridCard = ({ quote }: { quote: QuoteCard }) => (
-  <div className="relative rounded-2xl overflow-hidden aspect-[4/5]">
-    <img src={quote.image_url} alt={quote.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-background/30" />
-    <div className="absolute top-3 left-3 flex items-center gap-2">
-      {quote.is_pro && (
-        <span className="bg-primary/90 text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">Pro</span>
-      )}
-    </div>
-    <div className="absolute bottom-4 left-0 right-0 text-center px-3">
-      <p className="text-foreground/70 text-[10px] tracking-[0.2em] uppercase font-medium">{quote.category}</p>
-      <h3 className="text-foreground font-bold text-base mt-1 leading-tight">{quote.title}</h3>
-      <div className="w-6 h-[2px] bg-foreground/30 mx-auto mt-2 rounded-full" />
-    </div>
-  </div>
-);
-
 const QuotesTab = () => {
   const { user, canUpload, isAdmin, signOut } = useAuth();
   const [quotes, setQuotes] = useState<QuoteCard[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [page, setPage] = useState(0);
+  const [selectedQuote, setSelectedQuote] = useState<QuoteCard | null>(null);
 
   const fetchQuotes = useCallback(async () => {
     const { data } = await supabase.from("quotes").select("*").order("created_at", { ascending: false });
@@ -122,14 +109,17 @@ const QuotesTab = () => {
 
   useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
 
+  const totalPages = Math.ceil(quotes.length / PAGE_SIZE);
+  const currentQuotes = quotes.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   return (
     <>
       <div className="min-h-screen pb-24 pt-4 bg-background">
         {/* Header */}
-        <div className="px-4 pt-4 pb-4 flex items-center justify-between">
+        <div className="px-4 pt-4 pb-3 flex items-center justify-between">
           <div>
-            <h2 className="text-foreground font-semibold text-2xl">Quotes</h2>
-            <p className="text-muted-foreground text-sm mt-1">Daily wisdom for your soul</p>
+            <h2 className="text-foreground font-bold text-2xl">Photos</h2>
+            <p className="text-muted-foreground text-xs mt-0.5">Daily wisdom for your soul</p>
           </div>
           <div className="flex items-center gap-2">
             {user && isAdmin && (
@@ -154,18 +144,78 @@ const QuotesTab = () => {
           </div>
         </div>
 
-        {/* Grid */}
-        <div className="px-3 grid grid-cols-2 gap-3">
-          {quotes.map((quote, i) => (
-            <div key={quote.id} className="animate-float-up" style={{ animationDelay: `${i * 0.08}s` }}>
-              <QuoteGridCard quote={quote} />
-            </div>
-          ))}
+        {/* 2x2 Photo Grid */}
+        <div className="px-3">
+          <div className="grid grid-cols-2 gap-2">
+            {currentQuotes.map((quote, i) => (
+              <div
+                key={quote.id}
+                className="animate-float-up relative aspect-square rounded-xl overflow-hidden cursor-pointer group"
+                style={{ animationDelay: `${i * 0.08}s` }}
+                onClick={() => setSelectedQuote(quote)}
+              >
+                <img
+                  src={quote.image_url}
+                  alt={quote.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                />
+                {quote.is_pro && (
+                  <span className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                    Pro
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Empty state */}
           {quotes.length === 0 && (
-            <p className="text-muted-foreground text-sm text-center py-8 col-span-2">No quotes yet</p>
+            <p className="text-muted-foreground text-sm text-center py-12">No photos yet</p>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-6">
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium disabled:opacity-30 transition-opacity"
+              >
+                Previous
+              </button>
+              <span className="text-muted-foreground text-xs tabular-nums">
+                {page + 1} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium disabled:opacity-30 transition-opacity"
+              >
+                Next
+              </button>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Full-screen photo viewer */}
+      {selectedQuote && (
+        <div
+          className="fixed inset-0 z-50 bg-background/95 backdrop-blur-lg flex flex-col items-center justify-center"
+          onClick={() => setSelectedQuote(null)}
+        >
+          <img
+            src={selectedQuote.image_url}
+            alt={selectedQuote.title}
+            className="max-w-full max-h-[80vh] object-contain rounded-lg"
+          />
+          <div className="mt-4 text-center px-6">
+            <h3 className="text-foreground font-bold text-lg">{selectedQuote.title}</h3>
+            <p className="text-muted-foreground text-xs mt-1 uppercase tracking-widest">{selectedQuote.category}</p>
+          </div>
+        </div>
+      )}
 
       <AddQuoteDialog open={showAdd} onClose={() => setShowAdd(false)} onAdded={fetchQuotes} />
       <AuthSheet open={showAuth} onClose={() => setShowAuth(false)} />

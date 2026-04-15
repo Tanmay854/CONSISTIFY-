@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Play, Pause, SkipForward, SkipBack, Heart, Clock, Plus, LogIn, LogOut, Shield } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Heart, Plus, LogIn, LogOut, Shield, Shuffle, Repeat, Volume2, ChevronUp, ChevronDown, Music2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
@@ -84,6 +84,23 @@ const AddMusicDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: ()
   );
 };
 
+// Generate a consistent color from track id for album art placeholder
+const getTrackColor = (id: string) => {
+  const colors = [
+    "from-emerald-600 to-emerald-900",
+    "from-violet-600 to-violet-900",
+    "from-rose-600 to-rose-900",
+    "from-amber-600 to-amber-900",
+    "from-cyan-600 to-cyan-900",
+    "from-fuchsia-600 to-fuchsia-900",
+    "from-blue-600 to-blue-900",
+    "from-orange-600 to-orange-900",
+  ];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+};
+
 const MusicTab = () => {
   const { user, canUpload, isAdmin, signOut } = useAuth();
   const [activeCategory, setActiveCategory] = useState("All");
@@ -93,6 +110,7 @@ const MusicTab = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const fetchTracks = useCallback(async () => {
     const { data } = await supabase.from("music").select("*").order("created_at", { ascending: false });
@@ -112,15 +130,27 @@ const MusicTab = () => {
   };
 
   const playingTrack = tracks.find((t) => t.id === playing);
+  const playingIndex = playing ? tracks.findIndex(t => t.id === playing) : -1;
+
+  const playNext = () => {
+    if (playingIndex >= 0 && playingIndex < filtered.length - 1) {
+      setPlaying(filtered[playingIndex + 1].id);
+    }
+  };
+  const playPrev = () => {
+    if (playingIndex > 0) {
+      setPlaying(filtered[playingIndex - 1].id);
+    }
+  };
 
   return (
     <>
-      <div className="min-h-screen pb-24 pt-4">
+      <div className="min-h-screen pb-40 pt-4">
         {/* Header */}
         <div className="px-5 pt-4 pb-2 flex items-center justify-between">
           <div>
-            <h2 className="text-foreground font-semibold text-2xl">Music</h2>
-            <p className="text-muted-foreground text-sm mt-1">Fuel your journey</p>
+            <h2 className="text-foreground font-bold text-2xl">Music</h2>
+            <p className="text-muted-foreground text-xs mt-0.5">Fuel your journey</p>
           </div>
           <div className="flex items-center gap-2">
             {user && isAdmin && (
@@ -145,73 +175,177 @@ const MusicTab = () => {
           </div>
         </div>
 
-        {/* Categories */}
-        <div className="flex gap-2 px-5 py-4 overflow-x-auto scrollbar-hide">
+        {/* Category chips - Spotify style */}
+        <div className="flex gap-2 px-5 py-3 overflow-x-auto scrollbar-hide">
           {categories.map((cat) => (
             <button key={cat} onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 ${
-                activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+                activeCategory === cat
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/80 text-secondary-foreground hover:bg-secondary"
               }`}>
               {cat}
             </button>
           ))}
         </div>
 
-        {/* Now Playing */}
-        {playing !== null && playingTrack && (
-          <div className="mx-5 mb-4 p-4 rounded-2xl bg-card border border-border">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center">
-                <div className="w-6 h-6 rounded-full bg-primary animate-pulse" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-foreground font-semibold text-sm truncate">{playingTrack.title}</p>
-                <p className="text-muted-foreground text-xs">{playingTrack.artist}</p>
-                <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full w-1/3 bg-primary rounded-full" />
+        {/* Track list - Spotify style */}
+        <div className="px-4 mt-2 space-y-0.5">
+          {filtered.map((track, i) => {
+            const isActive = playing === track.id;
+            return (
+              <div
+                key={track.id}
+                className={`animate-float-up flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors cursor-pointer group ${
+                  isActive ? "bg-secondary/80" : "hover:bg-secondary/50"
+                }`}
+                style={{ animationDelay: `${i * 0.03}s` }}
+                onClick={() => setPlaying(isActive ? null : track.id)}
+              >
+                {/* Album art placeholder */}
+                <div className={`w-11 h-11 rounded-md bg-gradient-to-br ${getTrackColor(track.id)} flex items-center justify-center flex-shrink-0 shadow-lg`}>
+                  {isActive ? (
+                    <div className="flex items-end gap-[2px] h-4">
+                      <div className="w-[3px] bg-primary rounded-full animate-pulse" style={{ height: '60%' }} />
+                      <div className="w-[3px] bg-primary rounded-full animate-pulse" style={{ height: '100%', animationDelay: '0.2s' }} />
+                      <div className="w-[3px] bg-primary rounded-full animate-pulse" style={{ height: '40%', animationDelay: '0.4s' }} />
+                    </div>
+                  ) : (
+                    <Music2 size={18} className="text-foreground/60" />
+                  )}
+                </div>
+
+                {/* Track info */}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium truncate ${isActive ? "text-primary" : "text-foreground"}`}>
+                    {track.title}
+                  </p>
+                  <p className="text-muted-foreground text-xs truncate">{track.artist}</p>
+                </div>
+
+                {/* Like & duration */}
+                <div className="flex items-center gap-3">
+                  <button onClick={(e) => { e.stopPropagation(); toggleLike(track.id); }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Heart size={15} className={likedTracks.has(track.id) ? "fill-primary text-primary opacity-100" : "text-muted-foreground"} />
+                  </button>
+                  {likedTracks.has(track.id) && (
+                    <Heart size={15} className="fill-primary text-primary group-hover:hidden" />
+                  )}
+                  {track.duration && (
+                    <span className="text-muted-foreground text-[11px] tabular-nums">{track.duration}</span>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button><SkipBack size={18} className="text-foreground" /></button>
-                <button onClick={() => setPlaying(null)} className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                  <Pause size={18} className="text-primary-foreground" />
-                </button>
-                <button><SkipForward size={18} className="text-foreground" /></button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Track list */}
-        <div className="px-5 space-y-1">
-          {filtered.map((track, i) => (
-            <div key={track.id} className="animate-float-up flex items-center gap-4 p-3 rounded-xl hover:bg-card transition-colors"
-              style={{ animationDelay: `${i * 0.05}s` }}>
-              <button onClick={() => setPlaying(playing === track.id ? null : track.id)}
-                className="w-11 h-11 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                {playing === track.id ? <Pause size={16} className="text-primary" /> : <Play size={16} className="text-foreground ml-0.5" />}
-              </button>
-              <div className="flex-1 min-w-0">
-                <p className="text-foreground text-sm font-medium truncate">{track.title}</p>
-                <p className="text-muted-foreground text-xs">{track.artist}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                {track.duration && (
-                  <span className="text-muted-foreground text-xs flex items-center gap-1">
-                    <Clock size={10} />{track.duration}
-                  </span>
-                )}
-                <button onClick={() => toggleLike(track.id)}>
-                  <Heart size={16} className={likedTracks.has(track.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"} />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {filtered.length === 0 && (
-            <p className="text-muted-foreground text-sm text-center py-8">No tracks yet</p>
+            <p className="text-muted-foreground text-sm text-center py-12">No tracks yet</p>
           )}
         </div>
       </div>
+
+      {/* Spotify-style bottom player */}
+      {playing !== null && playingTrack && (
+        <>
+          {/* Expanded player */}
+          {expanded && (
+            <div className="fixed inset-0 z-40 bg-gradient-to-b from-secondary to-background flex flex-col">
+              <div className="px-5 pt-12 pb-4 flex items-center justify-between">
+                <button onClick={() => setExpanded(false)}>
+                  <ChevronDown size={24} className="text-foreground" />
+                </button>
+                <p className="text-foreground text-xs font-semibold uppercase tracking-wider">Now Playing</p>
+                <div className="w-6" />
+              </div>
+
+              <div className="flex-1 flex flex-col items-center justify-center px-8">
+                {/* Large album art */}
+                <div className={`w-64 h-64 rounded-lg bg-gradient-to-br ${getTrackColor(playingTrack.id)} flex items-center justify-center shadow-2xl mb-10`}>
+                  <Music2 size={64} className="text-foreground/40" />
+                </div>
+
+                {/* Track info */}
+                <div className="w-full flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-foreground font-bold text-xl truncate">{playingTrack.title}</h3>
+                    <p className="text-muted-foreground text-sm">{playingTrack.artist}</p>
+                  </div>
+                  <button onClick={() => toggleLike(playingTrack.id)}>
+                    <Heart size={22} className={likedTracks.has(playingTrack.id) ? "fill-primary text-primary" : "text-muted-foreground"} />
+                  </button>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full mt-6">
+                  <div className="h-1 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full w-1/3 bg-foreground rounded-full" />
+                  </div>
+                  <div className="flex justify-between mt-1.5">
+                    <span className="text-muted-foreground text-[10px]">1:23</span>
+                    <span className="text-muted-foreground text-[10px]">{playingTrack.duration || "3:45"}</span>
+                  </div>
+                </div>
+
+                {/* Controls */}
+                <div className="flex items-center justify-between w-full mt-4 px-4">
+                  <Shuffle size={18} className="text-muted-foreground" />
+                  <button onClick={playPrev}><SkipBack size={28} className="text-foreground" fill="hsl(0 0% 95%)" /></button>
+                  <button onClick={() => setPlaying(null)}
+                    className="w-16 h-16 rounded-full bg-foreground flex items-center justify-center">
+                    <Pause size={28} className="text-background" />
+                  </button>
+                  <button onClick={playNext}><SkipForward size={28} className="text-foreground" fill="hsl(0 0% 95%)" /></button>
+                  <Repeat size={18} className="text-muted-foreground" />
+                </div>
+
+                {/* Volume */}
+                <div className="flex items-center gap-2 mt-8 w-full px-8">
+                  <Volume2 size={14} className="text-muted-foreground" />
+                  <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full w-2/3 bg-muted-foreground rounded-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Mini player bar */}
+          {!expanded && (
+            <div className="fixed bottom-20 left-0 right-0 z-30 px-2">
+              <div
+                className="bg-card/95 backdrop-blur-xl border border-border rounded-lg mx-1 p-2.5 flex items-center gap-3 shadow-2xl cursor-pointer"
+                onClick={() => setExpanded(true)}
+              >
+                <div className={`w-10 h-10 rounded bg-gradient-to-br ${getTrackColor(playingTrack.id)} flex items-center justify-center flex-shrink-0`}>
+                  <div className="flex items-end gap-[2px] h-3">
+                    <div className="w-[2px] bg-primary rounded-full animate-pulse" style={{ height: '50%' }} />
+                    <div className="w-[2px] bg-primary rounded-full animate-pulse" style={{ height: '100%', animationDelay: '0.2s' }} />
+                    <div className="w-[2px] bg-primary rounded-full animate-pulse" style={{ height: '70%', animationDelay: '0.4s' }} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-foreground text-sm font-semibold truncate">{playingTrack.title}</p>
+                  <p className="text-muted-foreground text-[11px] truncate">{playingTrack.artist}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={(e) => { e.stopPropagation(); toggleLike(playingTrack.id); }}>
+                    <Heart size={18} className={likedTracks.has(playingTrack.id) ? "fill-primary text-primary" : "text-muted-foreground"} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); setPlaying(null); }}
+                    className="w-9 h-9 rounded-full bg-foreground flex items-center justify-center">
+                    <Pause size={16} className="text-background" />
+                  </button>
+                </div>
+              </div>
+              {/* Progress line */}
+              <div className="mx-3 h-[2px] bg-muted rounded-full overflow-hidden mt-0">
+                <div className="h-full w-1/3 bg-primary rounded-full" />
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       <AddMusicDialog open={showAdd} onClose={() => setShowAdd(false)} onAdded={fetchTracks} />
       <AuthSheet open={showAuth} onClose={() => setShowAuth(false)} />
