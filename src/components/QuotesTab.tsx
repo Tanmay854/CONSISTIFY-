@@ -1,9 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, LogIn, LogOut, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import AuthSheet from "./AuthSheet";
-import AdminPanel from "./AdminPanel";
 
 interface QuoteCard {
   id: string;

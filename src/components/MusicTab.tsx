@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Play, Pause, SkipForward, SkipBack, Heart, Plus, LogIn, LogOut, Shield, Shuffle, Repeat, Volume2, ChevronUp, ChevronDown, Music2 } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Heart, Shuffle, Repeat, Volume2, ChevronDown, Music2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import AuthSheet from "./AuthSheet";
-import AdminPanel from "./AdminPanel";
 
 interface Track {
   id: string;

@@ -1,10 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Plus, LogIn, Shield, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import AddReelDialog from "./AddReelDialog";
-import AuthSheet from "./AuthSheet";
-import AdminPanel from "./AdminPanel";
 
 interface Reel {
   id: string;
