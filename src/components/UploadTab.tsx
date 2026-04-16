@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Film, Music2, Image, Upload, Check } from "lucide-react";
+import { Film, Music2, Image, Upload, Check, FolderOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import MyUploads from "@/components/MyUploads";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"];
 
