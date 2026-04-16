@@ -64,7 +64,7 @@ const UploadTab = () => {
           setLoading(false);
           return;
         }
-        await supabase.from("reels").insert({ title: videoTitle.trim(), video_url: videoUrl.trim() });
+        await supabase.from("reels").insert({ title: videoTitle.trim(), video_url: videoUrl.trim(), uploaded_by: user?.id });
       } else if (activeType === "music") {
         if (!musicTitle.trim() || !musicArtist.trim()) {
           setLoading(false);
@@ -115,8 +115,21 @@ const UploadTab = () => {
     <div className="min-h-screen pb-24 pt-4 bg-background">
       {/* Header */}
       <div className="px-5 pt-4 pb-2">
-        <h2 className="text-foreground font-bold text-2xl">Upload</h2>
-        <p className="text-muted-foreground text-xs mt-0.5">Share content with your audience</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-foreground font-bold text-2xl">Upload</h2>
+            <p className="text-muted-foreground text-xs mt-0.5">Share content with your audience</p>
+          </div>
+          <button
+            onClick={() => setShowMyUploads(!showMyUploads)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              showMyUploads ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+            }`}
+          >
+            <FolderOpen size={14} />
+            My Videos
+          </button>
+        </div>
       </div>
 
       {/* Type selector */}
@@ -275,6 +288,9 @@ const UploadTab = () => {
           )}
         </button>
       </div>
+
+      {/* My Uploads section */}
+      {showMyUploads && <MyUploads />}
     </div>
   );
 };
