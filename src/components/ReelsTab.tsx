@@ -7,12 +7,14 @@ interface Reel {
   video_url: string;
   author_name: string | null;
   created_at: string;
+  trim_start: number | null;
+  trim_end: number | null;
 }
 
 const defaultReels: Reel[] = [
-  { id: "d1", title: "Rise Above", video_url: "", author_name: "Marcus Aurelius", created_at: "" },
-  { id: "d2", title: "Unstoppable", video_url: "", author_name: "David Goggins", created_at: "" },
-  { id: "d3", title: "Dream Big", video_url: "", author_name: "Steve Jobs", created_at: "" },
+  { id: "d1", title: "Rise Above", video_url: "", author_name: "Marcus Aurelius", created_at: "", trim_start: null, trim_end: null },
+  { id: "d2", title: "Unstoppable", video_url: "", author_name: "David Goggins", created_at: "", trim_start: null, trim_end: null },
+  { id: "d3", title: "Dream Big", video_url: "", author_name: "Steve Jobs", created_at: "", trim_start: null, trim_end: null },
 ];
 
 const defaultQuotes: Record<string, string> = {
@@ -46,7 +48,13 @@ const getYoutubeId = (url: string): string | null => {
 const getEmbedUrl = (url: string): string | null => {
   if (!isValidUrl(url)) return null;
   const ytId = getYoutubeId(url);
-  if (ytId) return `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&showinfo=0`;
+  if (ytId) {
+    const params = new URLSearchParams({
+      autoplay: "1", mute: "1", loop: "1", playlist: ytId,
+      controls: "0", modestbranding: "1", rel: "0", showinfo: "0",
+    });
+    return `https://www.youtube.com/embed/${ytId}?${params.toString()}`;
+  }
   return url;
 };
 

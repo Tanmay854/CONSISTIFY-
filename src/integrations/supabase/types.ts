@@ -98,6 +98,9 @@ export type Database = {
           created_at: string
           id: string
           title: string
+          trim_end: number | null
+          trim_start: number | null
+          uploaded_by: string | null
           video_url: string
         }
         Insert: {
@@ -105,6 +108,9 @@ export type Database = {
           created_at?: string
           id?: string
           title: string
+          trim_end?: number | null
+          trim_start?: number | null
+          uploaded_by?: string | null
           video_url: string
         }
         Update: {
@@ -112,6 +118,9 @@ export type Database = {
           created_at?: string
           id?: string
           title?: string
+          trim_end?: number | null
+          trim_start?: number | null
+          uploaded_by?: string | null
           video_url?: string
         }
         Relationships: []
