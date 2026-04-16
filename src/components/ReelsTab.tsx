@@ -12,9 +12,9 @@ interface Reel {
 }
 
 const defaultReels: Reel[] = [
-  { id: "d1", title: "Rise Above", video_url: "", author_name: "Marcus Aurelius", created_at: "" },
-  { id: "d2", title: "Unstoppable", video_url: "", author_name: "David Goggins", created_at: "" },
-  { id: "d3", title: "Dream Big", video_url: "", author_name: "Steve Jobs", created_at: "" },
+  { id: "d1", title: "Rise Above", video_url: "", author_name: "Marcus Aurelius", created_at: "", trim_start: null, trim_end: null },
+  { id: "d2", title: "Unstoppable", video_url: "", author_name: "David Goggins", created_at: "", trim_start: null, trim_end: null },
+  { id: "d3", title: "Dream Big", video_url: "", author_name: "Steve Jobs", created_at: "", trim_start: null, trim_end: null },
 ];
 
 const defaultQuotes: Record<string, string> = {
