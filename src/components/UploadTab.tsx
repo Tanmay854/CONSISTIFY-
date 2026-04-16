@@ -9,8 +9,9 @@ const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", 
 type UploadType = "video" | "music" | "photo";
 
 const UploadTab = () => {
-  const { canUpload } = useAuth();
+  const { canUpload, user } = useAuth();
   const [activeType, setActiveType] = useState<UploadType>("video");
+  const [showMyUploads, setShowMyUploads] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
