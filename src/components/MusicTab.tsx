@@ -335,21 +335,28 @@ const MusicTab = () => {
                   <button onClick={(e) => { e.stopPropagation(); toggleLike(playingTrack.id); }}>
                     <Heart size={18} className={likedTracks.has(playingTrack.id) ? "fill-primary text-primary" : "text-muted-foreground"} />
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); setPlaying(null); }}
-                    className="w-9 h-9 rounded-full bg-foreground flex items-center justify-center">
-                    <Pause size={16} className="text-background" />
+                  <button onClick={(e) => { e.stopPropagation(); togglePlayPause(); }}
+                    className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+                    {isPaused ? <Play size={16} className="text-primary-foreground ml-0.5" fill="currentColor" /> : <Pause size={16} className="text-primary-foreground" fill="currentColor" />}
                   </button>
                 </div>
               </div>
               {/* Progress line */}
               <div className="mx-3 h-[2px] bg-muted rounded-full overflow-hidden mt-0">
-                <div className="h-full w-1/3 bg-primary rounded-full" />
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: duration ? `${(progress / duration) * 100}%` : "0%" }} />
               </div>
             </div>
           )}
         </>
       )}
 
+      {/* Hidden audio element */}
+      <audio
+        ref={audioRef}
+        onTimeUpdate={(e) => setProgress(e.currentTarget.currentTime)}
+        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+        onEnded={playNext}
+      />
     </>
   );
 };
