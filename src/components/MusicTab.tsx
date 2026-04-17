@@ -282,11 +282,11 @@ const MusicTab = () => {
                 {/* Progress bar */}
                 <div className="w-full mt-6">
                   <div className="h-1 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full w-1/3 bg-foreground rounded-full" />
+                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: duration ? `${(progress / duration) * 100}%` : "0%" }} />
                   </div>
                   <div className="flex justify-between mt-1.5">
-                    <span className="text-muted-foreground text-[10px]">1:23</span>
-                    <span className="text-muted-foreground text-[10px]">{playingTrack.duration || "3:45"}</span>
+                    <span className="text-muted-foreground text-[10px]">{formatTime(progress)}</span>
+                    <span className="text-muted-foreground text-[10px]">{formatTime(duration)}</span>
                   </div>
                 </div>
 
@@ -294,9 +294,9 @@ const MusicTab = () => {
                 <div className="flex items-center justify-between w-full mt-4 px-4">
                   <Shuffle size={18} className="text-muted-foreground" />
                   <button onClick={playPrev}><SkipBack size={28} className="text-foreground" fill="hsl(0 0% 95%)" /></button>
-                  <button onClick={() => setPlaying(null)}
-                    className="w-16 h-16 rounded-full bg-foreground flex items-center justify-center">
-                    <Pause size={28} className="text-background" />
+                  <button onClick={togglePlayPause}
+                    className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
+                    {isPaused ? <Play size={28} className="text-primary-foreground ml-1" fill="currentColor" /> : <Pause size={28} className="text-primary-foreground" fill="currentColor" />}
                   </button>
                   <button onClick={playNext}><SkipForward size={28} className="text-foreground" fill="hsl(0 0% 95%)" /></button>
                   <Repeat size={18} className="text-muted-foreground" />
