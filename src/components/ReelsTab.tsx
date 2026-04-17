@@ -50,7 +50,7 @@ const getEmbedUrl = (url: string): string | null => {
   const ytId = getYoutubeId(url);
   if (ytId) {
     const params = new URLSearchParams({
-      autoplay: "1", mute: "1", loop: "1", playlist: ytId,
+      autoplay: "1", mute: "0", loop: "1", playlist: ytId,
       controls: "0", modestbranding: "1", rel: "0", showinfo: "0",
     });
     return `https://www.youtube.com/embed/${ytId}?${params.toString()}`;
@@ -81,7 +81,6 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
           className="absolute inset-0 w-full h-full object-cover"
           autoPlay={isActive}
           loop
-          muted
           playsInline
         />
       ) : (

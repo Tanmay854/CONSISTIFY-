@@ -15,16 +15,16 @@
     --popover: 0 0% 7%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 40 90% 55%;
+    --primary: 142 71% 45%;
     --primary-foreground: 0 0% 0%;
 
     --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 90%;
+    --secondary-foreground: 0 0% 95%;
 
     --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 55%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 40 90% 55%;
+    --accent: 142 71% 45%;
     --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84% 60%;
@@ -32,23 +32,23 @@
 
     --border: 0 0% 18%;
     --input: 0 0% 18%;
-    --ring: 40 90% 55%;
+    --ring: 142 71% 45%;
 
     --radius: 0.75rem;
 
-    --gold-glow: 40 100% 50%;
+    --gold-glow: 142 80% 50%;
     --surface-elevated: 0 0% 10%;
-    --tab-active: 40 90% 55%;
+    --tab-active: 142 71% 45%;
     --tab-inactive: 0 0% 45%;
 
     --sidebar-background: 0 0% 5%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 40 90% 55%;
+    --sidebar-primary: 142 71% 45%;
     --sidebar-primary-foreground: 0 0% 0%;
     --sidebar-accent: 0 0% 12%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 40 90% 55%;
+    --sidebar-ring: 142 71% 45%;
   }
 }
 
@@ -83,7 +83,7 @@
   }
 
   .gradient-gold {
-    background: linear-gradient(135deg, hsl(40, 90%, 55%), hsl(30, 100%, 65%), hsl(45, 85%, 50%));
+    background: linear-gradient(135deg, hsl(142, 71%, 45%), hsl(150, 80%, 55%), hsl(135, 75%, 40%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
