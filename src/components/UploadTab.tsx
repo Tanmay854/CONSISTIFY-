@@ -219,7 +219,7 @@ const UploadTab = () => {
                 </div>
                 <SourceToggle
                   value={videoSource}
-                  onChange={setVideoSource}
+                  onChange={(v) => setVideoSource(v as VideoSource)}
                   options={[
                     { id: "url", label: "URL / YouTube", icon: Link2 },
                     { id: "file", label: "From device", icon: FileVideo },
@@ -286,7 +286,7 @@ const UploadTab = () => {
                 </div>
                 <SourceToggle
                   value={musicSource}
-                  onChange={setMusicSource}
+                  onChange={(v) => setMusicSource(v as MusicSource)}
                   options={[
                     { id: "file", label: "From device", icon: FileVideo },
                     { id: "url", label: "Audio URL", icon: Link2 },
