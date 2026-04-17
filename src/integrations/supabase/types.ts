@@ -23,6 +23,7 @@ export type Database = {
           duration: string | null
           id: string
           title: string
+          uploaded_by: string | null
         }
         Insert: {
           artist?: string
@@ -32,6 +33,7 @@ export type Database = {
           duration?: string | null
           id?: string
           title: string
+          uploaded_by?: string | null
         }
         Update: {
           artist?: string
@@ -41,6 +43,7 @@ export type Database = {
           duration?: string | null
           id?: string
           title?: string
+          uploaded_by?: string | null
         }
         Relationships: []
       }
@@ -73,6 +76,7 @@ export type Database = {
           image_url: string
           is_pro: boolean
           title: string
+          uploaded_by: string | null
         }
         Insert: {
           category?: string
@@ -81,6 +85,7 @@ export type Database = {
           image_url: string
           is_pro?: boolean
           title: string
+          uploaded_by?: string | null
         }
         Update: {
           category?: string
@@ -89,6 +94,7 @@ export type Database = {
           image_url?: string
           is_pro?: boolean
           title?: string
+          uploaded_by?: string | null
         }
         Relationships: []
       }
