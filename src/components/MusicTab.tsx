@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Play, Pause, SkipForward, SkipBack, Heart, Shuffle, Repeat, Volume2, ChevronDown, Music2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -104,6 +104,10 @@ const MusicTab = () => {
   const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set());
   const [tracks, setTracks] = useState<Track[]>([]);
   const [expanded, setExpanded] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const fetchTracks = useCallback(async () => {
     const { data } = await supabase.from("music").select("*").order("created_at", { ascending: false });
@@ -125,15 +129,44 @@ const MusicTab = () => {
   const playingTrack = tracks.find((t) => t.id === playing);
   const playingIndex = playing ? tracks.findIndex(t => t.id === playing) : -1;
 
-  const playNext = () => {
+  const playNext = useCallback(() => {
     if (playingIndex >= 0 && playingIndex < filtered.length - 1) {
       setPlaying(filtered[playingIndex + 1].id);
+      setIsPaused(false);
     }
-  };
+  }, [playingIndex, filtered]);
   const playPrev = () => {
     if (playingIndex > 0) {
       setPlaying(filtered[playingIndex - 1].id);
+      setIsPaused(false);
     }
+  };
+
+  // Play / pause audio when track changes
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playingTrack?.audio_url) {
+      if (audio.src !== playingTrack.audio_url) {
+        audio.src = playingTrack.audio_url;
+      }
+      if (!isPaused) {
+        audio.play().catch(() => {});
+      } else {
+        audio.pause();
+      }
+    } else {
+      audio.pause();
+      audio.removeAttribute("src");
+    }
+  }, [playingTrack, isPaused]);
+
+  const togglePlayPause = () => setIsPaused((p) => !p);
+  const formatTime = (s: number) => {
+    if (!isFinite(s)) return "0:00";
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60).toString().padStart(2, "0");
+    return `${m}:${sec}`;
   };
 
   return (
