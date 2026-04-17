@@ -143,7 +143,7 @@ const UploadTab = () => {
     { id: "photo", label: "Photo", icon: Image },
   ];
 
-  const SourceToggle = ({ value, onChange, options }: { value: string; onChange: (v: never) => void; options: { id: string; label: string; icon: typeof Link2 }[] }) => (
+  const SourceToggle = ({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { id: string; label: string; icon: typeof Link2 }[] }) => (
     <div className="flex gap-2 mb-3">
       {options.map((o) => {
         const Icon = o.icon;
