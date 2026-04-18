@@ -100,21 +100,24 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
       </div>
 
       <div className="relative z-10 px-8 max-w-md mx-auto text-center">
-        {isActive && (
-          <>
-            <div className="animate-float-up" style={{ animationDelay: "0.1s" }}>
-              <span className="text-xs tracking-[0.3em] uppercase text-primary font-medium">
-                {reel.title}
-              </span>
-            </div>
-            {defaultQuotes[reel.id] && (
-              <div className="animate-float-up mt-6" style={{ animationDelay: "0.3s" }}>
-                <p className="font-display text-2xl leading-relaxed text-foreground font-medium">
-                  "{defaultQuotes[reel.id]}"
-                </p>
-              </div>
-            )}
-          </>
+        {isActive && defaultQuotes[reel.id] && (
+          <div className="animate-float-up" style={{ animationDelay: "0.3s" }}>
+            <p className="font-display text-2xl leading-relaxed text-foreground font-medium">
+              "{defaultQuotes[reel.id]}"
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Instagram-style title at bottom-left */}
+      <div className="absolute bottom-24 left-4 right-16 z-20 pointer-events-none">
+        <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
+          {reel.title}
+        </p>
+        {reel.author_name && (
+          <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate mt-0.5">
+            {reel.author_name}
+          </p>
         )}
       </div>
     </div>
