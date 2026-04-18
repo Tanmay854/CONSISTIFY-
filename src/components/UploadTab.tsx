@@ -59,9 +59,9 @@ const UploadTab = () => {
   };
 
   const resetFields = () => {
-    setVideoTitle(""); setVideoUrl(""); setVideoFile(null);
+    setVideoTitle(""); setVideoDescription(""); setVideoUrl(""); setVideoFile(null);
     setMusicTitle(""); setMusicArtist(""); setMusicDuration(""); setMusicUrl(""); setMusicFile(null);
-    setPhotoTitle(""); setPhotoFile(null); setIsPro(false);
+    setPhotoTitle(""); setPhotoDescription(""); setPhotoFile(null); setIsPro(false);
   };
 
   const uploadFileToBucket = async (bucket: string, file: File): Promise<string | null> => {
@@ -94,7 +94,7 @@ const UploadTab = () => {
           if (!url) { setLoading(false); return; }
           finalUrl = url;
         }
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), video_url: finalUrl, uploaded_by: user?.id });
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: finalUrl, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "music") {
         if (!musicTitle.trim() || !musicArtist.trim()) { setError("Title and artist required"); setLoading(false); return; }
@@ -122,6 +122,7 @@ const UploadTab = () => {
         if (!url) { setLoading(false); return; }
         const { error: insertErr } = await supabase.from("quotes").insert({
           title: photoTitle.trim(),
+          description: photoDescription.trim() || null,
           category: photoCategory.toUpperCase(),
           image_url: url,
           is_pro: isPro,
