@@ -7,6 +7,7 @@ interface QuoteCard {
   category: string;
   image_url: string;
   is_pro: boolean;
+  description: string | null;
 }
 
 const PAGE_SIZE = 4;
@@ -179,9 +180,12 @@ const QuotesTab = () => {
             alt={selectedQuote.title}
             className="max-w-full max-h-[80vh] object-contain rounded-lg"
           />
-          <div className="mt-4 text-center px-6">
+          <div className="mt-4 text-center px-6 max-w-md">
             <h3 className="text-foreground font-bold text-lg">{selectedQuote.title}</h3>
             <p className="text-muted-foreground text-xs mt-1 uppercase tracking-widest">{selectedQuote.category}</p>
+            {selectedQuote.description && (
+              <p className="text-foreground/90 text-sm mt-3 whitespace-pre-wrap">{selectedQuote.description}</p>
+            )}
           </div>
         </div>
       )}
