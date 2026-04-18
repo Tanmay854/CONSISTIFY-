@@ -189,8 +189,8 @@ const MyUploads = () => {
       ) : (
         <>
           {tab === "videos" && (
-            reels.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">No videos yet.</p> :
-            reels.map((reel) => {
+            fReels.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos yet."}</p> :
+            fReels.map((reel) => {
               const ytId = getYoutubeId(reel.video_url);
               const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : null;
               const isEditing = editingId === reel.id;
