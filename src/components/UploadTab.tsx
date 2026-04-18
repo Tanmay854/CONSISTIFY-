@@ -36,6 +36,7 @@ const UploadTab = () => {
 
   // Photo fields
   const [photoTitle, setPhotoTitle] = useState("");
+  const [photoDescription, setPhotoDescription] = useState("");
   const [photoCategory, setPhotoCategory] = useState("Motivation");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isPro, setIsPro] = useState(false);
