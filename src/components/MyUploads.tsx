@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Check, X, Scissors, Trash2, Film, Music2, Image as ImageIcon } from "lucide-react";
+import { Pencil, Check, X, Scissors, Trash2, Film, Music2, Image as ImageIcon, Search } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
 interface Reel {
