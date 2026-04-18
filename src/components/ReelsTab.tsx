@@ -7,15 +7,16 @@ interface Reel {
   title: string;
   video_url: string;
   author_name: string | null;
+  description: string | null;
   created_at: string;
   trim_start: number | null;
   trim_end: number | null;
 }
 
 const defaultReels: Reel[] = [
-  { id: "d1", title: "Rise Above", video_url: "", author_name: "Marcus Aurelius", created_at: "", trim_start: null, trim_end: null },
-  { id: "d2", title: "Unstoppable", video_url: "", author_name: "David Goggins", created_at: "", trim_start: null, trim_end: null },
-  { id: "d3", title: "Dream Big", video_url: "", author_name: "Steve Jobs", created_at: "", trim_start: null, trim_end: null },
+  { id: "d1", title: "Rise Above", video_url: "", author_name: "Marcus Aurelius", description: null, created_at: "", trim_start: null, trim_end: null },
+  { id: "d2", title: "Unstoppable", video_url: "", author_name: "David Goggins", description: null, created_at: "", trim_start: null, trim_end: null },
+  { id: "d3", title: "Dream Big", video_url: "", author_name: "Steve Jobs", description: null, created_at: "", trim_start: null, trim_end: null },
 ];
 
 const defaultQuotes: Record<string, string> = {
@@ -154,6 +155,11 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
         {reel.author_name && (
           <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate mt-0.5">
             {reel.author_name}
+          </p>
+        )}
+        {reel.description && (
+          <p className="text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1.5 line-clamp-3 whitespace-pre-wrap">
+            {reel.description}
           </p>
         )}
       </div>

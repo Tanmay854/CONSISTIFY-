@@ -21,6 +21,7 @@ const UploadTab = () => {
   // Video fields
   const [videoSource, setVideoSource] = useState<VideoSource>("url");
   const [videoTitle, setVideoTitle] = useState("");
+  const [videoDescription, setVideoDescription] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
 
@@ -35,6 +36,7 @@ const UploadTab = () => {
 
   // Photo fields
   const [photoTitle, setPhotoTitle] = useState("");
+  const [photoDescription, setPhotoDescription] = useState("");
   const [photoCategory, setPhotoCategory] = useState("Motivation");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isPro, setIsPro] = useState(false);
@@ -57,9 +59,9 @@ const UploadTab = () => {
   };
 
   const resetFields = () => {
-    setVideoTitle(""); setVideoUrl(""); setVideoFile(null);
+    setVideoTitle(""); setVideoDescription(""); setVideoUrl(""); setVideoFile(null);
     setMusicTitle(""); setMusicArtist(""); setMusicDuration(""); setMusicUrl(""); setMusicFile(null);
-    setPhotoTitle(""); setPhotoFile(null); setIsPro(false);
+    setPhotoTitle(""); setPhotoDescription(""); setPhotoFile(null); setIsPro(false);
   };
 
   const uploadFileToBucket = async (bucket: string, file: File): Promise<string | null> => {
@@ -92,7 +94,7 @@ const UploadTab = () => {
           if (!url) { setLoading(false); return; }
           finalUrl = url;
         }
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), video_url: finalUrl, uploaded_by: user?.id });
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: finalUrl, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "music") {
         if (!musicTitle.trim() || !musicArtist.trim()) { setError("Title and artist required"); setLoading(false); return; }
@@ -120,6 +122,7 @@ const UploadTab = () => {
         if (!url) { setLoading(false); return; }
         const { error: insertErr } = await supabase.from("quotes").insert({
           title: photoTitle.trim(),
+          description: photoDescription.trim() || null,
           category: photoCategory.toUpperCase(),
           image_url: url,
           is_pro: isPro,
@@ -215,6 +218,16 @@ const UploadTab = () => {
                     onChange={(e) => setVideoTitle(e.target.value)}
                     placeholder="e.g. Rise and Grind"
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Description</label>
+                  <textarea
+                    value={videoDescription}
+                    onChange={(e) => setVideoDescription(e.target.value)}
+                    placeholder="Write a caption..."
+                    rows={3}
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none"
                   />
                 </div>
                 <SourceToggle
@@ -330,6 +343,16 @@ const UploadTab = () => {
                   >
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Description</label>
+                  <textarea
+                    value={photoDescription}
+                    onChange={(e) => setPhotoDescription(e.target.value)}
+                    placeholder="Write a caption..."
+                    rows={3}
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none"
+                  />
                 </div>
                 <div>
                   <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Image</label>
