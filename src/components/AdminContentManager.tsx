@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Film, Music2, Image as ImageIcon, User } from "lucide-react";
+import { Trash2, Film, Music2, Image as ImageIcon, User, Search, X } from "lucide-react";
 
 type Tab = "videos" | "music" | "photos";
 
