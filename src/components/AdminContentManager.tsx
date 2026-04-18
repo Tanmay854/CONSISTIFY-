@@ -67,10 +67,18 @@ const AdminContentManager = () => {
     setBusy(false);
   };
 
+  const q = query.trim().toLowerCase();
+  const matches = (title: string, uid: string | null, extra = "") =>
+    !q || title.toLowerCase().includes(q) || nameFor(uid).toLowerCase().includes(q) || extra.toLowerCase().includes(q);
+
+  const fReels = useMemo(() => reels.filter((r) => matches(r.title, r.uploaded_by)), [reels, q, profiles]);
+  const fMusic = useMemo(() => music.filter((m) => matches(m.title, m.uploaded_by, m.artist)), [music, q, profiles]);
+  const fQuotes = useMemo(() => quotes.filter((qq) => matches(qq.title, qq.uploaded_by)), [quotes, q, profiles]);
+
   const tabs: { id: Tab; label: string; icon: typeof Film; count: number }[] = [
-    { id: "videos", label: "Videos", icon: Film, count: reels.length },
-    { id: "music", label: "Music", icon: Music2, count: music.length },
-    { id: "photos", label: "Photos", icon: ImageIcon, count: quotes.length },
+    { id: "videos", label: "Videos", icon: Film, count: fReels.length },
+    { id: "music", label: "Music", icon: Music2, count: fMusic.length },
+    { id: "photos", label: "Photos", icon: ImageIcon, count: fQuotes.length },
   ];
 
   return (
