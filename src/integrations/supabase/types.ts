@@ -72,6 +72,7 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          description: string | null
           id: string
           image_url: string
           is_pro: boolean
@@ -81,6 +82,7 @@ export type Database = {
         Insert: {
           category?: string
           created_at?: string
+          description?: string | null
           id?: string
           image_url: string
           is_pro?: boolean
@@ -90,6 +92,7 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          description?: string | null
           id?: string
           image_url?: string
           is_pro?: boolean
@@ -102,6 +105,7 @@ export type Database = {
         Row: {
           author_name: string | null
           created_at: string
+          description: string | null
           id: string
           title: string
           trim_end: number | null
@@ -112,6 +116,7 @@ export type Database = {
         Insert: {
           author_name?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           title: string
           trim_end?: number | null
@@ -122,6 +127,7 @@ export type Database = {
         Update: {
           author_name?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           title?: string
           trim_end?: number | null
