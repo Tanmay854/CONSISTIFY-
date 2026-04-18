@@ -21,6 +21,7 @@ const UploadTab = () => {
   // Video fields
   const [videoSource, setVideoSource] = useState<VideoSource>("url");
   const [videoTitle, setVideoTitle] = useState("");
+  const [videoDescription, setVideoDescription] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
 
