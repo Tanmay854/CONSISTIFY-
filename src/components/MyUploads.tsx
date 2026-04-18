@@ -228,8 +228,8 @@ const MyUploads = () => {
           )}
 
           {tab === "music" && (
-            music.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">No music yet.</p> :
-            music.map((m) => {
+            fMusic.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No music yet."}</p> :
+            fMusic.map((m) => {
               const isEditing = editingId === m.id;
               return (
                 <div key={m.id} className="bg-secondary rounded-xl p-3 flex gap-3 items-center">
