@@ -262,8 +262,8 @@ const MyUploads = () => {
           )}
 
           {tab === "photos" && (
-            quotes.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">No photos yet.</p> :
-            quotes.map((q) => {
+            fQuotes.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No photos yet."}</p> :
+            fQuotes.map((q) => {
               const isEditing = editingId === q.id;
               return (
                 <div key={q.id} className="bg-secondary rounded-xl p-3 flex gap-3">
