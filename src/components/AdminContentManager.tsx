@@ -30,6 +30,7 @@ const AdminContentManager = () => {
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [query, setQuery] = useState("");
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
