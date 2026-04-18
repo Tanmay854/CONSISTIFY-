@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Reel {
@@ -45,12 +46,12 @@ const getYoutubeId = (url: string): string | null => {
   return ytMatch ? ytMatch[1] : null;
 };
 
-const getEmbedUrl = (url: string): string | null => {
+const getEmbedUrl = (url: string, playing: boolean): string | null => {
   if (!isValidUrl(url)) return null;
   const ytId = getYoutubeId(url);
   if (ytId) {
     const params = new URLSearchParams({
-      autoplay: "1", mute: "0", loop: "1", playlist: ytId,
+      autoplay: playing ? "1" : "0", mute: "0", loop: "1", playlist: ytId,
       controls: "0", modestbranding: "1", rel: "0", showinfo: "0",
     });
     return `https://www.youtube.com/embed/${ytId}?${params.toString()}`;
@@ -64,12 +65,39 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
   const isYoutube = !!ytId;
   const isDirectVideo = hasVideo && !isYoutube;
   const gradient = gradients[index % gradients.length];
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [showIcon, setShowIcon] = useState(false);
+
+  useEffect(() => {
+    setIsPlaying(isActive);
+  }, [isActive]);
+
+  useEffect(() => {
+    if (!isDirectVideo || !videoRef.current) return;
+    if (isPlaying && isActive) {
+      videoRef.current.play().catch(() => {});
+    } else {
+      videoRef.current.pause();
+    }
+  }, [isPlaying, isActive, isDirectVideo]);
+
+  const togglePlay = () => {
+    if (!hasVideo) return;
+    setIsPlaying((p) => !p);
+    setShowIcon(true);
+    setTimeout(() => setShowIcon(false), 600);
+  };
 
   return (
-    <div className="relative h-screen w-full snap-start flex items-center justify-center overflow-hidden">
+    <div
+      className="relative h-screen w-full snap-start flex items-center justify-center overflow-hidden cursor-pointer"
+      onClick={togglePlay}
+    >
       {hasVideo && isYoutube && isActive ? (
         <iframe
-          src={getEmbedUrl(reel.video_url)}
+          key={isPlaying ? "play" : "pause"}
+          src={getEmbedUrl(reel.video_url, isPlaying)}
           className="absolute inset-0 w-full h-full object-cover"
           style={{ border: "none", pointerEvents: "none" }}
           allow="autoplay; encrypted-media"
@@ -77,6 +105,7 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
         />
       ) : hasVideo && isDirectVideo ? (
         <video
+          ref={videoRef}
           src={reel.video_url}
           className="absolute inset-0 w-full h-full object-cover"
           autoPlay={isActive}
@@ -87,7 +116,15 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
         <div className={`absolute inset-0 bg-gradient-to-b ${gradient}`} />
       )}
 
-      <div className="absolute inset-0 bg-background/40" />
+      <div className="absolute inset-0 bg-background/40 pointer-events-none" />
+
+      {hasVideo && (showIcon || !isPlaying) && (
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+          <div className="bg-black/50 rounded-full p-6 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
+            <Play className="w-12 h-12 text-white fill-white" />
+          </div>
+        </div>
+      )}
 
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[...Array(6)].map((_, i) => (
