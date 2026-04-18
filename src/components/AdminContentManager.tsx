@@ -116,7 +116,7 @@ const AdminContentManager = () => {
           <div className="animate-pulse space-y-2">{[1,2,3].map((i) => <div key={i} className="h-16 bg-secondary rounded-lg" />)}</div>
         ) : (
           <>
-            {tab === "videos" && reels.map((r) => (
+            {tab === "videos" && fReels.map((r) => (
               <div key={r.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
                 <Film size={18} className="text-primary flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -126,9 +126,9 @@ const AdminContentManager = () => {
                 <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos")} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
             ))}
-            {tab === "videos" && reels.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">No videos.</p>}
+            {tab === "videos" && fReels.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos."}</p>}
 
-            {tab === "music" && music.map((m) => (
+            {tab === "music" && fMusic.map((m) => (
               <div key={m.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
                 <Music2 size={18} className="text-primary flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -138,19 +138,19 @@ const AdminContentManager = () => {
                 <button onClick={() => handleDelete("music", m.id, m.audio_url, "audio")} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
             ))}
-            {tab === "music" && music.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">No music.</p>}
+            {tab === "music" && fMusic.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No music."}</p>}
 
-            {tab === "photos" && quotes.map((q) => (
-              <div key={q.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
-                <img src={q.image_url} alt={q.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+            {tab === "photos" && fQuotes.map((qq) => (
+              <div key={qq.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
+                <img src={qq.image_url} alt={qq.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-foreground text-sm font-medium truncate">{q.title}</p>
-                  <p className="text-muted-foreground text-xs truncate flex items-center gap-1"><User size={10} /> {nameFor(q.uploaded_by)}</p>
+                  <p className="text-foreground text-sm font-medium truncate">{qq.title}</p>
+                  <p className="text-muted-foreground text-xs truncate flex items-center gap-1"><User size={10} /> {nameFor(qq.uploaded_by)}</p>
                 </div>
-                <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images")} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
+                <button onClick={() => handleDelete("quotes", qq.id, qq.image_url, "quote-images")} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
             ))}
-            {tab === "photos" && quotes.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">No photos.</p>}
+            {tab === "photos" && fQuotes.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No photos."}</p>}
           </>
         )}
       </div>
