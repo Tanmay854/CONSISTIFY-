@@ -145,14 +145,32 @@ const MyUploads = () => {
     setBusy(false);
   };
 
+  const fReels = filterFn(reels);
+  const fMusic = filterFn(music, (m) => `${m.artist} ${m.category}`);
+  const fQuotes = filterFn(quotes, (q) => q.category);
+
   const tabs: { id: Tab; label: string; icon: typeof Film; count: number }[] = [
-    { id: "videos", label: "Videos", icon: Film, count: reels.length },
-    { id: "music", label: "Music", icon: Music2, count: music.length },
-    { id: "photos", label: "Photos", icon: ImageIcon, count: quotes.length },
+    { id: "videos", label: "Videos", icon: Film, count: fReels.length },
+    { id: "music", label: "Music", icon: Music2, count: fMusic.length },
+    { id: "photos", label: "Photos", icon: ImageIcon, count: fQuotes.length },
   ];
 
   return (
     <div className="px-5 py-4 space-y-3">
+      <div className="relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search your uploads..."
+          className="w-full bg-secondary text-foreground rounded-lg pl-9 pr-9 py-2 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+        />
+        {query && (
+          <button onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            <X size={14} />
+          </button>
+        )}
+      </div>
       <div className="flex gap-2">
         {tabs.map((t) => {
           const Icon = t.icon;
