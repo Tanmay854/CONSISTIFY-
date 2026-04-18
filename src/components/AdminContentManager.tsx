@@ -83,6 +83,21 @@ const AdminContentManager = () => {
 
   return (
     <div className="space-y-3">
+      <div className="relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by title, uploader, artist..."
+          className="w-full bg-secondary text-foreground rounded-lg pl-9 pr-9 py-2 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+        />
+        {query && (
+          <button onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            <X size={14} />
+          </button>
+        )}
+      </div>
+
       <div className="flex gap-2">
         {tabs.map((t) => {
           const Icon = t.icon;
