@@ -220,6 +220,16 @@ const UploadTab = () => {
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Description</label>
+                  <textarea
+                    value={videoDescription}
+                    onChange={(e) => setVideoDescription(e.target.value)}
+                    placeholder="Write a caption..."
+                    rows={3}
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none"
+                  />
+                </div>
                 <SourceToggle
                   value={videoSource}
                   onChange={(v) => setVideoSource(v as VideoSource)}
@@ -333,6 +343,16 @@ const UploadTab = () => {
                   >
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Description</label>
+                  <textarea
+                    value={photoDescription}
+                    onChange={(e) => setPhotoDescription(e.target.value)}
+                    placeholder="Write a caption..."
+                    rows={3}
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none"
+                  />
                 </div>
                 <div>
                   <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Image</label>
