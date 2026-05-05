@@ -309,7 +309,10 @@ const MyUploads = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-foreground text-sm font-medium truncate">{q.title}</p>
-                          <p className="text-muted-foreground text-xs truncate">{q.category}</p>
+                          <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
+                            <span>{q.category}</span>
+                            <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
+                          </p>
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                           <button onClick={() => { setEditingId(q.id); setEditTitle(q.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
