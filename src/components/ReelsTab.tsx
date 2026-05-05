@@ -112,6 +112,12 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
           autoPlay={isActive}
           loop
           playsInline
+          onTimeUpdate={(e) => {
+            const v = e.currentTarget;
+            if (v.currentTime >= 180) {
+              v.currentTime = 0;
+            }
+          }}
         />
       ) : (
         <div className={`absolute inset-0 bg-gradient-to-b ${gradient}`} />
