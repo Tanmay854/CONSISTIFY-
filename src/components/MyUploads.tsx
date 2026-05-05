@@ -112,6 +112,27 @@ const MyUploads = () => {
     setReels((r.data as Reel[]) || []);
     setMusic((m.data as Music[]) || []);
     setQuotes((q.data as Quote[]) || []);
+
+    // Aggregate view counts for items shown
+    const ids = [
+      ...((r.data as Reel[]) || []).map((x) => ({ t: "reel", id: x.id })),
+      ...((m.data as Music[]) || []).map((x) => ({ t: "music", id: x.id })),
+      ...((q.data as Quote[]) || []).map((x) => ({ t: "quote", id: x.id })),
+    ];
+    if (ids.length) {
+      const { data: vData } = await supabase
+        .from("content_views")
+        .select("content_type, content_id")
+        .in("content_id", ids.map((i) => i.id));
+      const counts: Record<string, number> = {};
+      (vData || []).forEach((v) => {
+        const key = `${v.content_type}:${v.content_id}`;
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      setViews(counts);
+    } else {
+      setViews({});
+    }
     setLoading(false);
   }, [user, isAdmin]);
 
