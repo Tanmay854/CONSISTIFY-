@@ -94,6 +94,7 @@ const MyUploads = () => {
   const [trimmingId, setTrimmingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
+  const [views, setViews] = useState<Record<string, number>>({});
 
   const q = query.trim().toLowerCase();
   const filterFn = <T extends { title: string }>(items: T[], extra?: (i: T) => string) =>
