@@ -36,6 +36,9 @@ const QuotesTab = () => {
       </div>
 
       {quotes.map((quote) => (
+        <PhotoCard key={quote.id} quote={quote} />
+      ))}
+      <div style={{ display: "none" }}>{quotes.map((quote) => (
         <div
           key={quote.id}
           className="relative h-screen w-full snap-start flex items-center justify-center overflow-hidden"
