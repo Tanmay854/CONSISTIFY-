@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Check, X, Scissors, Trash2, Film, Music2, Image as ImageIcon, Search } from "lucide-react";
+import { Pencil, Check, X, Scissors, Trash2, Film, Music2, Image as ImageIcon, Search, Eye } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
 interface Reel {
@@ -94,6 +94,7 @@ const MyUploads = () => {
   const [trimmingId, setTrimmingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
+  const [views, setViews] = useState<Record<string, number>>({});
 
   const q = query.trim().toLowerCase();
   const filterFn = <T extends { title: string }>(items: T[], extra?: (i: T) => string) =>
@@ -111,6 +112,27 @@ const MyUploads = () => {
     setReels((r.data as Reel[]) || []);
     setMusic((m.data as Music[]) || []);
     setQuotes((q.data as Quote[]) || []);
+
+    // Aggregate view counts for items shown
+    const ids = [
+      ...((r.data as Reel[]) || []).map((x) => ({ t: "reel", id: x.id })),
+      ...((m.data as Music[]) || []).map((x) => ({ t: "music", id: x.id })),
+      ...((q.data as Quote[]) || []).map((x) => ({ t: "quote", id: x.id })),
+    ];
+    if (ids.length) {
+      const { data: vData } = await supabase
+        .from("content_views")
+        .select("content_type, content_id")
+        .in("content_id", ids.map((i) => i.id));
+      const counts: Record<string, number> = {};
+      (vData || []).forEach((v) => {
+        const key = `${v.content_type}:${v.content_id}`;
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      setViews(counts);
+    } else {
+      setViews({});
+    }
     setLoading(false);
   }, [user, isAdmin]);
 
@@ -218,7 +240,10 @@ const MyUploads = () => {
                           </div>
                         </div>
                       )}
-                      <p className="text-muted-foreground text-xs mt-0.5">{new Date(reel.created_at).toLocaleDateString()}</p>
+                      <p className="text-muted-foreground text-xs mt-0.5 flex items-center gap-2">
+                        <span>{new Date(reel.created_at).toLocaleDateString()}</span>
+                        <span className="flex items-center gap-1"><Eye size={11} /> {views[`reel:${reel.id}`] || 0}</span>
+                      </p>
                     </div>
                   </div>
                   {isTrimming && <VideoTrimmer reel={reel} onSave={(s, e) => handleSaveTrim(reel.id, s, e)} />}
@@ -246,7 +271,10 @@ const MyUploads = () => {
                     ) : (
                       <>
                         <p className="text-foreground text-sm font-medium truncate">{m.title}</p>
-                        <p className="text-muted-foreground text-xs truncate">{m.artist} · {m.category}</p>
+                        <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
+                          <span>{m.artist} · {m.category}</span>
+                          <span className="flex items-center gap-1"><Eye size={11} /> {views[`music:${m.id}`] || 0}</span>
+                        </p>
                       </>
                     )}
                   </div>
@@ -281,7 +309,10 @@ const MyUploads = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-foreground text-sm font-medium truncate">{q.title}</p>
-                          <p className="text-muted-foreground text-xs truncate">{q.category}</p>
+                          <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
+                            <span>{q.category}</span>
+                            <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
+                          </p>
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                           <button onClick={() => { setEditingId(q.id); setEditTitle(q.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>

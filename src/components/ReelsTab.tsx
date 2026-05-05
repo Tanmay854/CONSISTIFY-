@@ -72,7 +72,10 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
 
   useEffect(() => {
     setIsPlaying(isActive);
-  }, [isActive]);
+    if (isActive && !reel.id.startsWith("d")) {
+      supabase.from("content_views").insert({ content_type: "reel", content_id: reel.id });
+    }
+  }, [isActive, reel.id]);
 
   useEffect(() => {
     if (!isDirectVideo || !videoRef.current) return;

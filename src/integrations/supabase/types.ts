@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      content_views: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          id: string
+          viewer_id: string | null
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          id?: string
+          viewer_id?: string | null
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          viewer_id?: string | null
+        }
+        Relationships: []
+      }
       music: {
         Row: {
           artist: string
