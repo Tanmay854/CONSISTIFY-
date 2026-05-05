@@ -90,6 +90,19 @@ const UploadTab = () => {
           finalUrl = videoUrl.trim();
         } else {
           if (!videoFile) { setError("Select a video file"); setLoading(false); return; }
+          // Enforce 3-minute max duration
+          const duration = await new Promise<number>((resolve) => {
+            const v = document.createElement("video");
+            v.preload = "metadata";
+            v.onloadedmetadata = () => resolve(v.duration);
+            v.onerror = () => resolve(0);
+            v.src = URL.createObjectURL(videoFile);
+          });
+          if (duration > 180) {
+            setError(`Video must be 3 minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
+            setLoading(false);
+            return;
+          }
           const url = await uploadFileToBucket("videos", videoFile);
           if (!url) { setLoading(false); return; }
           finalUrl = url;
