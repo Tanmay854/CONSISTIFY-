@@ -271,7 +271,10 @@ const MyUploads = () => {
                     ) : (
                       <>
                         <p className="text-foreground text-sm font-medium truncate">{m.title}</p>
-                        <p className="text-muted-foreground text-xs truncate">{m.artist} · {m.category}</p>
+                        <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
+                          <span>{m.artist} · {m.category}</span>
+                          <span className="flex items-center gap-1"><Eye size={11} /> {views[`music:${m.id}`] || 0}</span>
+                        </p>
                       </>
                     )}
                   </div>
