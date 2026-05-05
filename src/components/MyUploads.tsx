@@ -240,7 +240,10 @@ const MyUploads = () => {
                           </div>
                         </div>
                       )}
-                      <p className="text-muted-foreground text-xs mt-0.5">{new Date(reel.created_at).toLocaleDateString()}</p>
+                      <p className="text-muted-foreground text-xs mt-0.5 flex items-center gap-2">
+                        <span>{new Date(reel.created_at).toLocaleDateString()}</span>
+                        <span className="flex items-center gap-1"><Eye size={11} /> {views[`reel:${reel.id}`] || 0}</span>
+                      </p>
                     </div>
                   </div>
                   {isTrimming && <VideoTrimmer reel={reel} onSave={(s, e) => handleSaveTrim(reel.id, s, e)} />}
