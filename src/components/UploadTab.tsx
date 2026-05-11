@@ -42,6 +42,14 @@ const UploadTab = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isPro, setIsPro] = useState(false);
 
+  // Ad fields
+  const [adTitle, setAdTitle] = useState("");
+  const [adPlacement, setAdPlacement] = useState<"reels" | "music">("reels");
+  const [adLink, setAdLink] = useState("");
+  const [adSource, setAdSource] = useState<AdSource>("file");
+  const [adUrl, setAdUrl] = useState("");
+  const [adFile, setAdFile] = useState<File | null>(null);
+
   if (!canUpload) {
     return (
       <div className="min-h-screen flex items-center justify-center pb-20">
