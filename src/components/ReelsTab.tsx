@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Play } from "lucide-react";
+import { Play, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Reel {
@@ -12,6 +12,16 @@ interface Reel {
   trim_start: number | null;
   trim_end: number | null;
 }
+
+interface Ad {
+  id: string;
+  title: string;
+  media_url: string;
+  media_type: string;
+  link_url: string | null;
+}
+
+type FeedItem = { kind: "reel"; data: Reel } | { kind: "ad"; data: Ad };
 
 const defaultReels: Reel[] = [
   { id: "d1", title: "Rise Above", video_url: "", author_name: "Marcus Aurelius", description: null, created_at: "", trim_start: null, trim_end: null },
