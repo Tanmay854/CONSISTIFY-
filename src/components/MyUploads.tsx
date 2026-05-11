@@ -238,6 +238,7 @@ const MyUploads = () => {
                           <div className="flex gap-2 flex-shrink-0">
                             <button onClick={() => { setEditingId(reel.id); setEditTitle(reel.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
                             <button onClick={() => setTrimmingId(isTrimming ? null : reel.id)} className={isTrimming ? "text-primary" : "text-muted-foreground hover:text-primary"}><Scissors size={14} /></button>
+                            <button onClick={() => setStatsOpen(statsOpen === `reel:${reel.id}` ? null : `reel:${reel.id}`)} className={statsOpen === `reel:${reel.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
                             <button onClick={() => handleDelete("reels", reel.id, reel.video_url, ytId ? null : "videos")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
                           </div>
                         </div>
@@ -249,6 +250,7 @@ const MyUploads = () => {
                     </div>
                   </div>
                   {isTrimming && <VideoTrimmer reel={reel} onSave={(s, e) => handleSaveTrim(reel.id, s, e)} />}
+                  {statsOpen === `reel:${reel.id}` && <StatsChart contentType="reel" contentId={reel.id} />}
                 </div>
               );
             })
