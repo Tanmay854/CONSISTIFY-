@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { Film, Music2, Image, Upload, Check, FolderOpen, Link2, FileVideo } from "lucide-react";
+import { Film, Music2, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MyUploads from "@/components/MyUploads";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"];
 
-type UploadType = "video" | "music" | "photo";
+type UploadType = "video" | "music" | "photo" | "ad";
 type VideoSource = "url" | "file";
 type MusicSource = "url" | "file";
+type AdSource = "url" | "file";
 
 const UploadTab = () => {
   const { canUpload, user } = useAuth();
