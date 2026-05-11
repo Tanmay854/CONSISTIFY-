@@ -152,6 +152,35 @@ const UploadTab = () => {
           uploaded_by: user?.id,
         });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
+      } else if (activeType === "ad") {
+        if (!adTitle.trim()) { setError("Ad title required"); setLoading(false); return; }
+        let mediaUrl = "";
+        let mediaType = adPlacement === "music" ? "audio" : "video";
+        if (adSource === "url") {
+          if (!adUrl.trim() || !isValidUrl(adUrl.trim())) { setError("Valid media URL required"); setLoading(false); return; }
+          mediaUrl = adUrl.trim();
+          if (adPlacement === "reels" && /\.(jpg|jpeg|png|webp|gif)$/i.test(mediaUrl)) mediaType = "image";
+        } else {
+          if (!adFile) { setError("Select a file"); setLoading(false); return; }
+          const bucket = adPlacement === "music" ? "audio" : "videos";
+          const url = await uploadFileToBucket(bucket, adFile);
+          if (!url) { setLoading(false); return; }
+          mediaUrl = url;
+          if (adFile.type.startsWith("image/")) mediaType = "image";
+          else if (adFile.type.startsWith("audio/")) mediaType = "audio";
+          else mediaType = "video";
+        }
+        if (adLink.trim() && !isValidUrl(adLink.trim())) { setError("Invalid click-through URL"); setLoading(false); return; }
+        const { error: insertErr } = await supabase.from("ads").insert({
+          title: adTitle.trim(),
+          media_url: mediaUrl,
+          media_type: mediaType,
+          link_url: adLink.trim() || null,
+          placement: adPlacement,
+          active: true,
+          uploaded_by: user?.id,
+        });
+        if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       }
 
       setSuccess(true);
@@ -167,6 +196,7 @@ const UploadTab = () => {
     { id: "video", label: "Video", icon: Film },
     { id: "music", label: "Music", icon: Music2 },
     { id: "photo", label: "Photo", icon: Image },
+    { id: "ad", label: "Ad", icon: Megaphone },
   ];
 
   const SourceToggle = ({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { id: string; label: string; icon: typeof Link2 }[] }) => (
