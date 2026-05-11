@@ -71,6 +71,7 @@ const UploadTab = () => {
     setVideoTitle(""); setVideoDescription(""); setVideoUrl(""); setVideoFile(null);
     setMusicTitle(""); setMusicArtist(""); setMusicDuration(""); setMusicUrl(""); setMusicFile(null);
     setPhotoTitle(""); setPhotoDescription(""); setPhotoFile(null); setIsPro(false);
+    setAdTitle(""); setAdLink(""); setAdUrl(""); setAdFile(null);
   };
 
   const uploadFileToBucket = async (bucket: string, file: File): Promise<string | null> => {
