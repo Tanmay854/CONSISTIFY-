@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { Film, Music2, Image, Upload, Check, FolderOpen, Link2, FileVideo } from "lucide-react";
+import { Film, Music2, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MyUploads from "@/components/MyUploads";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"];
 
-type UploadType = "video" | "music" | "photo";
+type UploadType = "video" | "music" | "photo" | "ad";
 type VideoSource = "url" | "file";
 type MusicSource = "url" | "file";
+type AdSource = "url" | "file";
 
 const UploadTab = () => {
   const { canUpload, user } = useAuth();
@@ -41,6 +42,14 @@ const UploadTab = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isPro, setIsPro] = useState(false);
 
+  // Ad fields
+  const [adTitle, setAdTitle] = useState("");
+  const [adPlacement, setAdPlacement] = useState<"reels" | "music">("reels");
+  const [adLink, setAdLink] = useState("");
+  const [adSource, setAdSource] = useState<AdSource>("file");
+  const [adUrl, setAdUrl] = useState("");
+  const [adFile, setAdFile] = useState<File | null>(null);
+
   if (!canUpload) {
     return (
       <div className="min-h-screen flex items-center justify-center pb-20">
@@ -62,6 +71,7 @@ const UploadTab = () => {
     setVideoTitle(""); setVideoDescription(""); setVideoUrl(""); setVideoFile(null);
     setMusicTitle(""); setMusicArtist(""); setMusicDuration(""); setMusicUrl(""); setMusicFile(null);
     setPhotoTitle(""); setPhotoDescription(""); setPhotoFile(null); setIsPro(false);
+    setAdTitle(""); setAdLink(""); setAdUrl(""); setAdFile(null);
   };
 
   const uploadFileToBucket = async (bucket: string, file: File): Promise<string | null> => {
@@ -142,6 +152,35 @@ const UploadTab = () => {
           uploaded_by: user?.id,
         });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
+      } else if (activeType === "ad") {
+        if (!adTitle.trim()) { setError("Ad title required"); setLoading(false); return; }
+        let mediaUrl = "";
+        let mediaType = adPlacement === "music" ? "audio" : "video";
+        if (adSource === "url") {
+          if (!adUrl.trim() || !isValidUrl(adUrl.trim())) { setError("Valid media URL required"); setLoading(false); return; }
+          mediaUrl = adUrl.trim();
+          if (adPlacement === "reels" && /\.(jpg|jpeg|png|webp|gif)$/i.test(mediaUrl)) mediaType = "image";
+        } else {
+          if (!adFile) { setError("Select a file"); setLoading(false); return; }
+          const bucket = adPlacement === "music" ? "audio" : "videos";
+          const url = await uploadFileToBucket(bucket, adFile);
+          if (!url) { setLoading(false); return; }
+          mediaUrl = url;
+          if (adFile.type.startsWith("image/")) mediaType = "image";
+          else if (adFile.type.startsWith("audio/")) mediaType = "audio";
+          else mediaType = "video";
+        }
+        if (adLink.trim() && !isValidUrl(adLink.trim())) { setError("Invalid click-through URL"); setLoading(false); return; }
+        const { error: insertErr } = await supabase.from("ads").insert({
+          title: adTitle.trim(),
+          media_url: mediaUrl,
+          media_type: mediaType,
+          link_url: adLink.trim() || null,
+          placement: adPlacement,
+          active: true,
+          uploaded_by: user?.id,
+        });
+        if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       }
 
       setSuccess(true);
@@ -157,6 +196,7 @@ const UploadTab = () => {
     { id: "video", label: "Video", icon: Film },
     { id: "music", label: "Music", icon: Music2 },
     { id: "photo", label: "Photo", icon: Image },
+    { id: "ad", label: "Ad", icon: Megaphone },
   ];
 
   const SourceToggle = ({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { id: string; label: string; icon: typeof Link2 }[] }) => (
@@ -385,6 +425,71 @@ const UploadTab = () => {
                   />
                   Mark as Pro
                 </label>
+              </>
+            )}
+
+            {activeType === "ad" && (
+              <>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Ad Title / Sponsor</label>
+                  <input
+                    value={adTitle}
+                    onChange={(e) => setAdTitle(e.target.value)}
+                    placeholder="e.g. Sponsored by Acme"
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Placement</label>
+                  <div className="flex gap-2">
+                    {(["reels", "music"] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setAdPlacement(p)}
+                        className={`flex-1 py-2.5 rounded-xl text-xs font-semibold capitalize ${adPlacement === p ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                      >
+                        {p === "reels" ? "Videos feed" : "Music"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Click-through URL (optional)</label>
+                  <input
+                    value={adLink}
+                    onChange={(e) => setAdLink(e.target.value)}
+                    placeholder="https://example.com"
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <SourceToggle
+                  value={adSource}
+                  onChange={(v) => setAdSource(v as AdSource)}
+                  options={[
+                    { id: "file", label: "From device", icon: FileVideo },
+                    { id: "url", label: "Media URL", icon: Link2 },
+                  ]}
+                />
+                {adSource === "file" ? (
+                  <input
+                    type="file"
+                    accept={adPlacement === "music" ? "audio/*" : "video/*,image/*"}
+                    onChange={(e) => setAdFile(e.target.files?.[0] || null)}
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
+                  />
+                ) : (
+                  <input
+                    value={adUrl}
+                    onChange={(e) => setAdUrl(e.target.value)}
+                    placeholder={adPlacement === "music" ? "https://example.com/ad.mp3" : "https://example.com/ad.mp4 or .jpg"}
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+                  />
+                )}
+                <p className="text-muted-foreground text-[11px]">
+                  {adPlacement === "reels"
+                    ? "Shown as a sponsored card in the Videos feed."
+                    : "Plays as a short interstitial between music tracks."}
+                </p>
               </>
             )}
 

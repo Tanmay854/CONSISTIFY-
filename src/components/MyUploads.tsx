@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Check, X, Scissors, Trash2, Film, Music2, Image as ImageIcon, Search, Eye } from "lucide-react";
+import { Pencil, Check, X, Scissors, Trash2, Film, Music2, Image as ImageIcon, Search, Eye, BarChart3 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import StatsChart from "@/components/StatsChart";
 
 interface Reel {
   id: string;
@@ -95,6 +96,7 @@ const MyUploads = () => {
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
   const [views, setViews] = useState<Record<string, number>>({});
+  const [statsOpen, setStatsOpen] = useState<string | null>(null);
 
   const q = query.trim().toLowerCase();
   const filterFn = <T extends { title: string }>(items: T[], extra?: (i: T) => string) =>
@@ -236,6 +238,7 @@ const MyUploads = () => {
                           <div className="flex gap-2 flex-shrink-0">
                             <button onClick={() => { setEditingId(reel.id); setEditTitle(reel.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
                             <button onClick={() => setTrimmingId(isTrimming ? null : reel.id)} className={isTrimming ? "text-primary" : "text-muted-foreground hover:text-primary"}><Scissors size={14} /></button>
+                            <button onClick={() => setStatsOpen(statsOpen === `reel:${reel.id}` ? null : `reel:${reel.id}`)} className={statsOpen === `reel:${reel.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
                             <button onClick={() => handleDelete("reels", reel.id, reel.video_url, ytId ? null : "videos")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
                           </div>
                         </div>
@@ -247,6 +250,7 @@ const MyUploads = () => {
                     </div>
                   </div>
                   {isTrimming && <VideoTrimmer reel={reel} onSave={(s, e) => handleSaveTrim(reel.id, s, e)} />}
+                  {statsOpen === `reel:${reel.id}` && <StatsChart contentType="reel" contentId={reel.id} />}
                 </div>
               );
             })
@@ -257,33 +261,37 @@ const MyUploads = () => {
             fMusic.map((m) => {
               const isEditing = editingId === m.id;
               return (
-                <div key={m.id} className="bg-secondary rounded-xl p-3 flex gap-3 items-center">
-                  <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <Music2 size={20} className="text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {isEditing ? (
-                      <div className="flex gap-2 items-center">
-                        <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="flex-1 bg-background text-foreground rounded-lg px-2 py-1 text-sm" autoFocus />
-                        <button onClick={() => handleSaveTitle("music", m.id)} disabled={busy} className="text-primary"><Check size={16} /></button>
-                        <button onClick={() => setEditingId(null)} className="text-muted-foreground"><X size={16} /></button>
+                <div key={m.id} className="bg-secondary rounded-xl p-3">
+                  <div className="flex gap-3 items-center">
+                    <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <Music2 size={20} className="text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {isEditing ? (
+                        <div className="flex gap-2 items-center">
+                          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="flex-1 bg-background text-foreground rounded-lg px-2 py-1 text-sm" autoFocus />
+                          <button onClick={() => handleSaveTitle("music", m.id)} disabled={busy} className="text-primary"><Check size={16} /></button>
+                          <button onClick={() => setEditingId(null)} className="text-muted-foreground"><X size={16} /></button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-foreground text-sm font-medium truncate">{m.title}</p>
+                          <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
+                            <span>{m.artist} · {m.category}</span>
+                            <span className="flex items-center gap-1"><Eye size={11} /> {views[`music:${m.id}`] || 0}</span>
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    {!isEditing && (
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button onClick={() => { setEditingId(m.id); setEditTitle(m.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
+                        <button onClick={() => setStatsOpen(statsOpen === `music:${m.id}` ? null : `music:${m.id}`)} className={statsOpen === `music:${m.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
+                        <button onClick={() => handleDelete("music", m.id, m.audio_url, "audio")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
                       </div>
-                    ) : (
-                      <>
-                        <p className="text-foreground text-sm font-medium truncate">{m.title}</p>
-                        <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
-                          <span>{m.artist} · {m.category}</span>
-                          <span className="flex items-center gap-1"><Eye size={11} /> {views[`music:${m.id}`] || 0}</span>
-                        </p>
-                      </>
                     )}
                   </div>
-                  {!isEditing && (
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button onClick={() => { setEditingId(m.id); setEditTitle(m.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
-                      <button onClick={() => handleDelete("music", m.id, m.audio_url, "audio")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-                    </div>
-                  )}
+                  {statsOpen === `music:${m.id}` && <StatsChart contentType="music" contentId={m.id} label="Listens" />}
                 </div>
               );
             })
@@ -294,33 +302,37 @@ const MyUploads = () => {
             fQuotes.map((q) => {
               const isEditing = editingId === q.id;
               return (
-                <div key={q.id} className="bg-secondary rounded-xl p-3 flex gap-3">
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    <img src={q.image_url} alt={q.title} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {isEditing ? (
-                      <div className="flex gap-2 items-center">
-                        <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="flex-1 bg-background text-foreground rounded-lg px-2 py-1 text-sm" autoFocus />
-                        <button onClick={() => handleSaveTitle("quotes", q.id)} disabled={busy} className="text-primary"><Check size={16} /></button>
-                        <button onClick={() => setEditingId(null)} className="text-muted-foreground"><X size={16} /></button>
-                      </div>
-                    ) : (
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-foreground text-sm font-medium truncate">{q.title}</p>
-                          <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
-                            <span>{q.category}</span>
-                            <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
-                          </p>
+                <div key={q.id} className="bg-secondary rounded-xl p-3">
+                  <div className="flex gap-3">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                      <img src={q.image_url} alt={q.title} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {isEditing ? (
+                        <div className="flex gap-2 items-center">
+                          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="flex-1 bg-background text-foreground rounded-lg px-2 py-1 text-sm" autoFocus />
+                          <button onClick={() => handleSaveTitle("quotes", q.id)} disabled={busy} className="text-primary"><Check size={16} /></button>
+                          <button onClick={() => setEditingId(null)} className="text-muted-foreground"><X size={16} /></button>
                         </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          <button onClick={() => { setEditingId(q.id); setEditTitle(q.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
-                          <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+                      ) : (
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-foreground text-sm font-medium truncate">{q.title}</p>
+                            <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
+                              <span>{q.category}</span>
+                              <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
+                            </p>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button onClick={() => { setEditingId(q.id); setEditTitle(q.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
+                            <button onClick={() => setStatsOpen(statsOpen === `quote:${q.id}` ? null : `quote:${q.id}`)} className={statsOpen === `quote:${q.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
+                            <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
+                  {statsOpen === `quote:${q.id}` && <StatsChart contentType="quote" contentId={q.id} />}
                 </div>
               );
             })
