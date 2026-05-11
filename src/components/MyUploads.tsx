@@ -302,33 +302,37 @@ const MyUploads = () => {
             fQuotes.map((q) => {
               const isEditing = editingId === q.id;
               return (
-                <div key={q.id} className="bg-secondary rounded-xl p-3 flex gap-3">
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    <img src={q.image_url} alt={q.title} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {isEditing ? (
-                      <div className="flex gap-2 items-center">
-                        <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="flex-1 bg-background text-foreground rounded-lg px-2 py-1 text-sm" autoFocus />
-                        <button onClick={() => handleSaveTitle("quotes", q.id)} disabled={busy} className="text-primary"><Check size={16} /></button>
-                        <button onClick={() => setEditingId(null)} className="text-muted-foreground"><X size={16} /></button>
-                      </div>
-                    ) : (
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-foreground text-sm font-medium truncate">{q.title}</p>
-                          <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
-                            <span>{q.category}</span>
-                            <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
-                          </p>
+                <div key={q.id} className="bg-secondary rounded-xl p-3">
+                  <div className="flex gap-3">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                      <img src={q.image_url} alt={q.title} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {isEditing ? (
+                        <div className="flex gap-2 items-center">
+                          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="flex-1 bg-background text-foreground rounded-lg px-2 py-1 text-sm" autoFocus />
+                          <button onClick={() => handleSaveTitle("quotes", q.id)} disabled={busy} className="text-primary"><Check size={16} /></button>
+                          <button onClick={() => setEditingId(null)} className="text-muted-foreground"><X size={16} /></button>
                         </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          <button onClick={() => { setEditingId(q.id); setEditTitle(q.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
-                          <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+                      ) : (
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-foreground text-sm font-medium truncate">{q.title}</p>
+                            <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
+                              <span>{q.category}</span>
+                              <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
+                            </p>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button onClick={() => { setEditingId(q.id); setEditTitle(q.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
+                            <button onClick={() => setStatsOpen(statsOpen === `quote:${q.id}` ? null : `quote:${q.id}`)} className={statsOpen === `quote:${q.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
+                            <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
+                  {statsOpen === `quote:${q.id}` && <StatsChart contentType="quote" contentId={q.id} />}
                 </div>
               );
             })
