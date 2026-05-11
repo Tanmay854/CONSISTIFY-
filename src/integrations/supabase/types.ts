@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      ads: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          link_url: string | null
+          media_type: string
+          media_url: string
+          placement: string
+          title: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          media_type?: string
+          media_url: string
+          placement?: string
+          title: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          media_type?: string
+          media_url?: string
+          placement?: string
+          title?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       content_views: {
         Row: {
           content_id: string
