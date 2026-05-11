@@ -186,21 +186,71 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
   );
 };
 
+const AdCard = ({ ad, isActive }: { ad: Ad; isActive: boolean }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (!videoRef.current) return;
+    if (isActive) videoRef.current.play().catch(() => {});
+    else videoRef.current.pause();
+  }, [isActive]);
+  const isVideo = ad.media_type === "video";
+  return (
+    <div className="relative h-screen w-full snap-start flex items-center justify-center overflow-hidden bg-black">
+      {isVideo ? (
+        <video ref={videoRef} src={ad.media_url} className="absolute inset-0 w-full h-full object-cover" loop playsInline muted={!isActive} />
+      ) : (
+        <img src={ad.media_url} alt={ad.title} className="absolute inset-0 w-full h-full object-cover" />
+      )}
+      <div className="absolute inset-0 bg-black/30 pointer-events-none" />
+      <div className="absolute top-16 left-4 z-20 bg-primary/90 text-primary-foreground text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded">
+        Sponsored
+      </div>
+      <div className="absolute bottom-24 left-4 right-4 z-20 space-y-3">
+        <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{ad.title}</p>
+        {ad.link_url && (
+          <a
+            href={ad.link_url}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-full px-4 py-2 text-sm font-semibold"
+          >
+            Learn more <ExternalLink size={14} />
+          </a>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const ReelsTab = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [reels, setReels] = useState<Reel[]>(defaultReels);
+  const [ads, setAds] = useState<Ad[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const fetchReels = useCallback(async () => {
-    const { data } = await supabase.from("reels").select("*").order("created_at", { ascending: false });
-    if (data && data.length > 0) {
-      setReels(data);
-    }
+  const fetchData = useCallback(async () => {
+    const [r, a] = await Promise.all([
+      supabase.from("reels").select("*").order("created_at", { ascending: false }),
+      supabase.from("ads").select("id,title,media_url,media_type,link_url").eq("placement", "reels").eq("active", true),
+    ]);
+    if (r.data && r.data.length > 0) setReels(r.data);
+    if (a.data) setAds(a.data as Ad[]);
   }, []);
 
   useEffect(() => {
-    fetchReels();
-  }, [fetchReels]);
+    fetchData();
+  }, [fetchData]);
+
+  // Build interleaved feed: 1 ad after every 5 reels
+  const feed: FeedItem[] = [];
+  let adIdx = 0;
+  reels.forEach((r, i) => {
+    feed.push({ kind: "reel", data: r });
+    if (ads.length > 0 && (i + 1) % 5 === 0) {
+      feed.push({ kind: "ad", data: ads[adIdx % ads.length] });
+      adIdx++;
+    }
+  });
 
   const handleScroll = () => {
     if (containerRef.current) {
@@ -223,9 +273,13 @@ const ReelsTab = () => {
           <h2 className="text-foreground font-semibold text-lg">Videos</h2>
         </div>
 
-        {reels.map((reel, index) => (
-          <ReelCard key={reel.id} reel={reel} isActive={index === activeIndex} index={index} />
-        ))}
+        {feed.map((item, index) =>
+          item.kind === "reel" ? (
+            <ReelCard key={`r-${item.data.id}`} reel={item.data} isActive={index === activeIndex} index={index} />
+          ) : (
+            <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={index === activeIndex} />
+          )
+        )}
       </div>
 
     </>
