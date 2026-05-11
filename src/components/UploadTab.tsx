@@ -428,6 +428,71 @@ const UploadTab = () => {
               </>
             )}
 
+            {activeType === "ad" && (
+              <>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Ad Title / Sponsor</label>
+                  <input
+                    value={adTitle}
+                    onChange={(e) => setAdTitle(e.target.value)}
+                    placeholder="e.g. Sponsored by Acme"
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Placement</label>
+                  <div className="flex gap-2">
+                    {(["reels", "music"] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setAdPlacement(p)}
+                        className={`flex-1 py-2.5 rounded-xl text-xs font-semibold capitalize ${adPlacement === p ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                      >
+                        {p === "reels" ? "Videos feed" : "Music"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Click-through URL (optional)</label>
+                  <input
+                    value={adLink}
+                    onChange={(e) => setAdLink(e.target.value)}
+                    placeholder="https://example.com"
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <SourceToggle
+                  value={adSource}
+                  onChange={(v) => setAdSource(v as AdSource)}
+                  options={[
+                    { id: "file", label: "From device", icon: FileVideo },
+                    { id: "url", label: "Media URL", icon: Link2 },
+                  ]}
+                />
+                {adSource === "file" ? (
+                  <input
+                    type="file"
+                    accept={adPlacement === "music" ? "audio/*" : "video/*,image/*"}
+                    onChange={(e) => setAdFile(e.target.files?.[0] || null)}
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
+                  />
+                ) : (
+                  <input
+                    value={adUrl}
+                    onChange={(e) => setAdUrl(e.target.value)}
+                    placeholder={adPlacement === "music" ? "https://example.com/ad.mp3" : "https://example.com/ad.mp4 or .jpg"}
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+                  />
+                )}
+                <p className="text-muted-foreground text-[11px]">
+                  {adPlacement === "reels"
+                    ? "Shown as a sponsored card in the Videos feed."
+                    : "Plays as a short interstitial between music tracks."}
+                </p>
+              </>
+            )}
+
             {error && <p className="text-destructive text-xs">{error}</p>}
 
             <button
