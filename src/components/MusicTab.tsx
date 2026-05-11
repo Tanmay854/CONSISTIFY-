@@ -143,6 +143,7 @@ const MusicTab = () => {
   };
 
   // Play / pause audio when track changes
+  const trackedListens = useRef<Set<string>>(new Set());
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -152,6 +153,10 @@ const MusicTab = () => {
       }
       if (!isPaused) {
         audio.play().catch(() => {});
+        if (!trackedListens.current.has(playingTrack.id)) {
+          trackedListens.current.add(playingTrack.id);
+          supabase.from("content_views").insert({ content_type: "music", content_id: playingTrack.id });
+        }
       } else {
         audio.pause();
       }
