@@ -186,6 +186,7 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
 
       <AuthSheet open={showAuth} onClose={() => setShowAuth(false)} />
       <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
+      <ApplyUploaderSheet open={showApply} onClose={() => setShowApply(false)} />
     </>
   );
 };
