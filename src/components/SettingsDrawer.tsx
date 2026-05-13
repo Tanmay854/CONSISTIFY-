@@ -1,17 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
-import { X, LogIn, LogOut, Shield, User, Check } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
 import AdminPanel from "./AdminPanel";
+import ApplyUploaderSheet from "./ApplyUploaderSheet";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
 const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const { user, isAdmin, signOut, loading: authLoading } = useAuth();
+  const { user, isAdmin, canUpload, signOut, loading: authLoading } = useAuth();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showApply, setShowApply] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const fetchPreferences = useCallback(async () => {
@@ -141,6 +143,19 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
             )}
           </div>
 
+          {/* Apply as uploader */}
+          {user && !canUpload && (
+            <div className="px-5 py-4 border-t border-border">
+              <button
+                onClick={() => setShowApply(true)}
+                className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+              >
+                <Send size={18} className="text-primary" />
+                <span className="text-foreground text-sm font-medium">Apply to be an Uploader</span>
+              </button>
+            </div>
+          )}
+
           {/* Admin */}
           {user && isAdmin && (
             <div className="px-5 py-4 border-t border-border">
@@ -171,6 +186,7 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
 
       <AuthSheet open={showAuth} onClose={() => setShowAuth(false)} />
       <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
+      <ApplyUploaderSheet open={showApply} onClose={() => setShowApply(false)} />
     </>
   );
 };

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { X, UserPlus, Shield, LayoutGrid } from "lucide-react";
+import { X, UserPlus, Shield, LayoutGrid, Inbox } from "lucide-react";
 import AdminContentManager from "@/components/AdminContentManager";
+import UploaderApplications from "@/components/UploaderApplications";
 
-type AdminTab = "roles" | "content";
+type AdminTab = "roles" | "applications" | "content";
 
 const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { isAdmin } = useAuth();
@@ -48,6 +49,10 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold ${tab === "roles" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
             <UserPlus size={14} /> Roles
           </button>
+          <button onClick={() => setTab("applications")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold ${tab === "applications" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            <Inbox size={14} /> Apps
+          </button>
           <button onClick={() => setTab("content")}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold ${tab === "content" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
             <LayoutGrid size={14} /> Content
@@ -79,6 +84,7 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
           </div>
         )}
 
+        {tab === "applications" && <UploaderApplications />}
         {tab === "content" && <AdminContentManager />}
       </div>
     </div>
