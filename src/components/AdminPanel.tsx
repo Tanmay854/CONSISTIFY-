@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { X, UserPlus, Shield, LayoutGrid } from "lucide-react";
+import { X, UserPlus, Shield, LayoutGrid, Inbox } from "lucide-react";
 import AdminContentManager from "@/components/AdminContentManager";
+import UploaderApplications from "@/components/UploaderApplications";
 
-type AdminTab = "roles" | "content";
+type AdminTab = "roles" | "applications" | "content";
 
 const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { isAdmin } = useAuth();
