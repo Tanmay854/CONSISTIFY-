@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { X, LogIn, LogOut, Shield, User, Check } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
 import AdminPanel from "./AdminPanel";
+import ApplyUploaderSheet from "./ApplyUploaderSheet";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
