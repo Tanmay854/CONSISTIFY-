@@ -84,6 +84,7 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
           </div>
         )}
 
+        {tab === "applications" && <UploaderApplications />}
         {tab === "content" && <AdminContentManager />}
       </div>
     </div>
