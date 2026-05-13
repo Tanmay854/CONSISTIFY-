@@ -143,6 +143,19 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
             )}
           </div>
 
+          {/* Apply as uploader */}
+          {user && !canUpload && (
+            <div className="px-5 py-4 border-t border-border">
+              <button
+                onClick={() => setShowApply(true)}
+                className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+              >
+                <Send size={18} className="text-primary" />
+                <span className="text-foreground text-sm font-medium">Apply to be an Uploader</span>
+              </button>
+            </div>
+          )}
+
           {/* Admin */}
           {user && isAdmin && (
             <div className="px-5 py-4 border-t border-border">
