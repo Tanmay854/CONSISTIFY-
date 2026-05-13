@@ -9,10 +9,11 @@ import ApplyUploaderSheet from "./ApplyUploaderSheet";
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
 const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const { user, isAdmin, signOut, loading: authLoading } = useAuth();
+  const { user, isAdmin, canUpload, signOut, loading: authLoading } = useAuth();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showApply, setShowApply] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const fetchPreferences = useCallback(async () => {
