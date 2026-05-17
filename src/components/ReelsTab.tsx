@@ -222,24 +222,63 @@ const AdCard = ({ ad, isActive }: { ad: Ad; isActive: boolean }) => {
   );
 };
 
+const PAGE_SIZE = 5;
+
 const ReelsTab = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [reels, setReels] = useState<Reel[]>(defaultReels);
   const [ads, setAds] = useState<Ad[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [usingDefaults, setUsingDefaults] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const fetchData = useCallback(async () => {
-    const [r, a] = await Promise.all([
-      supabase.from("reels").select("*").order("created_at", { ascending: false }),
-      supabase.from("ads").select("id,title,media_url,media_type,link_url").eq("placement", "reels").eq("active", true),
-    ]);
-    if (r.data && r.data.length > 0) setReels(r.data);
-    if (a.data) setAds(a.data as Ad[]);
+  const fetchPage = useCallback(async (p: number) => {
+    setLoading(true);
+    const from = p * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data } = await supabase
+      .from("reels")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (data) {
+      if (p === 0) {
+        if (data.length > 0) {
+          setReels(data);
+          setUsingDefaults(false);
+        }
+      } else {
+        setReels((prev) => [...prev, ...data]);
+      }
+      if (data.length < PAGE_SIZE) setHasMore(false);
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchPage(0);
+    supabase.from("ads").select("id,title,media_url,media_type,link_url")
+      .eq("placement", "reels").eq("active", true)
+      .then(({ data }) => { if (data) setAds(data as Ad[]); });
+  }, [fetchPage]);
+
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore || loading || usingDefaults) return;
+    const obs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setPage((p) => {
+          const next = p + 1;
+          fetchPage(next);
+          return next;
+        });
+      }
+    }, { root: containerRef.current, rootMargin: "600px" });
+    obs.observe(sentinelRef.current);
+    return () => obs.disconnect();
+  }, [hasMore, loading, fetchPage, reels.length, usingDefaults]);
 
   // Build interleaved feed: 1 ad after every 5 reels
   const feed: FeedItem[] = [];
@@ -280,6 +319,7 @@ const ReelsTab = () => {
             <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={index === activeIndex} />
           )
         )}
+        {hasMore && !usingDefaults && <div ref={sentinelRef} className="h-1" />}
       </div>
 
     </>
