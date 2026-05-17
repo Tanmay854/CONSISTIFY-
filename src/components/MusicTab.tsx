@@ -109,12 +109,50 @@ const MusicTab = () => {
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const fetchTracks = useCallback(async () => {
-    const { data } = await supabase.from("music").select("*").order("created_at", { ascending: false });
-    if (data) setTracks(data);
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const fetchPage = useCallback(async (p: number) => {
+    setLoadingMore(true);
+    const from = p * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data } = await supabase
+      .from("music")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (data) {
+      setTracks((prev) => (p === 0 ? data : [...prev, ...data]));
+      if (data.length < PAGE_SIZE) setHasMore(false);
+    }
+    setLoadingMore(false);
   }, []);
 
+  const fetchTracks = useCallback(async () => {
+    setHasMore(true);
+    setPage(0);
+    await fetchPage(0);
+  }, [fetchPage]);
+
   useEffect(() => { fetchTracks(); }, [fetchTracks]);
+
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore || loadingMore) return;
+    const obs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setPage((p) => {
+          const next = p + 1;
+          fetchPage(next);
+          return next;
+        });
+      }
+    }, { rootMargin: "300px" });
+    obs.observe(sentinelRef.current);
+    return () => obs.disconnect();
+  }, [hasMore, loadingMore, fetchPage, tracks.length]);
 
   const filtered = activeCategory === "All" ? tracks : tracks.filter((t) => t.category === activeCategory);
 
@@ -247,8 +285,12 @@ const MusicTab = () => {
               </div>
             );
           })}
-          {filtered.length === 0 && (
+          {filtered.length === 0 && !loadingMore && (
             <p className="text-muted-foreground text-sm text-center py-12">No tracks yet</p>
+          )}
+          {hasMore && <div ref={sentinelRef} className="h-8" />}
+          {loadingMore && (
+            <p className="text-muted-foreground text-xs text-center py-4">Loading…</p>
           )}
         </div>
       </div>

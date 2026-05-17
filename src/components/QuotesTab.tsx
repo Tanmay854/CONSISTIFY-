@@ -67,17 +67,49 @@ const PhotoCard = ({ quote }: { quote: QuoteCard }) => {
   );
 };
 
+const PAGE_SIZE = 8;
+
 const QuotesTab = () => {
   const [quotes, setQuotes] = useState<QuoteCard[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const fetchQuotes = useCallback(async () => {
-    const { data } = await supabase.from("quotes").select("*").order("created_at", { ascending: false });
-    if (data) setQuotes(data);
+  const fetchPage = useCallback(async (p: number) => {
+    setLoading(true);
+    const from = p * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data } = await supabase
+      .from("quotes")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (data) {
+      setQuotes((prev) => (p === 0 ? data : [...prev, ...data]));
+      if (data.length < PAGE_SIZE) setHasMore(false);
+    }
+    setLoading(false);
   }, []);
 
-  useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
+  useEffect(() => { fetchPage(0); }, [fetchPage]);
 
-  if (quotes.length === 0) {
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore || loading) return;
+    const obs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setPage((p) => {
+          const next = p + 1;
+          fetchPage(next);
+          return next;
+        });
+      }
+    }, { rootMargin: "400px" });
+    obs.observe(sentinelRef.current);
+    return () => obs.disconnect();
+  }, [hasMore, loading, fetchPage, quotes.length]);
+
+  if (quotes.length === 0 && !loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground text-sm">No photos yet</p>
@@ -93,6 +125,7 @@ const QuotesTab = () => {
       {quotes.map((quote) => (
         <PhotoCard key={quote.id} quote={quote} />
       ))}
+      {hasMore && <div ref={sentinelRef} className="h-1" />}
     </div>
   );
 };
