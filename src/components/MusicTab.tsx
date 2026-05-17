@@ -285,8 +285,12 @@ const MusicTab = () => {
               </div>
             );
           })}
-          {filtered.length === 0 && (
+          {filtered.length === 0 && !loadingMore && (
             <p className="text-muted-foreground text-sm text-center py-12">No tracks yet</p>
+          )}
+          {hasMore && <div ref={sentinelRef} className="h-8" />}
+          {loadingMore && (
+            <p className="text-muted-foreground text-xs text-center py-4">Loading…</p>
           )}
         </div>
       </div>
