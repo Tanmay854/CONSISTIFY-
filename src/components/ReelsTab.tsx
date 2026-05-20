@@ -70,7 +70,7 @@ const getEmbedUrl = (url: string, playing: boolean): string | null => {
   return url;
 };
 
-const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; index: number }) => {
+const ReelCard = ({ reel, isActive, index, muted }: { reel: Reel; isActive: boolean; index: number; muted: boolean }) => {
   const hasVideo = reel.video_url && reel.video_url.length > 0 && isValidUrl(reel.video_url);
   const ytId = hasVideo ? getYoutubeId(reel.video_url) : null;
   const isYoutube = !!ytId;
@@ -89,18 +89,32 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
 
   useEffect(() => {
     if (!isDirectVideo || !videoRef.current) return;
+    videoRef.current.muted = muted;
     if (isPlaying && isActive) {
       videoRef.current.play().catch(() => {});
     } else {
       videoRef.current.pause();
     }
-  }, [isPlaying, isActive, isDirectVideo]);
+  }, [isPlaying, isActive, isDirectVideo, muted]);
 
   const togglePlay = () => {
     if (!hasVideo) return;
     setIsPlaying((p) => !p);
     setShowIcon(true);
     setTimeout(() => setShowIcon(false), 600);
+  };
+
+  const ytEmbed = (url: string, playing: boolean): string | null => {
+    if (!isValidUrl(url)) return null;
+    const id = getYoutubeId(url);
+    if (!id) return url;
+    const params = new URLSearchParams({
+      autoplay: playing ? "1" : "0",
+      mute: muted ? "1" : "0",
+      loop: "1", playlist: id,
+      controls: "0", modestbranding: "1", rel: "0", showinfo: "0",
+    });
+    return `https://www.youtube.com/embed/${id}?${params.toString()}`;
   };
 
   return (
@@ -110,8 +124,8 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
     >
       {hasVideo && isYoutube && isActive ? (
         <iframe
-          key={isPlaying ? "play" : "pause"}
-          src={getEmbedUrl(reel.video_url, isPlaying)}
+          key={`${isPlaying ? "play" : "pause"}-${muted ? "m" : "u"}`}
+          src={ytEmbed(reel.video_url, isPlaying) || undefined}
           className="absolute inset-0 w-full h-full object-cover"
           style={{ border: "none", pointerEvents: "none" }}
           allow="autoplay; encrypted-media"
@@ -125,6 +139,7 @@ const ReelCard = ({ reel, isActive, index }: { reel: Reel; isActive: boolean; in
           autoPlay={isActive}
           loop
           playsInline
+          muted={muted}
           onTimeUpdate={(e) => {
             const v = e.currentTarget;
             if (v.currentTime >= 180) {
@@ -224,7 +239,7 @@ const AdCard = ({ ad, isActive }: { ad: Ad; isActive: boolean }) => {
 
 const PAGE_SIZE = 5;
 
-const ReelsTab = () => {
+const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [reels, setReels] = useState<Reel[]>(defaultReels);
   const [ads, setAds] = useState<Ad[]>([]);

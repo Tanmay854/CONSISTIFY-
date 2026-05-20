@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import SplashScreen from "@/components/SplashScreen";
 import BottomNav from "@/components/BottomNav";
 import ReelsTab from "@/components/ReelsTab";
@@ -7,7 +7,7 @@ import QuotesTab from "@/components/QuotesTab";
 import UploadTab from "@/components/UploadTab";
 import SettingsDrawer from "@/components/SettingsDrawer";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { Settings } from "lucide-react";
+import { Settings, Volume2, VolumeX } from "lucide-react";
 
 type Tab = "reels" | "music" | "quotes" | "upload";
 
@@ -15,10 +15,17 @@ const AppContent = () => {
   const { canUpload } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("reels");
   const [showSettings, setShowSettings] = useState(false);
+  const [muted, setMuted] = useState<boolean>(() => {
+    try { return localStorage.getItem("video_muted") === "1"; } catch { return false; }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem("video_muted", muted ? "1" : "0"); } catch { /* empty */ }
+    document.querySelectorAll("video").forEach((v) => { (v as HTMLVideoElement).muted = muted; });
+  }, [muted]);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Global settings icon */}
       <button
         onClick={() => setShowSettings(true)}
         className="fixed top-4 right-4 z-30 w-9 h-9 rounded-full bg-secondary/80 backdrop-blur-sm flex items-center justify-center"
@@ -26,7 +33,17 @@ const AppContent = () => {
         <Settings size={18} className="text-foreground" />
       </button>
 
-      {activeTab === "reels" && <ReelsTab />}
+      {activeTab === "reels" && (
+        <button
+          onClick={() => setMuted((m) => !m)}
+          aria-label={muted ? "Unmute video" : "Mute video"}
+          className="fixed top-16 right-4 z-30 w-9 h-9 rounded-full bg-secondary/80 backdrop-blur-sm flex items-center justify-center"
+        >
+          {muted ? <VolumeX size={18} className="text-foreground" /> : <Volume2 size={18} className="text-foreground" />}
+        </button>
+      )}
+
+      {activeTab === "reels" && <ReelsTab muted={muted} />}
       {activeTab === "music" && <MusicTab />}
       {activeTab === "quotes" && <QuotesTab />}
       {activeTab === "upload" && <UploadTab />}
@@ -39,15 +56,8 @@ const AppContent = () => {
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
-
-  const handleSplashFinish = useCallback(() => {
-    setShowSplash(false);
-  }, []);
-
-  if (showSplash) {
-    return <SplashScreen onFinish={handleSplashFinish} />;
-  }
-
+  const handleSplashFinish = useCallback(() => { setShowSplash(false); }, []);
+  if (showSplash) return <SplashScreen onFinish={handleSplashFinish} />;
   return (
     <AuthProvider>
       <AppContent />
