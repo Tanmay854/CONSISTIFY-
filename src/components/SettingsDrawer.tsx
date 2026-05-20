@@ -17,7 +17,14 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
   const [saving, setSaving] = useState(false);
 
   const fetchPreferences = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      // Guest: load from localStorage
+      try {
+        const raw = localStorage.getItem("guest_categories");
+        if (raw) setSelectedCategories(JSON.parse(raw));
+      } catch { /* empty */ }
+      return;
+    }
     const { data } = await supabase
       .from("user_preferences")
       .select("selected_categories")
@@ -25,26 +32,39 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
       .maybeSingle();
     if (data?.selected_categories) {
       setSelectedCategories(data.selected_categories);
+    } else {
+      // First sign-in: migrate guest selections
+      try {
+        const raw = localStorage.getItem("guest_categories");
+        if (raw) {
+          const guest = JSON.parse(raw) as string[];
+          if (guest.length) {
+            await supabase.from("user_preferences").insert({ user_id: user.id, selected_categories: guest });
+            setSelectedCategories(guest);
+          }
+        }
+      } catch { /* empty */ }
     }
   }, [user]);
 
   useEffect(() => {
-    if (open && user) fetchPreferences();
-  }, [open, user, fetchPreferences]);
+    if (open) fetchPreferences();
+  }, [open, fetchPreferences]);
 
   const toggleCategory = async (cat: string) => {
-    if (!user) {
-      setShowAuth(true);
-      return;
-    }
-
     const updated = selectedCategories.includes(cat)
       ? selectedCategories.filter((c) => c !== cat)
       : [...selectedCategories, cat];
 
     setSelectedCategories(updated);
-    setSaving(true);
 
+    if (!user) {
+      // Guest mode: save to localStorage only
+      try { localStorage.setItem("guest_categories", JSON.stringify(updated)); } catch { /* empty */ }
+      return;
+    }
+
+    setSaving(true);
     const { data: existing } = await supabase
       .from("user_preferences")
       .select("id")
