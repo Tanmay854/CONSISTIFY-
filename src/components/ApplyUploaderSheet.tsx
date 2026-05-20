@@ -8,6 +8,7 @@ type AppRow = { id: string; status: string; reason: string; created_at: string }
 const ApplyUploaderSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { user } = useAuth();
   const [reason, setReason] = useState("");
+  const [requestedRole, setRequestedRole] = useState<"uploader" | "admin">("uploader");
   const [submitting, setSubmitting] = useState(false);
   const [existing, setExisting] = useState<AppRow | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -34,6 +35,7 @@ const ApplyUploaderSheet = ({ open, onClose }: { open: boolean; onClose: () => v
       user_id: user.id,
       email: user.email,
       reason: reason.trim(),
+      requested_role: requestedRole,
     });
     setSubmitting(false);
     if (error) setMessage(error.message);
@@ -66,7 +68,14 @@ const ApplyUploaderSheet = ({ open, onClose }: { open: boolean; onClose: () => v
 
         {canApply ? (
           <>
-            <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Why do you want to upload?</label>
+            <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Role</label>
+            <div className="flex gap-2 mb-3">
+              <button onClick={() => setRequestedRole("uploader")}
+                className={`flex-1 py-2 rounded-lg text-xs font-medium ${requestedRole === "uploader" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Uploader</button>
+              <button onClick={() => setRequestedRole("admin")}
+                className={`flex-1 py-2 rounded-lg text-xs font-medium ${requestedRole === "admin" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Admin</button>
+            </div>
+            <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Why?</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}

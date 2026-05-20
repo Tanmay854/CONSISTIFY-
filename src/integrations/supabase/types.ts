@@ -82,6 +82,7 @@ export type Database = {
           created_at: string
           duration: string | null
           id: string
+          image_url: string | null
           title: string
           uploaded_by: string | null
         }
@@ -92,6 +93,7 @@ export type Database = {
           created_at?: string
           duration?: string | null
           id?: string
+          image_url?: string | null
           title: string
           uploaded_by?: string | null
         }
@@ -102,6 +104,7 @@ export type Database = {
           created_at?: string
           duration?: string | null
           id?: string
+          image_url?: string | null
           title?: string
           uploaded_by?: string | null
         }
@@ -164,6 +167,7 @@ export type Database = {
       reels: {
         Row: {
           author_name: string | null
+          category: string
           created_at: string
           description: string | null
           id: string
@@ -175,6 +179,7 @@ export type Database = {
         }
         Insert: {
           author_name?: string | null
+          category?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -186,6 +191,7 @@ export type Database = {
         }
         Update: {
           author_name?: string | null
+          category?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -203,6 +209,7 @@ export type Database = {
           email: string | null
           id: string
           reason: string
+          requested_role: string
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
@@ -214,6 +221,7 @@ export type Database = {
           email?: string | null
           id?: string
           reason: string
+          requested_role?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -225,6 +233,7 @@ export type Database = {
           email?: string | null
           id?: string
           reason?: string
+          requested_role?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -287,6 +296,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "uploader" | "user"

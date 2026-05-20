@@ -12,7 +12,7 @@ type MusicSource = "url" | "file";
 type AdSource = "url" | "file";
 
 const UploadTab = () => {
-  const { canUpload, user } = useAuth();
+  const { canUpload, isAdmin, user } = useAuth();
   const [activeType, setActiveType] = useState<UploadType>("video");
   const [showMyUploads, setShowMyUploads] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,6 +23,7 @@ const UploadTab = () => {
   const [videoSource, setVideoSource] = useState<VideoSource>("url");
   const [videoTitle, setVideoTitle] = useState("");
   const [videoDescription, setVideoDescription] = useState("");
+  const [videoCategory, setVideoCategory] = useState("Motivation");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
 
@@ -34,6 +35,7 @@ const UploadTab = () => {
   const [musicCategory, setMusicCategory] = useState("Workout");
   const [musicUrl, setMusicUrl] = useState("");
   const [musicFile, setMusicFile] = useState<File | null>(null);
+  const [musicCoverFile, setMusicCoverFile] = useState<File | null>(null);
 
   // Photo fields
   const [photoTitle, setPhotoTitle] = useState("");
@@ -69,7 +71,7 @@ const UploadTab = () => {
 
   const resetFields = () => {
     setVideoTitle(""); setVideoDescription(""); setVideoUrl(""); setVideoFile(null);
-    setMusicTitle(""); setMusicArtist(""); setMusicDuration(""); setMusicUrl(""); setMusicFile(null);
+    setMusicTitle(""); setMusicArtist(""); setMusicDuration(""); setMusicUrl(""); setMusicFile(null); setMusicCoverFile(null);
     setPhotoTitle(""); setPhotoDescription(""); setPhotoFile(null); setIsPro(false);
     setAdTitle(""); setAdLink(""); setAdUrl(""); setAdFile(null);
   };
@@ -117,7 +119,7 @@ const UploadTab = () => {
           if (!url) { setLoading(false); return; }
           finalUrl = url;
         }
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: finalUrl, uploaded_by: user?.id });
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: finalUrl, category: videoCategory, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "music") {
         if (!musicTitle.trim() || !musicArtist.trim()) { setError("Title and artist required"); setLoading(false); return; }
@@ -130,12 +132,18 @@ const UploadTab = () => {
           audioUrl = await uploadFileToBucket("audio", musicFile);
           if (!audioUrl) { setLoading(false); return; }
         }
+        let coverUrl: string | null = null;
+        if (musicCoverFile) {
+          coverUrl = await uploadFileToBucket("quote-images", musicCoverFile);
+          if (!coverUrl) { setLoading(false); return; }
+        }
         const { error: insertErr } = await supabase.from("music").insert({
           title: musicTitle.trim(),
           artist: musicArtist.trim(),
           duration: musicDuration.trim() || null,
           category: musicCategory,
           audio_url: audioUrl,
+          image_url: coverUrl,
           uploaded_by: user?.id,
         });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
@@ -196,7 +204,7 @@ const UploadTab = () => {
     { id: "video", label: "Video", icon: Film },
     { id: "music", label: "Music", icon: Music2 },
     { id: "photo", label: "Photo", icon: Image },
-    { id: "ad", label: "Ad", icon: Megaphone },
+    ...(isAdmin ? [{ id: "ad" as UploadType, label: "Ad", icon: Megaphone }] : []),
   ];
 
   const SourceToggle = ({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { id: string; label: string; icon: typeof Link2 }[] }) => (
@@ -282,6 +290,16 @@ const UploadTab = () => {
                     rows={3}
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none"
                   />
+                </div>
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Interest / Category</label>
+                  <select
+                    value={videoCategory}
+                    onChange={(e) => setVideoCategory(e.target.value)}
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
                 <SourceToggle
                   value={videoSource}
@@ -373,6 +391,16 @@ const UploadTab = () => {
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
                   />
                 )}
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Cover image (optional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setMusicCoverFile(e.target.files?.[0] || null)}
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
+                  />
+                  {musicCoverFile && <p className="text-muted-foreground text-[10px] mt-1">{musicCoverFile.name}</p>}
+                </div>
               </>
             )}
 
