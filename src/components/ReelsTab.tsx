@@ -329,7 +329,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
 
         {feed.map((item, index) =>
           item.kind === "reel" ? (
-            <ReelCard key={`r-${item.data.id}`} reel={item.data} isActive={index === activeIndex} index={index} />
+            <ReelCard key={`r-${item.data.id}`} reel={item.data} isActive={index === activeIndex} index={index} muted={muted} />
           ) : (
             <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={index === activeIndex} />
           )
