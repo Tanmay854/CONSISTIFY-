@@ -9,6 +9,7 @@ type Application = {
   reason: string;
   status: string;
   created_at: string;
+  requested_role?: string | null;
 };
 
 const UploaderApplications = () => {
@@ -70,6 +71,7 @@ const UploaderApplications = () => {
                 <div className="min-w-0 flex-1">
                   <p className="text-foreground text-sm font-medium truncate">{app.email || app.user_id.slice(0, 8)}</p>
                   <p className="text-muted-foreground text-[10px]">{new Date(app.created_at).toLocaleString()}</p>
+                  <p className="text-primary text-[10px] font-semibold uppercase tracking-wider mt-0.5">Requesting: {app.requested_role || "uploader"}</p>
                 </div>
                 {app.status === "pending" && <Clock size={14} className="text-muted-foreground shrink-0" />}
               </div>

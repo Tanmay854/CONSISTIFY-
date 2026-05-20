@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { X, UserPlus, Shield, LayoutGrid, Inbox } from "lucide-react";
+import { X, UserPlus, Shield, LayoutGrid, Inbox, Users } from "lucide-react";
 import AdminContentManager from "@/components/AdminContentManager";
 import UploaderApplications from "@/components/UploaderApplications";
+import MembersManager from "@/components/MembersManager";
 
-type AdminTab = "roles" | "applications" | "content";
+type AdminTab = "roles" | "applications" | "content" | "members";
 
 const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { isAdmin } = useAuth();
@@ -44,18 +45,22 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
           <button onClick={onClose}><X size={20} className="text-muted-foreground" /></button>
         </div>
 
-        <div className="flex gap-2 mb-5">
+        <div className="grid grid-cols-4 gap-2 mb-5">
           <button onClick={() => setTab("roles")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold ${tab === "roles" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
-            <UserPlus size={14} /> Roles
+            className={`flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-semibold ${tab === "roles" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            <UserPlus size={12} /> Roles
           </button>
           <button onClick={() => setTab("applications")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold ${tab === "applications" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
-            <Inbox size={14} /> Apps
+            className={`flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-semibold ${tab === "applications" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            <Inbox size={12} /> Apps
+          </button>
+          <button onClick={() => setTab("members")}
+            className={`flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-semibold ${tab === "members" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            <Users size={12} /> Team
           </button>
           <button onClick={() => setTab("content")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold ${tab === "content" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
-            <LayoutGrid size={14} /> Content
+            className={`flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-semibold ${tab === "content" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            <LayoutGrid size={12} /> Content
           </button>
         </div>
 
@@ -85,6 +90,7 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
         )}
 
         {tab === "applications" && <UploaderApplications />}
+        {tab === "members" && <MembersManager />}
         {tab === "content" && <AdminContentManager />}
       </div>
     </div>
