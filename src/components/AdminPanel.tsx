@@ -18,8 +18,6 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  if (!open || !isAdmin) return null;
-
   const handleAddRole = useCallback(async () => {
     setMessage(null);
     setLoading(true);
@@ -41,6 +39,8 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
     }
     setLoading(false);
   }, [email, role]);
+
+  if (!open || !isAdmin) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
