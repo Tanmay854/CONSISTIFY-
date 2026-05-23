@@ -109,6 +109,7 @@ const MusicTab = () => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [reportTrack, setReportTrack] = useState<Track | null>(null);
 
   const PAGE_SIZE = 20;
   const [page, setPage] = useState(0);
@@ -405,6 +406,25 @@ const MusicTab = () => {
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
         onEnded={playNext}
       />
+
+      {playingTrack && (
+        <button
+          onClick={() => setReportTrack(playingTrack)}
+          className="fixed bottom-44 right-3 z-40 bg-black/60 backdrop-blur-sm rounded-full p-2 text-white/80 hover:text-white"
+          aria-label="Report track"
+        >
+          <Flag size={14} />
+        </button>
+      )}
+      {reportTrack && (
+        <ReportDialog
+          open={!!reportTrack}
+          onClose={() => setReportTrack(null)}
+          contentType="music"
+          contentId={reportTrack.id}
+          contentTitle={reportTrack.title}
+        />
+      )}
     </>
   );
 };
