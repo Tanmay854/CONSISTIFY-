@@ -30,6 +30,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [pendingApplicationMessage, setPendingApplicationMessage] = useState<string | null>(null);
 
   const enforceAccess = useCallback(async (u: User) => {
+    const isSuper = u.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
+
     const { data: roleRows } = await supabase
       .from("user_roles")
       .select("role")
@@ -37,13 +39,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const rs = (roleRows || []).map(r => r.role as AppRole);
     setRoles(rs);
 
-    // If they have any role, they're allowed in.
-    if (rs.length > 0) {
+    // Super-admin or anyone with a role (admin/uploader) is allowed in.
+    if (isSuper || rs.length > 0) {
       setPendingApplicationMessage(null);
       return;
     }
 
-    // No role — check for application
+    // No role and not super-admin → not authorised. Check application for a tailored message.
     const { data: apps } = await supabase
       .from("uploader_applications")
       .select("status")
@@ -51,17 +53,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .order("created_at", { ascending: false })
       .limit(1);
     const app = apps?.[0];
-    if (app) {
-      const msg = app.status === "pending"
-        ? "Your uploader application is awaiting admin approval."
-        : app.status === "rejected"
-          ? "Your uploader application was rejected. Contact an admin."
-          : null;
-      if (msg) {
-        setPendingApplicationMessage(msg);
-        await supabase.auth.signOut();
-      }
+    let msg = "You are not authorised to log in. Submit an uploader application and wait for admin approval.";
+    if (app?.status === "pending") {
+      msg = "You are not authorised yet — your application is awaiting admin approval.";
+    } else if (app?.status === "rejected") {
+      msg = "You are not authorised — your application was rejected by an admin.";
     }
+    setPendingApplicationMessage(msg);
+    await supabase.auth.signOut();
   }, []);
 
   useEffect(() => {
