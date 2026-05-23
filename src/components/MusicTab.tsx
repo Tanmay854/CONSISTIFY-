@@ -386,6 +386,9 @@ const MusicTab = () => {
                   <p className="text-muted-foreground text-[11px] truncate">{playingTrack.artist}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button onClick={(e) => { e.stopPropagation(); setReportTrack(playingTrack); }}>
+                    <Flag size={16} className="text-muted-foreground" />
+                  </button>
                   <button onClick={(e) => { e.stopPropagation(); toggleLike(playingTrack.id); }}>
                     <Heart size={18} className={likedTracks.has(playingTrack.id) ? "fill-primary text-primary" : "text-muted-foreground"} />
                   </button>
