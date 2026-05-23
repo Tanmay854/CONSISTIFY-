@@ -1,9 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const SUPER_ADMIN_EMAIL = "tanmaynimbalkar854@gmail.com";
 
@@ -42,15 +38,13 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Cannot reject super-admin" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // If the user happens to already have a role, also remove it
-    await admin.from("user_roles").delete().eq("user_id", app.user_id);
-    // Delete all their applications
-    await admin.from("uploader_applications").delete().eq("user_id", app.user_id);
-    // Delete the auth user so the email is freed for re-application
-    const { error: authDelErr } = await admin.auth.admin.deleteUser(app.user_id);
+    // Delete the auth user first so the email is definitely freed for re-application.
+    const { error: authDelErr } = await admin.auth.admin.deleteUser(app.user_id, false);
     if (authDelErr) {
-      return new Response(JSON.stringify({ error: "Application removed but failed to delete account: " + authDelErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Failed to delete account: " + authDelErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    await admin.from("user_roles").delete().eq("user_id", app.user_id);
+    await admin.from("uploader_applications").delete().eq("user_id", app.user_id);
 
     return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
