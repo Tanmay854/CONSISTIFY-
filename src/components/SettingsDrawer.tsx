@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { X, LogIn, LogOut, Shield, User, Check, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,13 +16,12 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
   const [showApply, setShowApply] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const fetchPreferences = useCallback(async () => {
+  const fetchPreferences = async () => {
     if (!user) {
-      // Guest: load from localStorage
       try {
         const raw = localStorage.getItem("guest_categories");
         if (raw) setSelectedCategories(JSON.parse(raw));
-      } catch { /* empty */ }
+      } catch { }
       return;
     }
     const { data } = await supabase
@@ -33,7 +32,6 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
     if (data?.selected_categories) {
       setSelectedCategories(data.selected_categories);
     } else {
-      // First sign-in: migrate guest selections
       try {
         const raw = localStorage.getItem("guest_categories");
         if (raw) {
@@ -43,13 +41,9 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
             setSelectedCategories(guest);
           }
         }
-      } catch { /* empty */ }
+      } catch { }
     }
-  }, [user]);
-
-  useEffect(() => {
-    if (open) fetchPreferences();
-  }, [open, fetchPreferences]);
+  };
 
   const toggleCategory = async (cat: string) => {
     const updated = selectedCategories.includes(cat)
@@ -59,8 +53,7 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
     setSelectedCategories(updated);
 
     if (!user) {
-      // Guest mode: save to localStorage only
-      try { localStorage.setItem("guest_categories", JSON.stringify(updated)); } catch { /* empty */ }
+      try { localStorage.setItem("guest_categories", JSON.stringify(updated)); } catch { }
       return;
     }
 
@@ -112,7 +105,7 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
                 <div className="flex-1 min-w-0">
                   <p className="text-foreground text-sm font-medium truncate">{user.email}</p>
                   <p className="text-muted-foreground text-xs">
-                    {isAdmin ? "Admin" : "Member"}
+                    {isAdmin ? "Admin" : canUpload ? "Uploader" : "Member"}
                   </p>
                 </div>
               </div>
@@ -204,7 +197,7 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
         </div>
       </div>
 
-      <AuthSheet open={showAuth} onClose={() => setShowAuth(false)} />
+      <AuthSheet open={showAuth} onClose={() => { setShowAuth(false); fetchPreferences(); }} />
       <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
       <ApplyUploaderSheet open={showApply} onClose={() => setShowApply(false)} />
     </>
