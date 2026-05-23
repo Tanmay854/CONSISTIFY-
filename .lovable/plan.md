@@ -1,82 +1,51 @@
 # Implementation Plan
 
-A large set of related changes. I'll group them into phases.
+## 1. Signup → Application-only flow
+- Remove generic "Create account" from `AuthSheet.tsx`. Two tabs only: **Login** and **Become Uploader**.
+- "Become Uploader" form: email + password + 50-word reason + requested role (uploader default; admin option visible only to super-admin email entry — actually keep uploader-only here; admin grants stay in admin panel).
+- On submit: `supabase.auth.signUp` (no email confirm) + immediately insert into `uploader_applications` with status `pending`.
+- Add `application_status` check on login: if user has no role AND has a pending/rejected application → `signOut()` and show "Application pending admin approval" / "Application rejected". Only users with `admin`/`uploader` role OR no application at all (anonymous browsers) can use the app as authenticated.
+- Actually simpler: after sign-in, fetch roles + latest application. If `roles.length === 0` and application exists → force sign-out with message. Anonymous browsing of content remains available (no login required to view).
+- Forgot password: keep `resetPasswordForEmail` with `redirectTo` set to deep-link/app origin. For APK use `window.location.origin + '/reset-password'` — works inside Capacitor webview since it loads from sandbox URL. `ResetPassword.tsx` already exists.
 
-## 1. Auth & Application flow (req 1, 11)
-- Update `AuthSheet`: after signup success, show inline prompt "Apply to become Uploader or Admin" with a reason textarea and role selector. Submits to `uploader_applications` (extend table to include `requested_role`).
-- Add **Forgot password** link on sign-in screen → calls `supabase.auth.resetPasswordForEmail` with redirect to `/reset-password`.
-- New route `/reset-password` → form to set new password via `supabase.auth.updateUser`.
+## 2. Role management (already mostly built — verify)
+- Edge functions `admin-grant-role` and `admin-remove-role` already enforce super-admin for admin role and admin for uploader. Keep as-is.
+- `MembersManager.tsx` already provides in-app remove. Confirm it works for admins (not just super).
 
-## 2. Database migration
-- `uploader_applications`: add `requested_role text default 'uploader' check in ('uploader','admin')`.
-- Update `handle_uploader_application_approval` trigger to grant the requested role (uploader or admin) on approval.
-- Add limits enforced via trigger:
-  - Max **5 admins** total.
-  - Max **200 uploaders** total.
-  - Only `tanmaynimbalkar854@gmail.com` can INSERT an `admin` role; other admins can only manage uploaders.
-  - Only that super-admin email can DELETE an `admin` role.
-- Add `super_admin` check function `is_super_admin(_user_id uuid)` looking up `auth.users.email`.
-- Update `user_roles` RLS:
-  - INSERT admin role → only super-admin.
-  - DELETE admin role → only super-admin.
-  - INSERT/DELETE uploader role → any admin.
-- Add `category` column to `reels` (videos) and ensure `music` already has it; add interest tagging.
-- Add `image_url` column to `music` for cover art (Spotify-like).
+## 3. Analytics 30-day chart
+- Update `AnalyticsChart.tsx` (or `StatsChart.tsx`) to query `user_roles` joined with `auth.users.created_at` via a new edge function or use `profiles.created_at`. Show daily counts of new admins + uploaders over last 30 days.
 
-## 3. In-app Admin Panel upgrades (req 2, 3, 8, 12)
-`UploaderApplications` already exists — extend so admin can approve/reject in-app (already does via update). Confirm it surfaces `requested_role`.
+## 4. Report button on content
+- Add small flag icon overlay in `ReelsTab` (video), `MusicTab` (music card), `QuotesTab` (photo card).
+- Reuses existing `ReportDialog.tsx` — wire it with `content_type` + `content_id`.
+- Create `reports` table if not present (id, content_type, content_id, reporter_id, reason text ≤50 words, status, created_at) with RLS: anyone authenticated can insert, admins+uploaders can read.
+- `ReportsTab.tsx` already exists in AdminPanel — verify it lists reports.
 
-New **"Members"** tab in `AdminPanel`:
-- Lists all users with `admin` or `uploader` roles (join `user_roles` + `profiles` + emails via edge function since `auth.users` not exposed).
-- Edge function `list-staff` (service role) returns `{user_id, email, display_name, role}[]`.
-- Remove-role button:
-  - Uploader → any admin can remove.
-  - Admin → only super-admin sees the button. Calls edge function `admin-remove-role` that validates super-admin server-side.
+## 5. Upload: device-only, no YouTube
+- In `UploadTab.tsx`: remove "Video URL" text input for video type. Replace with file picker → upload to `videos` storage bucket → store public URL in `reels.video_url`.
+- Remove YouTube embed handling in `ReelsTab.tsx` (keep HTML5 `<video>` only for non-YT URLs already there).
 
-## 4. Interests for anonymous users (req 4)
-- `SettingsDrawer` already has category chips behind auth. Add a **public** interest picker accessible from settings even when logged out; store in `localStorage` under `guest_categories`. When user signs in, merge into `user_preferences`.
+## 6. Remove "mark as pro" for photos
+- In `UploadTab.tsx` photo form: remove `is_pro` checkbox. Default stays `false`.
 
-## 5. Upload tagging + music cover (req 5, 6)
-- `UploadTab`:
-  - Video form: add Category select (Workout, Study, Motivation, Mindfulness, Finance, Relationships).
-  - Music form: add cover image upload to `quote-images` bucket → store in `music.image_url`.
-- Video/Music feeds filter by selected categories (already done for some).
+## 7. Fix in-app trim save
+- `AddReelDialog.tsx` (or wherever trim is): currently writes `trim_start`/`trim_end` to DB but playback may not honor it. 
+- Ensure save action: validates numbers, calls `supabase.from('reels').update({ trim_start, trim_end }).eq('id', reelId)`, shows toast on success, refreshes parent. 
+- In `ReelsTab` video element, apply `currentTime = trim_start` on load and pause/loop at `trim_end`.
 
-## 6. Player mute (req 7)
-- `ReelsTab`: add a Mute toggle button in the existing settings menu (below the gear), persists in localStorage.
+## Files to edit
+- `src/components/AuthSheet.tsx` — rewrite tabs
+- `src/components/UploadTab.tsx` — remove URL input + pro checkbox; add video file upload
+- `src/components/ReelsTab.tsx` — report button + trim playback + drop YouTube
+- `src/components/MusicTab.tsx` — report button
+- `src/components/QuotesTab.tsx` — report button
+- `src/components/AddReelDialog.tsx` — fix trim save
+- `src/components/ReportDialog.tsx` — confirm 50-word validation
+- `src/components/AnalyticsChart.tsx` — 30-day chart
+- `src/hooks/useAuth.tsx` — application-pending sign-out guard
+- New migration: `reports` table (if missing) with RLS
 
-## 7. Ads management (req 9)
-Already have `ads` table. Update `AdminContentManager`:
-- Add **Ads** sub-tab visible to admins only.
-- Admin can add (video or music ad) with title, media URL, placement, link URL — and remove.
-- Update `ads` INSERT RLS to **admin only** (currently allows uploaders too).
-- Show ads in feeds based on placement (existing logic preserved).
+## Open question
+Reports table — should reports be visible to **uploaders too** (you said "admins and uploaders") or admins only? I'll allow both per your message.
 
-## 8. Edge functions
-- `admin-grant-role` (existing) — update to enforce admin-cap (5) and super-admin-only for admin role.
-- `admin-remove-role` (new) — validates super-admin for admin removal, admin for uploader removal.
-- `list-staff` (new) — returns all admins + uploaders with email/display_name.
-
-## Technical details
-
-**Files to edit/create:**
-- migration (single)
-- `src/components/AuthSheet.tsx` — add forgot password + post-signup application prompt
-- `src/pages/ResetPassword.tsx` — new
-- `src/App.tsx` — add `/reset-password` route
-- `src/components/AdminPanel.tsx` — add Members tab + Ads tab
-- `src/components/UploaderApplications.tsx` — show requested_role
-- `src/components/MembersManager.tsx` — new
-- `src/components/AdsManager.tsx` — new
-- `src/components/UploadTab.tsx` — category select + music cover image
-- `src/components/ReelsTab.tsx` — mute toggle in settings
-- `src/components/SettingsDrawer.tsx` — guest interests
-- `supabase/functions/admin-grant-role/index.ts` — cap enforcement
-- `supabase/functions/admin-remove-role/index.ts` — new
-- `supabase/functions/list-staff/index.ts` — new
-
-**Super-admin email** `tanmaynimbalkar854@gmail.com` is hard-coded server-side in edge functions and in the `is_super_admin` SQL function (looks up by email).
-
-## Scope confirmation
-
-This is a large change set (~12 files + migration + 2 new edge functions). Approve and I'll implement in order: migration → edge functions → frontend.
+Approve to proceed?
