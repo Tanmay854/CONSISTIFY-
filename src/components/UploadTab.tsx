@@ -289,29 +289,16 @@ const UploadTab = () => {
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-                <SourceToggle
-                  value={videoSource}
-                  onChange={(v) => setVideoSource(v as VideoSource)}
-                  options={[
-                    { id: "url", label: "URL / YouTube", icon: Link2 },
-                    { id: "file", label: "From device", icon: FileVideo },
-                  ]}
-                />
-                {videoSource === "url" ? (
-                  <input
-                    value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
-                    placeholder="Paste YouTube or direct video link"
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
-                  />
-                ) : (
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Video file (from device, max 3 min)</label>
                   <input
                     type="file"
                     accept="video/*"
                     onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
                   />
-                )}
+                  {videoFile && <p className="text-muted-foreground text-[10px] mt-1">{videoFile.name}</p>}
+                </div>
               </>
             )}
 
@@ -432,15 +419,6 @@ const UploadTab = () => {
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
                   />
                 </div>
-                <label className="flex items-center gap-2 text-sm text-foreground">
-                  <input
-                    type="checkbox"
-                    checked={isPro}
-                    onChange={(e) => setIsPro(e.target.checked)}
-                    className="rounded border-border"
-                  />
-                  Mark as Pro
-                </label>
               </>
             )}
 
