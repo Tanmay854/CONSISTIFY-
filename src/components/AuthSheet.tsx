@@ -47,16 +47,29 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
     if (words.length > 50) { setError(`Maximum 50 words (currently ${words.length}).`); return; }
 
     setLoading(true);
-    const { error: signUpErr } = await signUp(email, password);
-    if (signUpErr) {
+    const normalizedEmail = email.trim();
+    const { error: signUpErr } = await signUp(normalizedEmail, password);
+    let { data: { user } } = await supabase.auth.getUser();
+
+    // If an older rejected account still exists, allow the same email to reapply
+    // by signing into that account and creating a fresh pending application.
+    if (signUpErr && /already|registered|exists/i.test(signUpErr)) {
+      const { data, error: siErr } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+      if (siErr) {
+        setLoading(false);
+        setError("This email already has an account. Use the same password or reset it, then submit the application again.");
+        return;
+      }
+      user = data.user;
+    } else if (signUpErr) {
       setLoading(false);
       setError(signUpErr);
       return;
     }
+
     // Get the user we just created (may need to sign in if email-confirm is on)
-    let { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      const { data, error: siErr } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error: siErr } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
       if (siErr) {
         setLoading(false);
         setError("Account created. Please log in and resubmit your application.");
@@ -77,7 +90,10 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
     await supabase.auth.signOut();
     setLoading(false);
     if (appErr) {
-      setError("Account created but application failed: " + appErr.message);
+      const message = /duplicate|unique/i.test(appErr.message)
+        ? "You already have a pending application. Please wait for admin approval."
+        : "Account created but application failed: " + appErr.message;
+      setError(message);
       return;
     }
     setInfo("Application submitted. You'll be able to log in once an admin approves it.");
