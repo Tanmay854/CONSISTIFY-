@@ -1,9 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const SUPER_ADMIN_EMAIL = "tanmaynimbalkar854@gmail.com";
 
@@ -45,16 +41,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { error: delErr } = await admin.from("user_roles").delete().eq("user_id", user_id).eq("role", role);
-    if (delErr) return new Response(JSON.stringify({ error: delErr.message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-
-    // Also fully delete the auth user + their application so the email is freed up
-    // and they cannot log back in. (Super-admin is already protected above.)
-    await admin.from("uploader_applications").delete().eq("user_id", user_id);
-    const { error: authDelErr } = await admin.auth.admin.deleteUser(user_id);
+    // Fully delete the auth user first so the email is freed up and they cannot log back in.
+    const { error: authDelErr } = await admin.auth.admin.deleteUser(user_id, false);
     if (authDelErr) {
-      return new Response(JSON.stringify({ error: "Role removed but failed to delete account: " + authDelErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Failed to delete account: " + authDelErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    await admin.from("user_roles").delete().eq("user_id", user_id);
+    await admin.from("uploader_applications").delete().eq("user_id", user_id);
 
     return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
