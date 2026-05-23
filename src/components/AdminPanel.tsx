@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { X, UserPlus, Shield, LayoutGrid, Inbox, Users, TrendingUp } from "lucide-react";
+import { useState, useCallback } from "react";
+import { X, UserPlus, Shield, LayoutGrid, Inbox, Users, TrendingUp, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminContentManager from "@/components/AdminContentManager";
@@ -24,46 +24,14 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
     setMessage(null);
     setLoading(true);
     try {
-      if (!email.trim()) {
-        setMessage("Enter an email address");
-        setLoading(false);
-        return;
-      }
-
-      // Get user by email
-      const { data: users, error: userError } = await supabase.auth.admin.listUsers();
-      if (userError) throw userError;
-
-      const targetUser = users?.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-      if (!targetUser) {
-        setMessage("User not found");
-        setLoading(false);
-        return;
-      }
-
-      // Check if role already exists
-      const { data: existing } = await supabase
-        .from("user_roles")
-        .select("id")
-        .eq("user_id", targetUser.id)
-        .eq("role", role);
-
-      if (existing && existing.length > 0) {
-        setMessage(`User already has ${role} role`);
-        setLoading(false);
-        return;
-      }
-
-      // Insert role
-      const { error: insertError } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: targetUser.id,
-          role,
-        });
-
-      if (insertError) {
-        setMessage(insertError.message);
+      if (!email.trim()) { setMessage("Enter an email address"); setLoading(false); return; }
+      const { data, error } = await supabase.functions.invoke("admin-grant-role", {
+        body: { email: email.trim(), role },
+      });
+      if (error) {
+        setMessage(error.message);
+      } else if (data?.error) {
+        setMessage(data.error);
       } else {
         setMessage(`✓ Granted "${role}" role to ${email}`);
         setEmail("");

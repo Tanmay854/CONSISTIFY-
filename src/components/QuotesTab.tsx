@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import ReportDialog from "@/components/ReportDialog";
 
 interface QuoteCard {
   id: string;
@@ -10,7 +12,7 @@ interface QuoteCard {
   description: string | null;
 }
 
-const PhotoCard = ({ quote }: { quote: QuoteCard }) => {
+const PhotoCard = ({ quote, onReport }: { quote: QuoteCard; onReport: (q: QuoteCard) => void }) => {
   const ref = useRef<HTMLDivElement>(null);
   const tracked = useRef(false);
 
@@ -44,11 +46,13 @@ const PhotoCard = ({ quote }: { quote: QuoteCard }) => {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-background/40 pointer-events-none" />
 
-      {quote.is_pro && (
-        <span className="absolute top-16 right-4 bg-primary/90 text-primary-foreground text-[9px] font-bold px-2 py-1 rounded uppercase tracking-wider z-10">
-          Pro
-        </span>
-      )}
+      <button
+        onClick={() => onReport(quote)}
+        className="absolute top-16 right-4 z-30 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white/80 hover:text-white"
+        aria-label="Report"
+      >
+        <Flag size={14} />
+      </button>
 
       <div className="absolute bottom-24 left-4 right-16 z-20 pointer-events-none">
         <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
@@ -74,6 +78,7 @@ const QuotesTab = () => {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [reportTarget, setReportTarget] = useState<QuoteCard | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const fetchPage = useCallback(async (p: number) => {
@@ -118,15 +123,26 @@ const QuotesTab = () => {
   }
 
   return (
-    <div className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background">
-      <div className="fixed top-0 left-0 right-0 z-20 px-4 pt-4 pb-2 bg-gradient-to-b from-background via-background/80 to-transparent">
-        <h2 className="text-foreground font-semibold text-lg">Photos</h2>
+    <>
+      <div className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background">
+        <div className="fixed top-0 left-0 right-0 z-20 px-4 pt-4 pb-2 bg-gradient-to-b from-background via-background/80 to-transparent">
+          <h2 className="text-foreground font-semibold text-lg">Photos</h2>
+        </div>
+        {quotes.map((quote) => (
+          <PhotoCard key={quote.id} quote={quote} onReport={setReportTarget} />
+        ))}
+        {hasMore && <div ref={sentinelRef} className="h-1" />}
       </div>
-      {quotes.map((quote) => (
-        <PhotoCard key={quote.id} quote={quote} />
-      ))}
-      {hasMore && <div ref={sentinelRef} className="h-1" />}
-    </div>
+      {reportTarget && (
+        <ReportDialog
+          open={!!reportTarget}
+          onClose={() => setReportTarget(null)}
+          contentType="photo"
+          contentId={reportTarget.id}
+          contentTitle={reportTarget.title}
+        />
+      )}
+    </>
   );
 };
 

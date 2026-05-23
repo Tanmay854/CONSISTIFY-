@@ -4,13 +4,17 @@ import type { User, Session } from "@supabase/supabase-js";
 
 type AppRole = "admin" | "uploader" | "user";
 
+const SUPER_ADMIN_EMAIL = "tanmaynimbalkar854@gmail.com";
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   roles: AppRole[];
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   canUpload: boolean;
+  pendingApplicationMessage: string | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -23,14 +27,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [pendingApplicationMessage, setPendingApplicationMessage] = useState<string | null>(null);
 
-  const fetchRoles = useCallback(async (userId: string) => {
-    const { data } = await supabase
+  const enforceAccess = useCallback(async (u: User) => {
+    const { data: roleRows } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId);
-    if (data) {
-      setRoles(data.map((r) => r.role));
+      .eq("user_id", u.id);
+    const rs = (roleRows || []).map(r => r.role as AppRole);
+    setRoles(rs);
+
+    // If they have any role, they're allowed in.
+    if (rs.length > 0) {
+      setPendingApplicationMessage(null);
+      return;
+    }
+
+    // No role — check for application
+    const { data: apps } = await supabase
+      .from("uploader_applications")
+      .select("status")
+      .eq("user_id", u.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const app = apps?.[0];
+    if (app) {
+      const msg = app.status === "pending"
+        ? "Your uploader application is awaiting admin approval."
+        : app.status === "rejected"
+          ? "Your uploader application was rejected. Contact an admin."
+          : null;
+      if (msg) {
+        setPendingApplicationMessage(msg);
+        await supabase.auth.signOut();
+      }
     }
   }, []);
 
@@ -39,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setTimeout(() => fetchRoles(session.user.id), 0);
+        setTimeout(() => enforceAccess(session.user), 0);
       } else {
         setRoles([]);
       }
@@ -49,12 +79,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) fetchRoles(session.user.id);
+      if (session?.user) enforceAccess(session.user);
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchRoles]);
+  }, [enforceAccess]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -62,20 +92,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
     return { error: error?.message ?? null };
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setRoles([]);
+    setPendingApplicationMessage(null);
   };
 
   const isAdmin = roles.includes("admin");
+  const isSuperAdmin = !!user?.email && user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
   const canUpload = isAdmin || roles.includes("uploader");
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, roles, isAdmin, canUpload, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, roles, isAdmin, isSuperAdmin, canUpload, pendingApplicationMessage, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
