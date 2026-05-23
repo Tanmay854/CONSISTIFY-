@@ -151,7 +151,7 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
       {!reel.id.startsWith("d") && (
         <button
           onClick={(e) => { e.stopPropagation(); onReport(reel); }}
-          className="absolute top-16 right-4 z-30 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white/80 hover:text-white"
+          className="absolute bottom-36 right-4 z-30 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white/80 hover:text-white"
           aria-label="Report"
         >
           <Flag size={14} />
