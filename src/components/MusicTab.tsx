@@ -323,9 +323,14 @@ const MusicTab = () => {
                     <h3 className="text-foreground font-bold text-xl truncate">{playingTrack.title}</h3>
                     <p className="text-muted-foreground text-sm">{playingTrack.artist}</p>
                   </div>
-                  <button onClick={() => toggleLike(playingTrack.id)}>
-                    <Heart size={22} className={likedTracks.has(playingTrack.id) ? "fill-primary text-primary" : "text-muted-foreground"} />
-                  </button>
+                  <div className="flex flex-col items-center gap-2">
+                    <button onClick={() => setReportTrack(playingTrack)} className="text-muted-foreground hover:text-foreground">
+                      <Flag size={18} />
+                    </button>
+                    <button onClick={() => toggleLike(playingTrack.id)}>
+                      <Heart size={22} className={likedTracks.has(playingTrack.id) ? "fill-primary text-primary" : "text-muted-foreground"} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Progress bar */}
