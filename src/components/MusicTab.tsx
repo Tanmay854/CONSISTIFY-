@@ -415,15 +415,6 @@ const MusicTab = () => {
         onEnded={playNext}
       />
 
-      {playingTrack && (
-        <button
-          onClick={() => setReportTrack(playingTrack)}
-          className="fixed bottom-44 right-3 z-40 bg-black/60 backdrop-blur-sm rounded-full p-2 text-white/80 hover:text-white"
-          aria-label="Report track"
-        >
-          <Flag size={14} />
-        </button>
-      )}
       {reportTrack && (
         <ReportDialog
           open={!!reportTrack}
