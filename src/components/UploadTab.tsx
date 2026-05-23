@@ -7,7 +7,6 @@ import MyUploads from "@/components/MyUploads";
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"];
 
 type UploadType = "video" | "music" | "photo" | "ad";
-type VideoSource = "url" | "file";
 type MusicSource = "url" | "file";
 type AdSource = "url" | "file";
 
@@ -20,11 +19,9 @@ const UploadTab = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Video fields
-  const [videoSource, setVideoSource] = useState<VideoSource>("url");
   const [videoTitle, setVideoTitle] = useState("");
   const [videoDescription, setVideoDescription] = useState("");
   const [videoCategory, setVideoCategory] = useState("Motivation");
-  const [videoUrl, setVideoUrl] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
 
   // Music fields
@@ -42,7 +39,6 @@ const UploadTab = () => {
   const [photoDescription, setPhotoDescription] = useState("");
   const [photoCategory, setPhotoCategory] = useState("Motivation");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [isPro, setIsPro] = useState(false);
 
   // Ad fields
   const [adTitle, setAdTitle] = useState("");
@@ -70,9 +66,9 @@ const UploadTab = () => {
   };
 
   const resetFields = () => {
-    setVideoTitle(""); setVideoDescription(""); setVideoUrl(""); setVideoFile(null);
+    setVideoTitle(""); setVideoDescription(""); setVideoFile(null);
     setMusicTitle(""); setMusicArtist(""); setMusicDuration(""); setMusicUrl(""); setMusicFile(null); setMusicCoverFile(null);
-    setPhotoTitle(""); setPhotoDescription(""); setPhotoFile(null); setIsPro(false);
+    setPhotoTitle(""); setPhotoDescription(""); setPhotoFile(null);
     setAdTitle(""); setAdLink(""); setAdUrl(""); setAdFile(null);
   };
 
@@ -96,29 +92,21 @@ const UploadTab = () => {
     try {
       if (activeType === "video") {
         if (!videoTitle.trim()) { setError("Title required"); setLoading(false); return; }
-        let finalUrl = "";
-        if (videoSource === "url") {
-          if (!videoUrl.trim() || !isValidUrl(videoUrl.trim())) { setError("Valid URL required"); setLoading(false); return; }
-          finalUrl = videoUrl.trim();
-        } else {
-          if (!videoFile) { setError("Select a video file"); setLoading(false); return; }
-          // Enforce 3-minute max duration
-          const duration = await new Promise<number>((resolve) => {
-            const v = document.createElement("video");
-            v.preload = "metadata";
-            v.onloadedmetadata = () => resolve(v.duration);
-            v.onerror = () => resolve(0);
-            v.src = URL.createObjectURL(videoFile);
-          });
-          if (duration > 180) {
-            setError(`Video must be 3 minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
-            setLoading(false);
-            return;
-          }
-          const url = await uploadFileToBucket("videos", videoFile);
-          if (!url) { setLoading(false); return; }
-          finalUrl = url;
+        if (!videoFile) { setError("Select a video file from your device"); setLoading(false); return; }
+        const duration = await new Promise<number>((resolve) => {
+          const v = document.createElement("video");
+          v.preload = "metadata";
+          v.onloadedmetadata = () => resolve(v.duration);
+          v.onerror = () => resolve(0);
+          v.src = URL.createObjectURL(videoFile);
+        });
+        if (duration > 180) {
+          setError(`Video must be 3 minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
+          setLoading(false);
+          return;
         }
+        const finalUrl = await uploadFileToBucket("videos", videoFile);
+        if (!finalUrl) { setLoading(false); return; }
         const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: finalUrl, category: videoCategory, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "music") {
@@ -156,7 +144,7 @@ const UploadTab = () => {
           description: photoDescription.trim() || null,
           category: photoCategory.toUpperCase(),
           image_url: url,
-          is_pro: isPro,
+          is_pro: false,
           uploaded_by: user?.id,
         });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
