@@ -78,6 +78,7 @@ const QuotesTab = () => {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [reportTarget, setReportTarget] = useState<QuoteCard | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const fetchPage = useCallback(async (p: number) => {
@@ -122,15 +123,26 @@ const QuotesTab = () => {
   }
 
   return (
-    <div className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background">
-      <div className="fixed top-0 left-0 right-0 z-20 px-4 pt-4 pb-2 bg-gradient-to-b from-background via-background/80 to-transparent">
-        <h2 className="text-foreground font-semibold text-lg">Photos</h2>
+    <>
+      <div className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background">
+        <div className="fixed top-0 left-0 right-0 z-20 px-4 pt-4 pb-2 bg-gradient-to-b from-background via-background/80 to-transparent">
+          <h2 className="text-foreground font-semibold text-lg">Photos</h2>
+        </div>
+        {quotes.map((quote) => (
+          <PhotoCard key={quote.id} quote={quote} onReport={setReportTarget} />
+        ))}
+        {hasMore && <div ref={sentinelRef} className="h-1" />}
       </div>
-      {quotes.map((quote) => (
-        <PhotoCard key={quote.id} quote={quote} />
-      ))}
-      {hasMore && <div ref={sentinelRef} className="h-1" />}
-    </div>
+      {reportTarget && (
+        <ReportDialog
+          open={!!reportTarget}
+          onClose={() => setReportTarget(null)}
+          contentType="photo"
+          contentId={reportTarget.id}
+          contentTitle={reportTarget.title}
+        />
+      )}
+    </>
   );
 };
 
