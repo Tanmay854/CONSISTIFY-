@@ -323,9 +323,14 @@ const MusicTab = () => {
                     <h3 className="text-foreground font-bold text-xl truncate">{playingTrack.title}</h3>
                     <p className="text-muted-foreground text-sm">{playingTrack.artist}</p>
                   </div>
-                  <button onClick={() => toggleLike(playingTrack.id)}>
-                    <Heart size={22} className={likedTracks.has(playingTrack.id) ? "fill-primary text-primary" : "text-muted-foreground"} />
-                  </button>
+                  <div className="flex flex-col items-center gap-2">
+                    <button onClick={() => setReportTrack(playingTrack)} className="text-muted-foreground hover:text-foreground">
+                      <Flag size={18} />
+                    </button>
+                    <button onClick={() => toggleLike(playingTrack.id)}>
+                      <Heart size={22} className={likedTracks.has(playingTrack.id) ? "fill-primary text-primary" : "text-muted-foreground"} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Progress bar */}
@@ -381,6 +386,9 @@ const MusicTab = () => {
                   <p className="text-muted-foreground text-[11px] truncate">{playingTrack.artist}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button onClick={(e) => { e.stopPropagation(); setReportTrack(playingTrack); }}>
+                    <Flag size={16} className="text-muted-foreground" />
+                  </button>
                   <button onClick={(e) => { e.stopPropagation(); toggleLike(playingTrack.id); }}>
                     <Heart size={18} className={likedTracks.has(playingTrack.id) ? "fill-primary text-primary" : "text-muted-foreground"} />
                   </button>
@@ -407,15 +415,6 @@ const MusicTab = () => {
         onEnded={playNext}
       />
 
-      {playingTrack && (
-        <button
-          onClick={() => setReportTrack(playingTrack)}
-          className="fixed bottom-44 right-3 z-40 bg-black/60 backdrop-blur-sm rounded-full p-2 text-white/80 hover:text-white"
-          aria-label="Report track"
-        >
-          <Flag size={14} />
-        </button>
-      )}
       {reportTrack && (
         <ReportDialog
           open={!!reportTrack}
