@@ -203,6 +203,42 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          id: string
+          issue_description: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          id?: string
+          issue_description: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          issue_description?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       uploader_applications: {
         Row: {
           created_at: string
