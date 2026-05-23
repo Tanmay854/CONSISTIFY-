@@ -32,14 +32,25 @@ const UploaderApplications = () => {
 
   const review = async (id: string, status: "approved" | "rejected") => {
     setBusyId(id);
-    const { data: { user } } = await supabase.auth.getUser();
-    await supabase
-      .from("uploader_applications")
-      .update({ status, reviewed_by: user?.id, reviewed_at: new Date().toISOString() })
-      .eq("id", id);
+    if (status === "rejected") {
+      // Fully delete the user's account so the email is freed and they can reapply
+      const { error } = await supabase.functions.invoke("admin-reject-application", {
+        body: { application_id: id },
+      });
+      if (error) {
+        console.error("Reject failed:", error);
+      }
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase
+        .from("uploader_applications")
+        .update({ status, reviewed_by: user?.id, reviewed_at: new Date().toISOString() })
+        .eq("id", id);
+    }
     setBusyId(null);
     load();
   };
+
 
   const filtered = apps.filter((a) => a.status === filter);
 
