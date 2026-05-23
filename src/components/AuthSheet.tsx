@@ -30,7 +30,6 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
     setLoading(false);
     if (result.error) { setError(result.error); return; }
     if (mode === "signup") {
-      // Show the apply step right after successful signup
       setStep("apply");
     } else {
       close();
@@ -41,10 +40,10 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
     setError(null); setInfo(null);
     if (!email) { setError("Enter your email first."); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/reset-password?native=true`,
     });
     if (error) setError(error.message);
-    else setInfo("Password reset link sent. Check your inbox.");
+    else setInfo("Password reset link sent to your email.");
   };
 
   const submitApplication = async () => {
@@ -52,15 +51,20 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setError("Please sign in again."); setLoading(false); return; }
     if (!reason.trim()) { setError("Please tell us why."); setLoading(false); return; }
+    
+    const wordCount = reason.trim().split(/\s+/).length;
+    if (wordCount > 50) { setError("Maximum 50 words allowed."); setLoading(false); return; }
+
     const { error } = await supabase.from("uploader_applications").insert({
       user_id: user.id,
       email: user.email,
       reason: reason.trim(),
       requested_role: requestedRole,
+      status: "pending",
     });
     setLoading(false);
     if (error) setError(error.message);
-    else { setInfo("Application submitted. Admins will review it."); setTimeout(close, 1200); }
+    else { setInfo("Application submitted! Admins will review it soon."); setTimeout(close, 1200); }
   };
 
   return (
@@ -68,7 +72,7 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
       <div className="w-full max-w-lg bg-card border-t border-border rounded-t-2xl p-6 animate-float-up max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-foreground font-semibold text-lg">
-            {step === "apply" ? "Apply for upload access" : mode === "login" ? "Sign In" : "Create Account"}
+            {step === "apply" ? "Become an Uploader" : mode === "login" ? "Sign In" : "Create Account"}
           </h3>
           <button onClick={close}><X size={20} className="text-muted-foreground" /></button>
         </div>
@@ -110,26 +114,18 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
 
         {step === "apply" && (
           <div className="space-y-4">
-            <p className="text-muted-foreground text-xs">Account created. Want to upload content? Apply to become an uploader or admin — the super-admin reviews each application.</p>
+            <p className="text-muted-foreground text-xs">Account created! Now apply to become an uploader or admin. Admins will review your application.</p>
             <div>
-              <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Role</label>
-              <div className="flex gap-2">
-                <button onClick={() => setRequestedRole("uploader")}
-                  className={`flex-1 py-2 rounded-lg text-xs font-medium ${requestedRole === "uploader" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Uploader</button>
-                <button onClick={() => setRequestedRole("admin")}
-                  className={`flex-1 py-2 rounded-lg text-xs font-medium ${requestedRole === "admin" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Admin</button>
-              </div>
-            </div>
-            <div>
-              <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Why?</label>
-              <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={4} placeholder="Tell us about your content..."
+              <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Why do you want to upload?</label>
+              <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={4} placeholder="Tell us about your content ideas... (max 50 words)"
                 className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none" />
+              <p className="text-muted-foreground text-[10px] mt-1">{reason.trim().split(/\s+/).filter(w => w).length}/50 words</p>
             </div>
             {error && <p className="text-destructive text-xs">{error}</p>}
             {info && <p className="text-primary text-xs">{info}</p>}
             <button onClick={submitApplication} disabled={loading || !reason.trim()}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2">
-              <Send size={14} /> {loading ? "Submitting..." : "Submit application"}
+              <Send size={14} /> {loading ? "Submitting..." : "Submit Application"}
             </button>
             <button onClick={close} className="w-full text-muted-foreground text-xs text-center py-2">Skip for now</button>
           </div>
