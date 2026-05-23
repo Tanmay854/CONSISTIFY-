@@ -1,16 +1,18 @@
-import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect, useCallback } from "react";
+import { X, UserPlus, Shield, LayoutGrid, Inbox, Users, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { X, UserPlus, Shield, LayoutGrid, Inbox, Users } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import AdminContentManager from "@/components/AdminContentManager";
 import UploaderApplications from "@/components/UploaderApplications";
 import MembersManager from "@/components/MembersManager";
+import ReportsTab from "@/components/ReportsTab";
+import AnalyticsChart from "@/components/AnalyticsChart";
 
-type AdminTab = "roles" | "applications" | "content" | "members";
+type AdminTab = "roles" | "applications" | "content" | "members" | "reports" | "analytics";
 
 const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const { isAdmin } = useAuth();
-  const [tab, setTab] = useState<AdminTab>("roles");
+  const { isAdmin, isSuperAdmin } = useAuth();
+  const [tab, setTab] = useState<AdminTab>("applications");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"uploader" | "admin">("uploader");
   const [loading, setLoading] = useState(false);
@@ -18,22 +20,59 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
 
   if (!open || !isAdmin) return null;
 
-  const handleAddRole = async () => {
+  const handleAddRole = useCallback(async () => {
     setMessage(null);
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setMessage("You must be logged in."); setLoading(false); return; }
+      if (!email.trim()) {
+        setMessage("Enter an email address");
+        setLoading(false);
+        return;
+      }
 
-      const response = await supabase.functions.invoke("admin-grant-role", { body: { email, role } });
-      if (response.error) setMessage(response.error.message || "Failed to grant role.");
-      else if (response.data?.error) setMessage(response.data.error);
-      else { setMessage(`Granted "${role}" role to ${email}`); setEmail(""); }
-    } catch {
-      setMessage("An error occurred.");
+      // Get user by email
+      const { data: users, error: userError } = await supabase.auth.admin.listUsers();
+      if (userError) throw userError;
+
+      const targetUser = users?.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+      if (!targetUser) {
+        setMessage("User not found");
+        setLoading(false);
+        return;
+      }
+
+      // Check if role already exists
+      const { data: existing } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", targetUser.id)
+        .eq("role", role);
+
+      if (existing && existing.length > 0) {
+        setMessage(`User already has ${role} role`);
+        setLoading(false);
+        return;
+      }
+
+      // Insert role
+      const { error: insertError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: targetUser.id,
+          role,
+        });
+
+      if (insertError) {
+        setMessage(insertError.message);
+      } else {
+        setMessage(`✓ Granted "${role}" role to ${email}`);
+        setEmail("");
+      }
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "An error occurred");
     }
     setLoading(false);
-  };
+  }, [email, role]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
@@ -45,28 +84,38 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
           <button onClick={onClose}><X size={20} className="text-muted-foreground" /></button>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 mb-5">
-          <button onClick={() => setTab("roles")}
-            className={`flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-semibold ${tab === "roles" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
-            <UserPlus size={12} /> Roles
-          </button>
+        <div className="grid grid-cols-3 gap-2 mb-5 overflow-x-auto pb-2">
           <button onClick={() => setTab("applications")}
-            className={`flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-semibold ${tab === "applications" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
-            <Inbox size={12} /> Apps
+            className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "applications" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            <Inbox size={12} /> Requests
           </button>
+          {isSuperAdmin && (
+            <button onClick={() => setTab("roles")}
+              className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "roles" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+              <UserPlus size={12} /> Roles
+            </button>
+          )}
           <button onClick={() => setTab("members")}
-            className={`flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-semibold ${tab === "members" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "members" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
             <Users size={12} /> Team
           </button>
           <button onClick={() => setTab("content")}
-            className={`flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-semibold ${tab === "content" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "content" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
             <LayoutGrid size={12} /> Content
+          </button>
+          <button onClick={() => setTab("reports")}
+            className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "reports" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            <AlertCircle size={12} /> Reports
+          </button>
+          <button onClick={() => setTab("analytics")}
+            className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "analytics" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            <TrendingUp size={12} /> Analytics
           </button>
         </div>
 
-        {tab === "roles" && (
+        {tab === "roles" && isSuperAdmin && (
           <div className="space-y-4">
-            <p className="text-muted-foreground text-xs">Grant upload access to registered users by their email.</p>
+            <p className="text-muted-foreground text-xs">Grant roles to registered users by their email.</p>
             <div>
               <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">User Email</label>
               <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@example.com"
@@ -92,6 +141,8 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
         {tab === "applications" && <UploaderApplications />}
         {tab === "members" && <MembersManager />}
         {tab === "content" && <AdminContentManager />}
+        {tab === "reports" && <ReportsTab />}
+        {tab === "analytics" && <AnalyticsChart />}
       </div>
     </div>
   );
