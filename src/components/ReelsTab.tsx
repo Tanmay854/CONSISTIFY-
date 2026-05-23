@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Play, ExternalLink } from "lucide-react";
+import { Play, ExternalLink, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import ReportDialog from "@/components/ReportDialog";
 
 interface Reel {
   id: string;
@@ -52,33 +53,15 @@ const isValidUrl = (url: string): boolean => {
   }
 };
 
-const getYoutubeId = (url: string): string | null => {
-  const ytMatch = url.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
-  return ytMatch ? ytMatch[1] : null;
-};
-
-const getEmbedUrl = (url: string, playing: boolean): string | null => {
-  if (!isValidUrl(url)) return null;
-  const ytId = getYoutubeId(url);
-  if (ytId) {
-    const params = new URLSearchParams({
-      autoplay: playing ? "1" : "0", mute: "0", loop: "1", playlist: ytId,
-      controls: "0", modestbranding: "1", rel: "0", showinfo: "0",
-    });
-    return `https://www.youtube.com/embed/${ytId}?${params.toString()}`;
-  }
-  return url;
-};
-
-const ReelCard = ({ reel, isActive, index, muted }: { reel: Reel; isActive: boolean; index: number; muted: boolean }) => {
+const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isActive: boolean; index: number; muted: boolean; onReport: (r: Reel) => void }) => {
   const hasVideo = reel.video_url && reel.video_url.length > 0 && isValidUrl(reel.video_url);
-  const ytId = hasVideo ? getYoutubeId(reel.video_url) : null;
-  const isYoutube = !!ytId;
-  const isDirectVideo = hasVideo && !isYoutube;
   const gradient = gradients[index % gradients.length];
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showIcon, setShowIcon] = useState(false);
+
+  const trimStart = reel.trim_start ?? 0;
+  const trimEnd = reel.trim_end ?? null;
 
   useEffect(() => {
     setIsPlaying(isActive);
@@ -88,14 +71,14 @@ const ReelCard = ({ reel, isActive, index, muted }: { reel: Reel; isActive: bool
   }, [isActive, reel.id]);
 
   useEffect(() => {
-    if (!isDirectVideo || !videoRef.current) return;
+    if (!hasVideo || !videoRef.current) return;
     videoRef.current.muted = muted;
     if (isPlaying && isActive) {
       videoRef.current.play().catch(() => {});
     } else {
       videoRef.current.pause();
     }
-  }, [isPlaying, isActive, isDirectVideo, muted]);
+  }, [isPlaying, isActive, hasVideo, muted]);
 
   const togglePlay = () => {
     if (!hasVideo) return;
@@ -104,34 +87,12 @@ const ReelCard = ({ reel, isActive, index, muted }: { reel: Reel; isActive: bool
     setTimeout(() => setShowIcon(false), 600);
   };
 
-  const ytEmbed = (url: string, playing: boolean): string | null => {
-    if (!isValidUrl(url)) return null;
-    const id = getYoutubeId(url);
-    if (!id) return url;
-    const params = new URLSearchParams({
-      autoplay: playing ? "1" : "0",
-      mute: muted ? "1" : "0",
-      loop: "1", playlist: id,
-      controls: "0", modestbranding: "1", rel: "0", showinfo: "0",
-    });
-    return `https://www.youtube.com/embed/${id}?${params.toString()}`;
-  };
-
   return (
     <div
       className="relative h-screen w-full snap-start flex items-center justify-center overflow-hidden cursor-pointer"
       onClick={togglePlay}
     >
-      {hasVideo && isYoutube && isActive ? (
-        <iframe
-          key={`${isPlaying ? "play" : "pause"}-${muted ? "m" : "u"}`}
-          src={ytEmbed(reel.video_url, isPlaying) || undefined}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ border: "none", pointerEvents: "none" }}
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-        />
-      ) : hasVideo && isDirectVideo ? (
+      {hasVideo ? (
         <video
           ref={videoRef}
           src={reel.video_url}
@@ -140,10 +101,15 @@ const ReelCard = ({ reel, isActive, index, muted }: { reel: Reel; isActive: bool
           loop
           playsInline
           muted={muted}
+          onLoadedMetadata={(e) => {
+            if (trimStart > 0) e.currentTarget.currentTime = trimStart;
+          }}
           onTimeUpdate={(e) => {
             const v = e.currentTarget;
-            if (v.currentTime >= 180) {
-              v.currentTime = 0;
+            const end = trimEnd ?? Math.min(v.duration || 180, 180);
+            if (v.currentTime >= end) {
+              v.currentTime = trimStart;
+              if (isPlaying) v.play().catch(() => {});
             }
           }}
         />
@@ -181,7 +147,17 @@ const ReelCard = ({ reel, isActive, index, muted }: { reel: Reel; isActive: bool
         )}
       </div>
 
-      {/* Instagram-style title at bottom-left */}
+      {/* Report button */}
+      {!reel.id.startsWith("d") && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onReport(reel); }}
+          className="absolute top-16 right-4 z-30 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white/80 hover:text-white"
+          aria-label="Report"
+        >
+          <Flag size={14} />
+        </button>
+      )}
+
       <div className="absolute bottom-24 left-4 right-16 z-20 pointer-events-none">
         <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
           {reel.title}
@@ -247,6 +223,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [usingDefaults, setUsingDefaults] = useState(true);
+  const [reportTarget, setReportTarget] = useState<Reel | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -295,7 +272,6 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
     return () => obs.disconnect();
   }, [hasMore, loading, fetchPage, reels.length, usingDefaults]);
 
-  // Build interleaved feed: 1 ad after every 5 reels
   const feed: FeedItem[] = [];
   let adIdx = 0;
   reels.forEach((r, i) => {
@@ -322,14 +298,13 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
         onScroll={handleScroll}
         className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
       >
-        {/* Header */}
         <div className="fixed top-0 left-0 right-0 z-20 px-4 pt-4 pb-2 bg-gradient-to-b from-background via-background/80 to-transparent">
           <h2 className="text-foreground font-semibold text-lg">Videos</h2>
         </div>
 
         {feed.map((item, index) =>
           item.kind === "reel" ? (
-            <ReelCard key={`r-${item.data.id}`} reel={item.data} isActive={index === activeIndex} index={index} muted={muted} />
+            <ReelCard key={`r-${item.data.id}`} reel={item.data} isActive={index === activeIndex} index={index} muted={muted} onReport={setReportTarget} />
           ) : (
             <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={index === activeIndex} />
           )
@@ -337,6 +312,15 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
         {hasMore && !usingDefaults && <div ref={sentinelRef} className="h-1" />}
       </div>
 
+      {reportTarget && (
+        <ReportDialog
+          open={!!reportTarget}
+          onClose={() => setReportTarget(null)}
+          contentType="video"
+          contentId={reportTarget.id}
+          contentTitle={reportTarget.title}
+        />
+      )}
     </>
   );
 };
