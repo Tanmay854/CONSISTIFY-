@@ -175,6 +175,7 @@ export type Database = {
           trim_end: number | null
           trim_start: number | null
           uploaded_by: string | null
+          video_fit: string
           video_url: string
         }
         Insert: {
@@ -187,6 +188,7 @@ export type Database = {
           trim_end?: number | null
           trim_start?: number | null
           uploaded_by?: string | null
+          video_fit?: string
           video_url: string
         }
         Update: {
@@ -199,6 +201,7 @@ export type Database = {
           trim_end?: number | null
           trim_start?: number | null
           uploaded_by?: string | null
+          video_fit?: string
           video_url?: string
         }
         Relationships: []
@@ -210,6 +213,7 @@ export type Database = {
           created_at: string
           id: string
           issue_description: string
+          reporter_email: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
@@ -221,6 +225,7 @@ export type Database = {
           created_at?: string
           id?: string
           issue_description: string
+          reporter_email?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -232,6 +237,7 @@ export type Database = {
           created_at?: string
           id?: string
           issue_description?: string
+          reporter_email?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string

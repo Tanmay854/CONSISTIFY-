@@ -47,6 +47,17 @@ Deno.serve(async (req) => {
     const target = users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
     if (!target) return new Response(JSON.stringify({ error: "User not found. They must sign up first." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    // When promoting to admin: target MUST currently be an uploader, and their uploader role is removed.
+    if (role === "admin") {
+      const { data: targetRoles } = await admin.from("user_roles").select("role").eq("user_id", target.id);
+      const isUploader = (targetRoles ?? []).some((r) => r.role === "uploader");
+      if (!isUploader) {
+        return new Response(JSON.stringify({ error: "Only existing uploaders can be promoted to admin" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Remove uploader role so they're admin only
+      await admin.from("user_roles").delete().eq("user_id", target.id).eq("role", "uploader");
+    }
+
     const { error: insertError } = await admin.from("user_roles").insert({ user_id: target.id, role });
     if (insertError) {
       const msg = insertError.message.includes("duplicate") ? "User already has this role" : insertError.message;
