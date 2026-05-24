@@ -23,6 +23,9 @@ const UploadTab = () => {
   const [videoDescription, setVideoDescription] = useState("");
   const [videoCategory, setVideoCategory] = useState("Motivation");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoFit, setVideoFit] = useState<"cover" | "contain" | "fill">("cover");
+  const videoPreviewUrl = videoFile ? URL.createObjectURL(videoFile) : null;
+
 
   // Music fields
   const [musicSource, setMusicSource] = useState<MusicSource>("file");
