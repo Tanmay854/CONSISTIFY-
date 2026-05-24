@@ -316,8 +316,50 @@ const UploadTab = () => {
                   />
                   {videoFile && <p className="text-muted-foreground text-[10px] mt-1">{videoFile.name}</p>}
                 </div>
+
+                {videoFile && (
+                  <div>
+                    <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Display mode</label>
+                    <div className="grid grid-cols-3 gap-2 mb-2">
+                      {([
+                        { id: "cover", label: "Crop", hint: "Fill, trim edges" },
+                        { id: "contain", label: "Fit", hint: "Full video, black bars" },
+                        { id: "fill", label: "Expand", hint: "Stretch to fill" },
+                      ] as const).map((m) => {
+                        const active = videoFit === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setVideoFit(m.id)}
+                            className={`py-2 rounded-lg text-[11px] font-semibold transition-all ${active ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                          >
+                            <div>{m.label}</div>
+                            <div className="text-[9px] font-normal opacity-70">{m.hint}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {videoPreviewUrl && (
+                      <div className="relative w-full aspect-[9/16] max-h-72 bg-black rounded-xl overflow-hidden mx-auto">
+                        <video
+                          key={videoPreviewUrl + videoFit}
+                          src={videoPreviewUrl}
+                          className="absolute inset-0 w-full h-full"
+                          style={{ objectFit: videoFit }}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                        />
+                      </div>
+                    )}
+                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">Preview — viewers will see the video in this mode.</p>
+                  </div>
+                )}
               </>
             )}
+
 
             {activeType === "music" && (
               <>
