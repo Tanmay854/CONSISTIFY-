@@ -12,7 +12,9 @@ interface Reel {
   created_at: string;
   trim_start: number | null;
   trim_end: number | null;
+  video_fit?: string | null;
 }
+
 
 interface Ad {
   id: string;
