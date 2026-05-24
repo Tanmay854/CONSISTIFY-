@@ -121,9 +121,22 @@ const UploadTab = () => {
           audioUrl = musicUrl.trim() || null;
         } else {
           if (!musicFile) { setError("Select an audio file"); setLoading(false); return; }
+          const audioDuration = await new Promise<number>((resolve) => {
+            const a = document.createElement("audio");
+            a.preload = "metadata";
+            a.onloadedmetadata = () => resolve(a.duration);
+            a.onerror = () => resolve(0);
+            a.src = URL.createObjectURL(musicFile);
+          });
+          if (audioDuration > 540) {
+            setError(`Music must be 9 minutes or less (yours is ${Math.floor(audioDuration / 60)}:${String(Math.floor(audioDuration % 60)).padStart(2, "0")})`);
+            setLoading(false);
+            return;
+          }
           audioUrl = await uploadFileToBucket("audio", musicFile);
           if (!audioUrl) { setLoading(false); return; }
         }
+
         let coverUrl: string | null = null;
         if (musicCoverFile) {
           coverUrl = await uploadFileToBucket("quote-images", musicCoverFile);
