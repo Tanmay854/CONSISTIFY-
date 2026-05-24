@@ -110,8 +110,9 @@ const UploadTab = () => {
         }
         const finalUrl = await uploadFileToBucket("videos", videoFile);
         if (!finalUrl) { setLoading(false); return; }
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: finalUrl, category: videoCategory, uploaded_by: user?.id });
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: finalUrl, category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
+
       } else if (activeType === "music") {
         if (!musicTitle.trim() || !musicArtist.trim()) { setError("Title and artist required"); setLoading(false); return; }
         let audioUrl: string | null = null;
