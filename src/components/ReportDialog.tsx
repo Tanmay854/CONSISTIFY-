@@ -13,6 +13,7 @@ interface ReportDialogProps {
 
 const ReportDialog = ({ open, onClose, contentType, contentId, contentTitle }: ReportDialogProps) => {
   const { user } = useAuth();
+  const [email, setEmail] = useState(user?.email ?? "");
   const [issue, setIssue] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,41 +21,30 @@ const ReportDialog = ({ open, onClose, contentType, contentId, contentTitle }: R
 
   if (!open) return null;
 
-  const wordCount = issue.trim().split(/\s+/).filter(w => w.length > 0).length;
+  const wordCount = issue.trim().split(/\s+/).filter((w) => w.length > 0).length;
   const maxWords = 50;
+  const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
 
   const handleSubmit = async () => {
     setError(null);
-
-    if (!issue.trim()) {
-      setError("Please describe the issue");
-      return;
-    }
-
-    if (wordCount > maxWords) {
-      setError(`Description must be ${maxWords} words or less (currently ${wordCount})`);
-      return;
-    }
+    if (!email.trim() || !isValidEmail(email)) { setError("Please enter a valid email"); return; }
+    if (!issue.trim()) { setError("Please describe the issue"); return; }
+    if (wordCount > maxWords) { setError(`Description must be ${maxWords} words or less (currently ${wordCount})`); return; }
 
     setLoading(true);
-
     try {
       const { error: insertError } = await supabase.from("reports").insert({
         user_id: user?.id || null,
         content_type: contentType,
         content_id: contentId,
         issue_description: issue.trim(),
+        reporter_email: email.trim(),
       });
-
       if (insertError) {
         setError(insertError.message);
       } else {
         setSuccess(true);
-        setTimeout(() => {
-          onClose();
-          setIssue("");
-          setSuccess(false);
-        }, 1500);
+        setTimeout(() => { onClose(); setIssue(""); setSuccess(false); }, 1500);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit report");
@@ -85,19 +75,27 @@ const ReportDialog = ({ open, onClose, contentType, contentId, contentTitle }: R
 
         <div className="space-y-3">
           <div>
+            <label className="text-muted-foreground text-xs uppercase tracking-wider mb-2 block">Your email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full bg-secondary text-foreground rounded-xl px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          <div>
             <label className="text-muted-foreground text-xs uppercase tracking-wider mb-2 block">
               What's the issue? ({wordCount}/{maxWords})
             </label>
             <textarea
               value={issue}
               onChange={(e) => setIssue(e.target.value)}
-              placeholder="Describe the problem with this content..."
+              placeholder="Describe the problem (max 50 words)..."
               rows={4}
               className="w-full bg-secondary text-foreground rounded-xl px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none"
             />
-            {wordCount > maxWords && (
-              <p className="text-destructive text-xs mt-1">Description too long</p>
-            )}
+            {wordCount > maxWords && <p className="text-destructive text-xs mt-1">Description too long</p>}
           </div>
 
           {error && <p className="text-destructive text-xs">{error}</p>}
@@ -105,7 +103,7 @@ const ReportDialog = ({ open, onClose, contentType, contentId, contentTitle }: R
 
           <button
             onClick={handleSubmit}
-            disabled={loading || !issue.trim() || wordCount > maxWords}
+            disabled={loading || !issue.trim() || wordCount > maxWords || !email.trim()}
             className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <Send size={14} />
