@@ -98,7 +98,8 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
         <video
           ref={videoRef}
           src={reel.video_url}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: (reel.video_fit as any) || "cover" }}
           autoPlay={isActive}
           loop
           playsInline
@@ -118,6 +119,7 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
       ) : (
         <div className={`absolute inset-0 bg-gradient-to-b ${gradient}`} />
       )}
+
 
       <div className="absolute inset-0 bg-background/40 pointer-events-none" />
 
