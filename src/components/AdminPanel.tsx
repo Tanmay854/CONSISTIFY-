@@ -43,6 +43,11 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
     }
     setLoading(false);
   }, [email, password, role]);
+
+  if (!open || !isAdmin) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-lg bg-card border-t border-border rounded-t-2xl p-6 animate-float-up max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-foreground font-semibold text-lg flex items-center gap-2">
