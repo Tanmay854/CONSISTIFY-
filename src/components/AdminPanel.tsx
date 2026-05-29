@@ -61,12 +61,10 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
             className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "applications" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
             <Inbox size={12} /> Requests
           </button>
-          {isSuperAdmin && (
-            <button onClick={() => setTab("roles")}
-              className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "roles" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
-              <UserPlus size={12} /> Roles
-            </button>
-          )}
+          <button onClick={() => { setTab("roles"); if (!isSuperAdmin) setRole("uploader"); }}
+            className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "roles" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            <UserPlus size={12} /> Roles
+          </button>
           <button onClick={() => setTab("members")}
             className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "members" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
             <Users size={12} /> Team
