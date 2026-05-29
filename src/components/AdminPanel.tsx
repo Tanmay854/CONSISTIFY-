@@ -83,27 +83,39 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
           </button>
         </div>
 
-        {tab === "roles" && isSuperAdmin && (
+        {tab === "roles" && (
           <div className="space-y-4">
-            <p className="text-muted-foreground text-xs">Grant roles to registered users by their email.</p>
+            <p className="text-muted-foreground text-xs">
+              {isSuperAdmin
+                ? "Create or update an admin/uploader account. Enter their email and set a password — they will use it to log in."
+                : "Create or update an uploader account. Enter their email and set a password — they will use it to log in."}
+            </p>
             <div>
               <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">User Email</label>
               <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@example.com"
                 className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary" />
             </div>
             <div>
+              <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Password</label>
+              <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 6 characters (leave blank for existing user)"
+                className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary" />
+              <p className="text-muted-foreground text-[10px] mt-1">Share this password with the user — they'll log in with it.</p>
+            </div>
+            <div>
               <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Role</label>
               <div className="flex gap-2">
                 <button onClick={() => setRole("uploader")}
                   className={`flex-1 py-2 rounded-lg text-xs font-medium ${role === "uploader" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Uploader</button>
-                <button onClick={() => setRole("admin")}
-                  className={`flex-1 py-2 rounded-lg text-xs font-medium ${role === "admin" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Admin</button>
+                {isSuperAdmin && (
+                  <button onClick={() => setRole("admin")}
+                    className={`flex-1 py-2 rounded-lg text-xs font-medium ${role === "admin" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Admin</button>
+                )}
               </div>
             </div>
             {message && <p className="text-xs text-muted-foreground">{message}</p>}
             <button onClick={handleAddRole} disabled={loading || !email}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2">
-              <UserPlus size={16} /> {loading ? "Granting..." : "Grant Role"}
+              <UserPlus size={16} /> {loading ? "Saving..." : "Grant Role"}
             </button>
           </div>
         )}
