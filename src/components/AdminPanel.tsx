@@ -14,6 +14,7 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
   const { isAdmin, isSuperAdmin } = useAuth();
   const [tab, setTab] = useState<AdminTab>("applications");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [role, setRole] = useState<"uploader" | "admin">("uploader");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -23,27 +24,25 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
     setLoading(true);
     try {
       if (!email.trim()) { setMessage("Enter an email address"); setLoading(false); return; }
+      if (password && password.length < 6) { setMessage("Password must be at least 6 characters"); setLoading(false); return; }
       const { data, error } = await supabase.functions.invoke("admin-grant-role", {
-        body: { email: email.trim(), role },
+        body: { email: email.trim(), role, password: password || undefined },
       });
       if (error) {
         setMessage(error.message);
       } else if (data?.error) {
         setMessage(data.error);
       } else {
-        setMessage(`✓ Granted "${role}" role to ${email}`);
+        const created = data?.created ? " (account created)" : "";
+        setMessage(`✓ Granted "${role}" role to ${email}${created}`);
         setEmail("");
+        setPassword("");
       }
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "An error occurred");
     }
     setLoading(false);
-  }, [email, role]);
-
-  if (!open || !isAdmin) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
+  }, [email, password, role]);
       <div className="w-full max-w-lg bg-card border-t border-border rounded-t-2xl p-6 animate-float-up max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-foreground font-semibold text-lg flex items-center gap-2">
