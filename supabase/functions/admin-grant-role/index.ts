@@ -7,66 +7,104 @@ const corsHeaders = {
 
 const SUPER_ADMIN_EMAIL = "tanmaynimbalkar854@gmail.com";
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Missing authorization" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!authHeader) return json({ error: "Missing authorization" }, 401);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
     const { data: { user: caller } } = await userClient.auth.getUser();
-    if (!caller) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!caller) return json({ error: "Unauthorized" }, 401);
 
     const admin = createClient(supabaseUrl, serviceKey);
-    const { data: callerRoles } = await admin.from("user_roles").select("role").eq("user_id", caller.id).eq("role", "admin");
-    if (!callerRoles || callerRoles.length === 0) return new Response(JSON.stringify({ error: "Only admins can grant roles" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const isSuper = caller.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
 
-    const { email, role } = await req.json();
-    if (!email || typeof email !== "string" || !email.includes("@")) return new Response(JSON.stringify({ error: "Invalid email" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    if (!["admin", "uploader"].includes(role)) return new Response(JSON.stringify({ error: "Invalid role" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: callerRoles } = await admin
+      .from("user_roles").select("role").eq("user_id", caller.id).eq("role", "admin");
+    const isAdmin = !!(callerRoles && callerRoles.length > 0);
 
-    // Only super-admin may grant admin role
-    if (role === "admin" && caller.email?.toLowerCase() !== SUPER_ADMIN_EMAIL) {
-      return new Response(JSON.stringify({ error: "Only the super-admin can grant the admin role" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!isAdmin && !isSuper) return json({ error: "Only admins can grant roles" }, 403);
+
+    const body = await req.json().catch(() => ({}));
+    const email: string = (body.email ?? "").toString().trim().toLowerCase();
+    const role: string = (body.role ?? "").toString();
+    const password: string | undefined = body.password ? String(body.password) : undefined;
+
+    if (!email || !email.includes("@")) return json({ error: "Invalid email" }, 400);
+    if (!["admin", "uploader"].includes(role)) return json({ error: "Invalid role" }, 400);
+    if (role === "admin" && !isSuper) {
+      return json({ error: "Only the super-admin can grant the admin role" }, 403);
+    }
+    if (password !== undefined && password.length < 6) {
+      return json({ error: "Password must be at least 6 characters" }, 400);
     }
 
     // Enforce caps
-    const { count: adminCount } = await admin.from("user_roles").select("*", { count: "exact", head: true }).eq("role", "admin");
-    const { count: uploaderCount } = await admin.from("user_roles").select("*", { count: "exact", head: true }).eq("role", "uploader");
-    if (role === "admin" && (adminCount ?? 0) >= 5) return new Response(JSON.stringify({ error: "Admin limit reached (max 5)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    if (role === "uploader" && (uploaderCount ?? 0) >= 200) return new Response(JSON.stringify({ error: "Uploader limit reached (max 200)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { count: adminCount } = await admin
+      .from("user_roles").select("*", { count: "exact", head: true }).eq("role", "admin");
+    const { count: uploaderCount } = await admin
+      .from("user_roles").select("*", { count: "exact", head: true }).eq("role", "uploader");
+    if (role === "admin" && (adminCount ?? 0) >= 5) return json({ error: "Admin limit reached (max 5)" }, 400);
+    if (role === "uploader" && (uploaderCount ?? 0) >= 200) return json({ error: "Uploader limit reached (max 200)" }, 400);
 
-    const { data: { users }, error: listError } = await admin.auth.admin.listUsers();
-    if (listError) return new Response(JSON.stringify({ error: "Failed to look up users" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Find or create the target user
+    const { data: list, error: listError } = await admin.auth.admin.listUsers();
+    if (listError) return json({ error: "Failed to look up users" }, 500);
+    let target = list.users.find((u) => u.email?.toLowerCase() === email);
+    let createdAccount = false;
 
-    const target = users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (!target) return new Response(JSON.stringify({ error: "User not found. They must sign up first." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!target) {
+      // Create the auth account with the provided password
+      if (!password) {
+        return json({ error: "User does not exist. Provide a password to create the account." }, 400);
+      }
+      const { data: created, error: createErr } = await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+      if (createErr || !created.user) {
+        return json({ error: createErr?.message || "Failed to create user" }, 400);
+      }
+      target = created.user;
+      createdAccount = true;
+    } else if (password) {
+      // Update existing user's password
+      const { error: updErr } = await admin.auth.admin.updateUserById(target.id, { password });
+      if (updErr) return json({ error: `Failed to set password: ${updErr.message}` }, 400);
+    }
 
-    // When promoting to admin: target MUST currently be an uploader, and their uploader role is removed.
+    // Promotion to admin: target must currently be an uploader; remove uploader role
     if (role === "admin") {
       const { data: targetRoles } = await admin.from("user_roles").select("role").eq("user_id", target.id);
-      const isUploader = (targetRoles ?? []).some((r) => r.role === "uploader");
-      if (!isUploader) {
-        return new Response(JSON.stringify({ error: "Only existing uploaders can be promoted to admin" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      // Remove uploader role so they're admin only
+      const hasAdmin = (targetRoles ?? []).some((r) => r.role === "admin");
+      if (hasAdmin) return json({ error: "User is already an admin" }, 400);
       await admin.from("user_roles").delete().eq("user_id", target.id).eq("role", "uploader");
     }
 
     const { error: insertError } = await admin.from("user_roles").insert({ user_id: target.id, role });
     if (insertError) {
       const msg = insertError.message.includes("duplicate") ? "User already has this role" : insertError.message;
-      return new Response(JSON.stringify({ error: msg }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return json({ error: msg }, 400);
     }
 
-    return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return json({ success: true, created: createdAccount, email, role });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ error: message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return json({ error: message }, 500);
   }
 });
