@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, LogIn, LogOut, Shield, User, Check, Send } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
@@ -15,6 +15,36 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
   const [showAdmin, setShowAdmin] = useState(false);
   const [showApply, setShowApply] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwInfo, setPwInfo] = useState<string | null>(null);
+
+  const handleChangePassword = async () => {
+    setPwError(null); setPwInfo(null);
+    if (newPw.length < 6) { setPwError("Password must be at least 6 characters."); return; }
+    if (newPw !== confirmPw) { setPwError("Passwords do not match."); return; }
+    setPwBusy(true);
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    setPwBusy(false);
+    if (error) { setPwError(error.message); return; }
+    setPwInfo("Password updated successfully.");
+    setNewPw(""); setConfirmPw("");
+    setTimeout(() => { setShowChangePw(false); setPwInfo(null); }, 1500);
+  };
+
+  const handleSendReset = async () => {
+    if (!user?.email) return;
+    setPwError(null); setPwInfo(null); setPwBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setPwBusy(false);
+    if (error) setPwError(error.message);
+    else setPwInfo("Reset link sent to " + user.email);
+  };
 
   const fetchPreferences = async () => {
     if (!user) {
