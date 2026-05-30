@@ -11,14 +11,35 @@ const ResetPassword = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Supabase puts the recovery token in the URL hash; the client will trigger onAuthStateChange
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
+    let cancelled = false;
+
+    // Supabase puts the recovery token in the URL hash (#access_token=...&type=recovery)
+    // The client auto-processes it; we listen for the event.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
+        setReady(true);
+        setChecking(false);
+      }
     });
-    supabase.auth.getSession().then(({ data }) => { if (data.session) setReady(true); });
-    return () => sub.subscription.unsubscribe();
+
+    // Fallback: if a session already exists (recovery hash already processed,
+    // or user is logged in and wants to change password), allow the form.
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      if (data.session) setReady(true);
+      setChecking(false);
+    });
+
+    // Safety timeout — if nothing arrives in 4s, stop the spinner so the user sees a message
+    const timer = setTimeout(() => {
+      if (!cancelled) setChecking(false);
+    }, 4000);
+
+    return () => { cancelled = true; clearTimeout(timer); sub.subscription.unsubscribe(); };
   }, []);
 
   const submit = async () => {
@@ -28,11 +49,11 @@ const ResetPassword = () => {
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (error) setError(error.message);
-    else {
-      setMessage("Password updated. Redirecting...");
-      setTimeout(() => navigate("/"), 1500);
-    }
+    if (error) { setError(error.message); return; }
+    setMessage("Password updated. Please sign in with your new password.");
+    // Sign out so they re-authenticate with the new password
+    await supabase.auth.signOut();
+    setTimeout(() => navigate("/"), 1500);
   };
 
   return (
@@ -42,8 +63,20 @@ const ResetPassword = () => {
           <KeyRound size={20} className="text-primary" />
           <h1 className="text-foreground font-semibold text-lg">Reset password</h1>
         </div>
-        {!ready ? (
+        {checking ? (
           <p className="text-muted-foreground text-sm">Validating reset link...</p>
+        ) : !ready ? (
+          <div className="space-y-3">
+            <p className="text-destructive text-sm">
+              This reset link is invalid or has expired.
+            </p>
+            <p className="text-muted-foreground text-xs">
+              Open the most recent password-reset email and tap the link again. Each link can only be used once and expires after 1 hour.
+            </p>
+            <button onClick={() => navigate("/")} className="w-full bg-secondary text-foreground rounded-xl py-3 font-semibold text-sm">
+              Back to app
+            </button>
+          </div>
         ) : (
           <div className="space-y-4">
             <div>
