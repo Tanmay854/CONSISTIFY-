@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, LogIn, LogOut, Shield, User, Check, Send } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
@@ -15,6 +15,36 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
   const [showAdmin, setShowAdmin] = useState(false);
   const [showApply, setShowApply] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwInfo, setPwInfo] = useState<string | null>(null);
+
+  const handleChangePassword = async () => {
+    setPwError(null); setPwInfo(null);
+    if (newPw.length < 6) { setPwError("Password must be at least 6 characters."); return; }
+    if (newPw !== confirmPw) { setPwError("Passwords do not match."); return; }
+    setPwBusy(true);
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    setPwBusy(false);
+    if (error) { setPwError(error.message); return; }
+    setPwInfo("Password updated successfully.");
+    setNewPw(""); setConfirmPw("");
+    setTimeout(() => { setShowChangePw(false); setPwInfo(null); }, 1500);
+  };
+
+  const handleSendReset = async () => {
+    if (!user?.email) return;
+    setPwError(null); setPwInfo(null); setPwBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setPwBusy(false);
+    if (error) setPwError(error.message);
+    else setPwInfo("Reset link sent to " + user.email);
+  };
 
   const fetchPreferences = async () => {
     if (!user) {
@@ -179,6 +209,56 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
                 <Shield size={18} className="text-primary" />
                 <span className="text-foreground text-sm font-medium">Admin Panel</span>
               </button>
+            </div>
+          )}
+
+          {/* Change password */}
+          {user && (
+            <div className="px-5 py-4 border-t border-border">
+              {!showChangePw ? (
+                <button
+                  onClick={() => { setShowChangePw(true); setPwError(null); setPwInfo(null); }}
+                  className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+                >
+                  <KeyRound size={18} className="text-primary" />
+                  <span className="text-foreground text-sm font-medium">Change Password</span>
+                </button>
+              ) : (
+                <div className="space-y-3 bg-secondary/40 rounded-xl p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-foreground text-sm font-semibold">Change Password</span>
+                    <button onClick={() => { setShowChangePw(false); setNewPw(""); setConfirmPw(""); setPwError(null); setPwInfo(null); }}>
+                      <X size={16} className="text-muted-foreground" />
+                    </button>
+                  </div>
+                  <input
+                    type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)}
+                    placeholder="New password (min 6 chars)"
+                    className="w-full bg-background text-foreground rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <input
+                    type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full bg-background text-foreground rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  {pwError && <p className="text-destructive text-xs">{pwError}</p>}
+                  {pwInfo && <p className="text-primary text-xs">{pwInfo}</p>}
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={pwBusy || !newPw || !confirmPw}
+                    className="w-full bg-primary text-primary-foreground rounded-lg py-2 font-semibold text-sm disabled:opacity-50"
+                  >
+                    {pwBusy ? "Updating..." : "Update password"}
+                  </button>
+                  <button
+                    onClick={handleSendReset}
+                    disabled={pwBusy}
+                    className="w-full text-muted-foreground text-xs hover:text-primary py-1 disabled:opacity-50"
+                  >
+                    Forgot current password? Email me a reset link
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

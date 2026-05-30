@@ -30,12 +30,18 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
 
   const handleForgot = async () => {
     setError(null); setInfo(null);
-    if (!email) { setError("Enter your email first."); return; }
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized || !normalized.includes("@")) {
+      setError("Enter your email above first, then tap Forgot password.");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(normalized, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
-    if (error) setError(error.message);
-    else setInfo("Password reset link sent to your email.");
+    setLoading(false);
+    if (error) { setError(error.message); return; }
+    setInfo("If an account exists for this email, a reset link has been sent. Check your inbox (and spam folder).");
   };
 
   const handleApply = async () => {
