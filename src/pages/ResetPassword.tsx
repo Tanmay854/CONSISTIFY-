@@ -3,6 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { KeyRound } from "lucide-react";
 
+const hasRecoveryHash = () => {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  return hash.get("type") === "recovery" && hash.has("access_token") && hash.has("refresh_token");
+};
+
+const hasRecoveryCode = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.has("code") || params.get("type") === "recovery";
+};
+
 const ResetPassword = () => {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
@@ -16,22 +26,47 @@ const ResetPassword = () => {
   useEffect(() => {
     let cancelled = false;
 
+    const markReady = () => {
+      setReady(true);
+      setChecking(false);
+    };
+
+    const finishChecking = () => setChecking(false);
+
     // Supabase puts the recovery token in the URL hash (#access_token=...&type=recovery)
     // The client auto-processes it; we listen for the event.
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
-      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
-        setReady(true);
-        setChecking(false);
-      }
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) markReady();
     });
+
+    const prepareRecovery = async () => {
+      if (hasRecoveryCode()) {
+        const code = new URLSearchParams(window.location.search).get("code");
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (cancelled) return;
+          if (error) setError(error.message);
+          else markReady();
+          window.history.replaceState(null, "", `${window.location.origin}/reset-password`);
+          finishChecking();
+          return;
+        }
+      }
+
+      // When opened from iPhone/Gmail, the auth library can take a moment to
+      // process the hash. Seeing the recovery hash means this is a valid reset attempt.
+      if (hasRecoveryHash()) markReady();
+    };
+
+    prepareRecovery();
 
     // Fallback: if a session already exists (recovery hash already processed,
     // or user is logged in and wants to change password), allow the form.
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
-      if (data.session) setReady(true);
-      setChecking(false);
+      if (data.session) markReady();
+      else finishChecking();
     });
 
     // Safety timeout — if nothing arrives in 4s, stop the spinner so the user sees a message
