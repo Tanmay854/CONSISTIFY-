@@ -8,10 +8,7 @@ const hasRecoveryHash = () => {
   return hash.get("type") === "recovery" && hash.has("access_token") && hash.has("refresh_token");
 };
 
-const hasRecoveryCode = () => {
-  const params = new URLSearchParams(window.location.search);
-  return params.has("code") || params.get("type") === "recovery";
-};
+const cleanResetUrl = () => window.history.replaceState(null, "", `${window.location.origin}/reset-password`);
 
 const ResetPassword = () => {
   const navigate = useNavigate();
