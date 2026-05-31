@@ -8,10 +8,7 @@ const hasRecoveryHash = () => {
   return hash.get("type") === "recovery" && hash.has("access_token") && hash.has("refresh_token");
 };
 
-const hasRecoveryCode = () => {
-  const params = new URLSearchParams(window.location.search);
-  return params.has("code") || params.get("type") === "recovery";
-};
+const cleanResetUrl = () => window.history.replaceState(null, "", `${window.location.origin}/reset-password`);
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -41,22 +38,35 @@ const ResetPassword = () => {
     });
 
     const prepareRecovery = async () => {
-      if (hasRecoveryCode()) {
-        const code = new URLSearchParams(window.location.search).get("code");
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (cancelled) return;
-          if (error) setError(error.message);
-          else markReady();
-          window.history.replaceState(null, "", `${window.location.origin}/reset-password`);
-          finishChecking();
-          return;
-        }
+      const search = new URLSearchParams(window.location.search);
+      const code = search.get("code");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (cancelled) return;
+        if (error) setError(error.message);
+        else markReady();
+        cleanResetUrl();
+        finishChecking();
+        return;
       }
 
       // When opened from iPhone/Gmail, the auth library can take a moment to
       // process the hash. Seeing the recovery hash means this is a valid reset attempt.
-      if (hasRecoveryHash()) markReady();
+      if (hasRecoveryHash()) {
+        const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const access_token = hash.get("access_token");
+        const refresh_token = hash.get("refresh_token");
+
+        if (access_token && refresh_token) {
+          const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+          if (cancelled) return;
+          if (error) setError(error.message);
+          else markReady();
+          cleanResetUrl();
+          finishChecking();
+          return;
+        }
+      }
     };
 
     prepareRecovery();
