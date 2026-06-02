@@ -250,13 +250,6 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
                   >
                     {pwBusy ? "Updating..." : "Update password"}
                   </button>
-                  <button
-                    onClick={handleSendReset}
-                    disabled={pwBusy}
-                    className="w-full text-muted-foreground text-xs hover:text-primary py-1 disabled:opacity-50"
-                  >
-                    Forgot current password? Email me a reset link
-                  </button>
                 </div>
               )}
             </div>
