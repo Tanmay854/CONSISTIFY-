@@ -158,15 +158,10 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
           {info && <p className="text-primary text-xs">{info}</p>}
 
           {mode === "login" ? (
-            <>
-              <button onClick={handleLogin} disabled={loading || !email || !password}
-                className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2">
-                <LogIn size={16} /> {loading ? "Signing in..." : "Sign In"}
-              </button>
-              <button onClick={handleForgot} className="w-full text-muted-foreground text-xs text-center py-1 hover:text-primary">
-                Forgot password?
-              </button>
-            </>
+            <button onClick={handleLogin} disabled={loading || !email || !password}
+              className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2">
+              <LogIn size={16} /> {loading ? "Signing in..." : "Sign In"}
+            </button>
           ) : (
             <button onClick={handleApply} disabled={loading}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2">
