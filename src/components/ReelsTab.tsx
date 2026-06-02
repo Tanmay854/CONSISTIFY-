@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Play, ExternalLink, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
 
 interface Reel {
@@ -68,7 +69,7 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
   useEffect(() => {
     setIsPlaying(isActive);
     if (isActive && !reel.id.startsWith("d")) {
-      supabase.from("content_views").insert({ content_type: "reel", content_id: reel.id });
+      trackView("reel", reel.id);
     }
   }, [isActive, reel.id]);
 

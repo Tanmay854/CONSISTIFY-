@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
 
 interface QuoteCard {
@@ -23,7 +24,7 @@ const PhotoCard = ({ quote, onReport }: { quote: QuoteCard; onReport: (q: QuoteC
         entries.forEach((e) => {
           if (e.isIntersecting && e.intersectionRatio > 0.6 && !tracked.current) {
             tracked.current = true;
-            supabase.from("content_views").insert({ content_type: "quote", content_id: quote.id });
+            trackView("quote", quote.id);
           }
         });
       },

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Play, Pause, SkipForward, SkipBack, Heart, Shuffle, Repeat, Volume2, ChevronDown, Music2, Flag } from "lucide-react";
 import ReportDialog from "@/components/ReportDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { trackView } from "@/lib/trackView";
 
 interface Track {
   id: string;
@@ -195,7 +196,7 @@ const MusicTab = () => {
         audio.play().catch(() => {});
         if (!trackedListens.current.has(playingTrack.id)) {
           trackedListens.current.add(playingTrack.id);
-          supabase.from("content_views").insert({ content_type: "music", content_id: playingTrack.id });
+          trackView("music", playingTrack.id);
         }
       } else {
         audio.pause();
