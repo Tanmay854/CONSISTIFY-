@@ -28,21 +28,6 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
     close();
   };
 
-  const handleForgot = async () => {
-    setError(null); setInfo(null);
-    const normalized = email.trim().toLowerCase();
-    if (!normalized || !normalized.includes("@")) {
-      setError("Enter your email above first, then tap Forgot password.");
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(normalized, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (error) { setError(error.message); return; }
-    setInfo("If an account exists for this email, a reset link has been sent. Check your inbox (and spam folder).");
-  };
 
   const handleApply = async () => {
     setError(null); setInfo(null);
