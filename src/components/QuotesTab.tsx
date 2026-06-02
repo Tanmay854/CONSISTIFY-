@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
 
 interface QuoteCard {
