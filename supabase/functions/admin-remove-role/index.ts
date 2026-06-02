@@ -41,12 +41,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fully delete the auth user first so the email is freed up and they cannot log back in.
-    const { error: authDelErr } = await admin.auth.admin.deleteUser(user_id, false);
-    if (authDelErr) {
-      return new Response(JSON.stringify({ error: "Failed to delete account: " + authDelErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Only remove the role row — keep the auth account and all their uploads intact.
+    // This way, if they are re-granted the role with the same email, they regain
+    // ownership of all their previous videos, music, quotes and view counts.
+    const { error: roleDelErr } = await admin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", user_id)
+      .eq("role", role);
+    if (roleDelErr) {
+      return new Response(JSON.stringify({ error: "Failed to remove role: " + roleDelErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    await admin.from("user_roles").delete().eq("user_id", user_id);
+
+    // Clear any pending/approved application so they can re-apply or be re-granted cleanly.
     await admin.from("uploader_applications").delete().eq("user_id", user_id);
 
     return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
