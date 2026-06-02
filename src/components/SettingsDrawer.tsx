@@ -35,16 +35,6 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
     setTimeout(() => { setShowChangePw(false); setPwInfo(null); }, 1500);
   };
 
-  const handleSendReset = async () => {
-    if (!user?.email) return;
-    setPwError(null); setPwInfo(null); setPwBusy(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setPwBusy(false);
-    if (error) setPwError(error.message);
-    else setPwInfo("Reset link sent to " + user.email);
-  };
 
   const fetchPreferences = async () => {
     if (!user) {
@@ -249,13 +239,6 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
                     className="w-full bg-primary text-primary-foreground rounded-lg py-2 font-semibold text-sm disabled:opacity-50"
                   >
                     {pwBusy ? "Updating..." : "Update password"}
-                  </button>
-                  <button
-                    onClick={handleSendReset}
-                    disabled={pwBusy}
-                    className="w-full text-muted-foreground text-xs hover:text-primary py-1 disabled:opacity-50"
-                  >
-                    Forgot current password? Email me a reset link
                   </button>
                 </div>
               )}

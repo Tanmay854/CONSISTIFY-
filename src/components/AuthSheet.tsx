@@ -28,21 +28,6 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
     close();
   };
 
-  const handleForgot = async () => {
-    setError(null); setInfo(null);
-    const normalized = email.trim().toLowerCase();
-    if (!normalized || !normalized.includes("@")) {
-      setError("Enter your email above first, then tap Forgot password.");
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(normalized, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (error) { setError(error.message); return; }
-    setInfo("If an account exists for this email, a reset link has been sent. Check your inbox (and spam folder).");
-  };
 
   const handleApply = async () => {
     setError(null); setInfo(null);
@@ -158,15 +143,10 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
           {info && <p className="text-primary text-xs">{info}</p>}
 
           {mode === "login" ? (
-            <>
-              <button onClick={handleLogin} disabled={loading || !email || !password}
-                className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2">
-                <LogIn size={16} /> {loading ? "Signing in..." : "Sign In"}
-              </button>
-              <button onClick={handleForgot} className="w-full text-muted-foreground text-xs text-center py-1 hover:text-primary">
-                Forgot password?
-              </button>
-            </>
+            <button onClick={handleLogin} disabled={loading || !email || !password}
+              className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2">
+              <LogIn size={16} /> {loading ? "Signing in..." : "Sign In"}
+            </button>
           ) : (
             <button onClick={handleApply} disabled={loading}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2">
