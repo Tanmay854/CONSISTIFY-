@@ -196,7 +196,7 @@ const MusicTab = () => {
         audio.play().catch(() => {});
         if (!trackedListens.current.has(playingTrack.id)) {
           trackedListens.current.add(playingTrack.id);
-          supabase.from("content_views").insert({ content_type: "music", content_id: playingTrack.id });
+          trackView("music", playingTrack.id);
         }
       } else {
         audio.pause();
