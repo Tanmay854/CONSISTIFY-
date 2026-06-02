@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Play, Pause, SkipForward, SkipBack, Heart, Shuffle, Repeat, Volume2, ChevronDown, Music2, Flag } from "lucide-react";
 import ReportDialog from "@/components/ReportDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { trackView } from "@/lib/trackView";
 
 interface Track {
   id: string;
