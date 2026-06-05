@@ -1,8 +1,28 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import Hls from "hls.js";
 import { Play, ExternalLink, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
+
+const attachHls = (video: HTMLVideoElement, url: string): (() => void) => {
+  if (!url.toLowerCase().includes(".m3u8")) {
+    video.src = url;
+    return () => {};
+  }
+  if (video.canPlayType("application/vnd.apple.mpegurl")) {
+    video.src = url;
+    return () => {};
+  }
+  if (Hls.isSupported()) {
+    const hls = new Hls({ enableWorker: true });
+    hls.loadSource(url);
+    hls.attachMedia(video);
+    return () => hls.destroy();
+  }
+  video.src = url;
+  return () => {};
+};
 
 interface Reel {
   id: string;
@@ -72,6 +92,12 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
       trackView("reel", reel.id);
     }
   }, [isActive, reel.id]);
+
+  useEffect(() => {
+    if (!hasVideo || !videoRef.current) return;
+    const cleanup = attachHls(videoRef.current, reel.video_url);
+    return cleanup;
+  }, [hasVideo, reel.video_url]);
 
   useEffect(() => {
     if (!hasVideo || !videoRef.current) return;
