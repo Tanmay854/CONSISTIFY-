@@ -124,7 +124,6 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
       {hasVideo ? (
         <video
           ref={videoRef}
-          src={reel.video_url}
           className="absolute inset-0 w-full h-full"
           style={{ objectFit: (reel.video_fit as any) || "cover" }}
           autoPlay={isActive}
