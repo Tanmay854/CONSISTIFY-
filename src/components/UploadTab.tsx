@@ -386,7 +386,7 @@ const UploadTab = () => {
                         );
                       })}
                     </div>
-                    {videoPreviewUrl && (
+                    {videoPreviewUrl ? (
                       <div className="relative w-full aspect-[9/16] max-h-72 bg-black rounded-xl overflow-hidden mx-auto">
                         <video
                           key={videoPreviewUrl + videoFit}
@@ -399,8 +399,12 @@ const UploadTab = () => {
                           playsInline
                         />
                       </div>
+                    ) : (
+                      <div className="w-full p-4 rounded-xl bg-secondary text-muted-foreground text-[11px] text-center">
+                        Preview hidden for large files to keep the app stable. Upload will work normally.
+                      </div>
                     )}
-                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">Preview — viewers will see the video in this mode.</p>
+                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">Viewers will see the video in this mode.</p>
                   </div>
                 )}
               </>
