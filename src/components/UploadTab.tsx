@@ -26,7 +26,11 @@ const UploadTab = () => {
   const [videoCategory, setVideoCategory] = useState("Motivation");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoFit, setVideoFit] = useState<"cover" | "contain" | "fill">("cover");
-  const videoPreviewUrl = videoFile ? URL.createObjectURL(videoFile) : null;
+  // Only build a preview URL for smaller files — decoding a large local video in the
+  // Android WebView is the main cause of upload-time crashes.
+  const PREVIEW_MAX_BYTES = 40 * 1024 * 1024; // 40 MB
+  const canPreviewVideo = !!videoFile && videoFile.size <= PREVIEW_MAX_BYTES;
+  const videoPreviewUrl = canPreviewVideo ? URL.createObjectURL(videoFile!) : null;
 
 
   // Music fields
@@ -98,17 +102,21 @@ const UploadTab = () => {
       if (activeType === "video") {
         if (!videoTitle.trim()) { setError("Title required"); setLoading(false); return; }
         if (!videoFile) { setError("Select a video file from your device"); setLoading(false); return; }
-        const duration = await new Promise<number>((resolve) => {
-          const v = document.createElement("video");
-          v.preload = "metadata";
-          v.onloadedmetadata = () => resolve(v.duration);
-          v.onerror = () => resolve(0);
-          v.src = URL.createObjectURL(videoFile);
-        });
-        if (duration > 180) {
-          setError(`Video must be 3 minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
-          setLoading(false);
-          return;
+        // Only probe duration for smaller files. Decoding a large local video in the
+        // Android WebView for a duration check can OOM-crash the app.
+        if (videoFile.size <= PREVIEW_MAX_BYTES) {
+          const duration = await new Promise<number>((resolve) => {
+            const v = document.createElement("video");
+            v.preload = "metadata";
+            v.onloadedmetadata = () => resolve(v.duration);
+            v.onerror = () => resolve(0);
+            v.src = URL.createObjectURL(videoFile);
+          });
+          if (duration > 180) {
+            setError(`Video must be 3 minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
+            setLoading(false);
+            return;
+          }
         }
 
         // 1. Ask edge function for a Bunny TUS upload ticket
@@ -126,9 +134,11 @@ const UploadTab = () => {
           const upload = new tus.Upload(videoFile, {
             endpoint: ticket.tusEndpoint,
             retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
-            // Stream in 5MB chunks so mobile WebViews don't OOM on large videos
-            chunkSize: 5 * 1024 * 1024,
+            // Small chunks + no resume storage so mobile WebViews don't OOM
+            chunkSize: 2 * 1024 * 1024,
             parallelUploads: 1,
+            storeFingerprintForResuming: false,
+            removeFingerprintOnSuccess: true,
             headers: {
               AuthorizationSignature: ticket.signature,
               AuthorizationExpire: String(ticket.expire),
@@ -143,6 +153,7 @@ const UploadTab = () => {
           upload.start();
         });
         if (uploadErr) { setError("Upload failed: " + uploadErr); setLoading(false); return; }
+
 
         // 3. Save Bunny playback URL into reels
         const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playbackUrl, category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
@@ -375,7 +386,7 @@ const UploadTab = () => {
                         );
                       })}
                     </div>
-                    {videoPreviewUrl && (
+                    {videoPreviewUrl ? (
                       <div className="relative w-full aspect-[9/16] max-h-72 bg-black rounded-xl overflow-hidden mx-auto">
                         <video
                           key={videoPreviewUrl + videoFit}
@@ -388,8 +399,12 @@ const UploadTab = () => {
                           playsInline
                         />
                       </div>
+                    ) : (
+                      <div className="w-full p-4 rounded-xl bg-secondary text-muted-foreground text-[11px] text-center">
+                        Preview hidden for large files to keep the app stable. Upload will work normally.
+                      </div>
                     )}
-                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">Preview — viewers will see the video in this mode.</p>
+                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">Viewers will see the video in this mode.</p>
                   </div>
                 )}
               </>

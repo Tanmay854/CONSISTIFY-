@@ -57,9 +57,11 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
       const upload = new tus.Upload(file, {
         endpoint: data.tusEndpoint,
         retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
-        // Stream in 5MB chunks so mobile WebViews don't OOM on large videos
-        chunkSize: 5 * 1024 * 1024,
+        // Small chunks + no resume storage so mobile WebViews don't OOM
+        chunkSize: 2 * 1024 * 1024,
         parallelUploads: 1,
+        storeFingerprintForResuming: false,
+        removeFingerprintOnSuccess: true,
         headers: {
           AuthorizationSignature: data.signature,
           AuthorizationExpire: String(data.expire),
