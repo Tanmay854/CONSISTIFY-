@@ -26,7 +26,11 @@ const UploadTab = () => {
   const [videoCategory, setVideoCategory] = useState("Motivation");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoFit, setVideoFit] = useState<"cover" | "contain" | "fill">("cover");
-  const videoPreviewUrl = videoFile ? URL.createObjectURL(videoFile) : null;
+  // Only build a preview URL for smaller files — decoding a large local video in the
+  // Android WebView is the main cause of upload-time crashes.
+  const PREVIEW_MAX_BYTES = 40 * 1024 * 1024; // 40 MB
+  const canPreviewVideo = !!videoFile && videoFile.size <= PREVIEW_MAX_BYTES;
+  const videoPreviewUrl = canPreviewVideo ? URL.createObjectURL(videoFile!) : null;
 
 
   // Music fields
