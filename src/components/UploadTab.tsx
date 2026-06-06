@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Film, Music2, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
+import * as tus from "tus-js-client";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MyUploads from "@/components/MyUploads";
@@ -17,6 +18,7 @@ const UploadTab = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Video fields
   const [videoTitle, setVideoTitle] = useState("");
@@ -108,9 +110,39 @@ const UploadTab = () => {
           setLoading(false);
           return;
         }
-        const finalUrl = await uploadFileToBucket("videos", videoFile);
-        if (!finalUrl) { setLoading(false); return; }
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: finalUrl, category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
+
+        // 1. Ask edge function for a Bunny TUS upload ticket
+        setUploadProgress(0);
+        const { data: ticket, error: fnErr } = await supabase.functions.invoke("bunny-create-video", {
+          body: { title: videoTitle.trim() },
+        });
+        if (fnErr || !ticket?.guid) {
+          setError(fnErr?.message || ticket?.error || "Failed to start upload");
+          setLoading(false); return;
+        }
+
+        // 2. Direct TUS upload to Bunny.net (no Supabase storage)
+        const uploadErr = await new Promise<string | null>((resolve) => {
+          const upload = new tus.Upload(videoFile, {
+            endpoint: ticket.tusEndpoint,
+            retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
+            headers: {
+              AuthorizationSignature: ticket.signature,
+              AuthorizationExpire: String(ticket.expire),
+              VideoId: ticket.guid,
+              LibraryId: String(ticket.libraryId),
+            },
+            metadata: { filetype: videoFile.type, title: videoTitle.trim() },
+            onError: (err) => resolve(err?.message || String(err)),
+            onProgress: (sent, total) => setUploadProgress(Math.round((sent / total) * 100)),
+            onSuccess: () => resolve(null),
+          });
+          upload.start();
+        });
+        if (uploadErr) { setError("Upload failed: " + uploadErr); setLoading(false); return; }
+
+        // 3. Save Bunny playback URL into reels
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playbackUrl, category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
 
       } else if (activeType === "music") {
@@ -553,7 +585,7 @@ const UploadTab = () => {
               disabled={loading}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
             >
-              {success ? (<><Check size={18} />Published!</>) : loading ? "Publishing..." : (<><Upload size={16} />Publish</>)}
+              {success ? (<><Check size={18} />Published!</>) : loading ? (activeType === "video" && uploadProgress > 0 ? `Uploading ${uploadProgress}%` : "Publishing...") : (<><Upload size={16} />Publish</>)}
             </button>
           </div>
         </>
