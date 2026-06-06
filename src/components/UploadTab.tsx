@@ -102,17 +102,21 @@ const UploadTab = () => {
       if (activeType === "video") {
         if (!videoTitle.trim()) { setError("Title required"); setLoading(false); return; }
         if (!videoFile) { setError("Select a video file from your device"); setLoading(false); return; }
-        const duration = await new Promise<number>((resolve) => {
-          const v = document.createElement("video");
-          v.preload = "metadata";
-          v.onloadedmetadata = () => resolve(v.duration);
-          v.onerror = () => resolve(0);
-          v.src = URL.createObjectURL(videoFile);
-        });
-        if (duration > 180) {
-          setError(`Video must be 3 minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
-          setLoading(false);
-          return;
+        // Only probe duration for smaller files. Decoding a large local video in the
+        // Android WebView for a duration check can OOM-crash the app.
+        if (videoFile.size <= PREVIEW_MAX_BYTES) {
+          const duration = await new Promise<number>((resolve) => {
+            const v = document.createElement("video");
+            v.preload = "metadata";
+            v.onloadedmetadata = () => resolve(v.duration);
+            v.onerror = () => resolve(0);
+            v.src = URL.createObjectURL(videoFile);
+          });
+          if (duration > 180) {
+            setError(`Video must be 3 minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
+            setLoading(false);
+            return;
+          }
         }
 
         // 1. Ask edge function for a Bunny TUS upload ticket
@@ -130,9 +134,11 @@ const UploadTab = () => {
           const upload = new tus.Upload(videoFile, {
             endpoint: ticket.tusEndpoint,
             retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
-            // Stream in 5MB chunks so mobile WebViews don't OOM on large videos
-            chunkSize: 5 * 1024 * 1024,
+            // Small chunks + no resume storage so mobile WebViews don't OOM
+            chunkSize: 2 * 1024 * 1024,
             parallelUploads: 1,
+            storeFingerprintForResuming: false,
+            removeFingerprintOnSuccess: true,
             headers: {
               AuthorizationSignature: ticket.signature,
               AuthorizationExpire: String(ticket.expire),
@@ -147,6 +153,7 @@ const UploadTab = () => {
           upload.start();
         });
         if (uploadErr) { setError("Upload failed: " + uploadErr); setLoading(false); return; }
+
 
         // 3. Save Bunny playback URL into reels
         const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playbackUrl, category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
