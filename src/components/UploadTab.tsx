@@ -585,7 +585,7 @@ const UploadTab = () => {
               disabled={loading}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
             >
-              {success ? (<><Check size={18} />Published!</>) : loading ? "Publishing..." : (<><Upload size={16} />Publish</>)}
+              {success ? (<><Check size={18} />Published!</>) : loading ? (activeType === "video" && uploadProgress > 0 ? `Uploading ${uploadProgress}%` : "Publishing...") : (<><Upload size={16} />Publish</>)}
             </button>
           </div>
         </>
