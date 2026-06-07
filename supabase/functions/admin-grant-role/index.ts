@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SUPER_ADMIN_EMAIL = "tanmaynimbalkar854@gmail.com";
+
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
