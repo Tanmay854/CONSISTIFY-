@@ -29,14 +29,16 @@ Deno.serve(async (req) => {
     }
 
     // Only super admin can remove admins
-    if (role === "admin" && caller.email?.toLowerCase() !== SUPER_ADMIN_EMAIL) {
+    const { data: callerSuper } = await admin.from("user_roles").select("role").eq("user_id", caller.id).eq("role", "super_admin");
+    const isCallerSuper = !!(callerSuper && callerSuper.length > 0);
+    if (role === "admin" && !isCallerSuper) {
       return new Response(JSON.stringify({ error: "Only the super-admin can remove admins" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Cannot remove super-admin
     if (role === "admin") {
-      const { data: { user: target } } = await admin.auth.admin.getUserById(user_id);
-      if (target?.email?.toLowerCase() === SUPER_ADMIN_EMAIL) {
+      const { data: targetSuper } = await admin.from("user_roles").select("role").eq("user_id", user_id).eq("role", "super_admin");
+      if (targetSuper && targetSuper.length > 0) {
         return new Response(JSON.stringify({ error: "Super-admin cannot be removed" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
