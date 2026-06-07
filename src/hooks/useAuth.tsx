@@ -28,14 +28,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [pendingApplicationMessage, setPendingApplicationMessage] = useState<string | null>(null);
 
   const enforceAccess = useCallback(async (u: User) => {
-    const isSuper = u.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
-
     const { data: roleRows } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", u.id);
     const rs = (roleRows || []).map(r => r.role as AppRole);
     setRoles(rs);
+
+    const isSuper = rs.includes("super_admin");
 
     // Super-admin or anyone with a role (admin/uploader) is allowed in.
     if (isSuper || rs.length > 0) {
