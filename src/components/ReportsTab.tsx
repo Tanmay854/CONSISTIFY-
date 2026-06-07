@@ -16,9 +16,12 @@ interface Report {
 
 type Filter = "admitted" | "rejected" | "all";
 
+interface ContentInfo { title: string; uploaderName: string; }
+
 const ReportsTab = () => {
   const { isAdmin } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
+  const [contentMap, setContentMap] = useState<Record<string, ContentInfo>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
 
@@ -28,7 +31,41 @@ const ReportsTab = () => {
     if (filter === "admitted") q = q.eq("status", "admitted");
     else if (filter === "rejected") q = q.eq("status", "rejected");
     const { data } = await q;
-    setReports((data as Report[]) || []);
+    const rows = (data as Report[]) || [];
+    setReports(rows);
+
+    const byType: Record<"video" | "music" | "photo", string[]> = { video: [], music: [], photo: [] };
+    rows.forEach((r) => {
+      if (r.content_type === "video" || r.content_type === "music" || r.content_type === "photo") {
+        byType[r.content_type].push(r.content_id);
+      }
+    });
+
+    const tableFor = { video: "reels" as const, music: "music" as const, photo: "quotes" as const };
+    const fetched: Array<{ id: string; title: string; uploaded_by: string | null }> = [];
+    const uploaderIds = new Set<string>();
+
+    await Promise.all((Object.keys(byType) as Array<keyof typeof byType>).map(async (type) => {
+      const ids = byType[type];
+      if (!ids.length) return;
+      const { data: items } = await supabase.from(tableFor[type]).select("id, title, uploaded_by").in("id", ids);
+      (items as any[] | null)?.forEach((it) => {
+        fetched.push({ id: it.id, title: it.title ?? "(untitled)", uploaded_by: it.uploaded_by });
+        if (it.uploaded_by) uploaderIds.add(it.uploaded_by);
+      });
+    }));
+
+    const profiles: Record<string, string> = {};
+    if (uploaderIds.size) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, display_name").in("user_id", Array.from(uploaderIds));
+      (profs || []).forEach((p: any) => { profiles[p.user_id] = p.display_name || "Unknown"; });
+    }
+
+    const map: Record<string, ContentInfo> = {};
+    fetched.forEach((f) => {
+      map[f.id] = { title: f.title, uploaderName: f.uploaded_by ? (profiles[f.uploaded_by] || "Unknown") : "Unknown" };
+    });
+    setContentMap(map);
     setLoading(false);
   }, [filter]);
 
