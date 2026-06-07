@@ -53,7 +53,7 @@ const MembersManager = () => {
             <h4 className="text-foreground text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5"><Shield size={12} className="text-primary" /> Admins</h4>
             <div className="space-y-2">
               {admins.map((s) => {
-                const isTargetSuper = s.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
+                const isTargetSuper = !!s.is_super;
                 return (
                   <div key={s.user_id + s.role} className="bg-secondary rounded-lg p-3 flex items-center gap-3">
                     <Shield size={14} className="text-primary flex-shrink-0" />
