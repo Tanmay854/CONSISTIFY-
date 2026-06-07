@@ -2,9 +2,7 @@ import { useState, useEffect, useContext, createContext, useCallback } from "rea
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-type AppRole = "admin" | "uploader" | "user";
-
-const SUPER_ADMIN_EMAIL = "tanmaynimbalkar854@gmail.com";
+type AppRole = "admin" | "uploader" | "user" | "super_admin";
 
 interface AuthContextType {
   user: User | null;
