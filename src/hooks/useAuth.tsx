@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const isAdmin = roles.includes("admin");
-  const isSuperAdmin = !!user?.email && user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+  const isSuperAdmin = roles.includes("super_admin");
   const canUpload = isAdmin || roles.includes("uploader");
 
   return (
