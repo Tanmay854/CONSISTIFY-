@@ -33,8 +33,8 @@ Deno.serve(async (req) => {
     if (!app) return new Response(JSON.stringify({ error: "Application not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // Protect super-admin
-    const { data: { user: target } } = await admin.auth.admin.getUserById(app.user_id);
-    if (target?.email?.toLowerCase() === SUPER_ADMIN_EMAIL) {
+    const { data: targetSuper } = await admin.from("user_roles").select("role").eq("user_id", app.user_id).eq("role", "super_admin");
+    if (targetSuper && targetSuper.length > 0) {
       return new Response(JSON.stringify({ error: "Cannot reject super-admin" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
