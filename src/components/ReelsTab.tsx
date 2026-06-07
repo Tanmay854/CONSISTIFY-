@@ -101,13 +101,17 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
 
   useEffect(() => {
     if (!hasVideo || !videoRef.current) return;
-    videoRef.current.muted = muted;
-    if (isPlaying && isActive) {
-      videoRef.current.play().catch(() => {});
+    const v = videoRef.current;
+    v.muted = muted;
+    if (isActive) {
+      try { v.currentTime = trimStart; } catch { /* empty */ }
+      if (isPlaying) v.play().catch(() => {});
+      else v.pause();
     } else {
-      videoRef.current.pause();
+      v.pause();
+      try { v.currentTime = trimStart; } catch { /* empty */ }
     }
-  }, [isPlaying, isActive, hasVideo, muted]);
+  }, [isPlaying, isActive, hasVideo, muted, trimStart]);
 
   const togglePlay = () => {
     if (!hasVideo) return;
