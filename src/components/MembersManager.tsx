@@ -3,13 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Shield, Upload as UploadIcon, Trash2, RefreshCw } from "lucide-react";
 
-const SUPER_ADMIN_EMAIL = "tanmaynimbalkar854@gmail.com";
-
-type Staff = { user_id: string; role: "admin" | "uploader"; email: string | null };
+type Staff = { user_id: string; role: "admin" | "uploader"; email: string | null; is_super?: boolean };
 
 const MembersManager = () => {
-  const { user } = useAuth();
-  const isSuperAdmin = user?.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
+  const { isSuperAdmin } = useAuth();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
