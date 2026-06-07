@@ -25,6 +25,8 @@ Deno.serve(async (req) => {
     if (!callerRoles || callerRoles.length === 0) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { data: roles } = await admin.from("user_roles").select("user_id, role").in("role", ["admin", "uploader"]);
+    const { data: superRoles } = await admin.from("user_roles").select("user_id").eq("role", "super_admin");
+    const superSet = new Set((superRoles || []).map((r) => r.user_id));
     const { data: { users } } = await admin.auth.admin.listUsers();
     const emailById = new Map(users.map((u) => [u.id, u.email]));
 
@@ -32,6 +34,7 @@ Deno.serve(async (req) => {
       user_id: r.user_id,
       role: r.role,
       email: emailById.get(r.user_id) || null,
+      is_super: superSet.has(r.user_id),
     }));
 
     return new Response(JSON.stringify({ staff }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

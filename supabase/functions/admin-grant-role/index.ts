@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SUPER_ADMIN_EMAIL = "tanmaynimbalkar854@gmail.com";
+
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -31,7 +31,9 @@ Deno.serve(async (req) => {
     if (!caller) return json({ error: "Unauthorized" }, 401);
 
     const admin = createClient(supabaseUrl, serviceKey);
-    const isSuper = caller.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
+    const { data: superRows } = await admin.from("user_roles").select("role").eq("user_id", caller.id).eq("role", "super_admin");
+    const isSuper = !!(superRows && superRows.length > 0);
+
 
     const { data: callerRoles } = await admin
       .from("user_roles").select("role").eq("user_id", caller.id).eq("role", "admin");

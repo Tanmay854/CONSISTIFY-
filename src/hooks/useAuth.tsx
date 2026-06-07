@@ -2,9 +2,7 @@ import { useState, useEffect, useContext, createContext, useCallback } from "rea
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-type AppRole = "admin" | "uploader" | "user";
-
-const SUPER_ADMIN_EMAIL = "tanmaynimbalkar854@gmail.com";
+type AppRole = "admin" | "uploader" | "user" | "super_admin";
 
 interface AuthContextType {
   user: User | null;
@@ -30,14 +28,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [pendingApplicationMessage, setPendingApplicationMessage] = useState<string | null>(null);
 
   const enforceAccess = useCallback(async (u: User) => {
-    const isSuper = u.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
-
     const { data: roleRows } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", u.id);
     const rs = (roleRows || []).map(r => r.role as AppRole);
     setRoles(rs);
+
+    const isSuper = rs.includes("super_admin");
 
     // Super-admin or anyone with a role (admin/uploader) is allowed in.
     if (isSuper || rs.length > 0) {
@@ -106,7 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const isAdmin = roles.includes("admin");
-  const isSuperAdmin = !!user?.email && user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+  const isSuperAdmin = roles.includes("super_admin");
   const canUpload = isAdmin || roles.includes("uploader");
 
   return (
