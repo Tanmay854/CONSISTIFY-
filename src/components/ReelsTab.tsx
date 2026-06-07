@@ -76,7 +76,7 @@ const isValidUrl = (url: string): boolean => {
   }
 };
 
-const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isActive: boolean; index: number; muted: boolean; onReport: (r: Reel) => void }) => {
+const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: Reel; isActive: boolean; distance: number; index: number; muted: boolean; onReport: (r: Reel) => void }) => {
   const hasVideo = reel.video_url && reel.video_url.length > 0 && isValidUrl(reel.video_url);
   const gradient = gradients[index % gradients.length];
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -86,6 +86,11 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
 
+  // Only mount the video element (and attach HLS) for the active reel
+  // and its immediate neighbors so swipes feel instant without burning memory.
+  const shouldMount = hasVideo && distance <= 1;
+  const preload = distance === 0 ? "auto" : distance === 1 ? "metadata" : "none";
+
   useEffect(() => {
     setIsPlaying(isActive);
     if (isActive && !reel.id.startsWith("d")) {
@@ -93,14 +98,15 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
     }
   }, [isActive, reel.id]);
 
+  // Attach HLS once per mounted card; never tear down on swipe between neighbors.
   useEffect(() => {
-    if (!hasVideo || !videoRef.current) return;
+    if (!shouldMount || !videoRef.current) return;
     const cleanup = attachHls(videoRef.current, reel.video_url);
     return cleanup;
-  }, [hasVideo, reel.video_url]);
+  }, [shouldMount, reel.video_url]);
 
   useEffect(() => {
-    if (!hasVideo || !videoRef.current) return;
+    if (!shouldMount || !videoRef.current) return;
     const v = videoRef.current;
     v.muted = muted;
     if (isActive) {
@@ -111,7 +117,7 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
       v.pause();
       try { v.currentTime = trimStart; } catch { /* empty */ }
     }
-  }, [isPlaying, isActive, hasVideo, muted, trimStart]);
+  }, [isPlaying, isActive, shouldMount, muted, trimStart]);
 
   const togglePlay = () => {
     if (!hasVideo) return;
@@ -125,7 +131,7 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
       className="relative h-screen w-full snap-start flex items-center justify-center overflow-hidden cursor-pointer"
       onClick={togglePlay}
     >
-      {hasVideo ? (
+      {shouldMount ? (
         <video
           ref={videoRef}
           className="absolute inset-0 w-full h-full"
@@ -134,6 +140,7 @@ const ReelCard = ({ reel, isActive, index, muted, onReport }: { reel: Reel; isAc
           loop
           playsInline
           muted={muted}
+          preload={preload}
           onLoadedMetadata={(e) => {
             if (trimStart > 0) e.currentTarget.currentTime = trimStart;
           }}
@@ -338,7 +345,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
 
         {feed.map((item, index) =>
           item.kind === "reel" ? (
-            <ReelCard key={`r-${item.data.id}`} reel={item.data} isActive={index === activeIndex} index={index} muted={muted} onReport={setReportTarget} />
+            <ReelCard key={`r-${item.data.id}`} reel={item.data} isActive={index === activeIndex} distance={Math.abs(index - activeIndex)} index={index} muted={muted} onReport={setReportTarget} />
           ) : (
             <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={index === activeIndex} />
           )
