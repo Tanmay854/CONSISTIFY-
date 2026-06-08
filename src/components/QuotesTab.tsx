@@ -88,7 +88,7 @@ const QuotesTab = () => {
     const to = from + PAGE_SIZE - 1;
     const { data } = await supabase
       .from("quotes")
-      .select("*")
+      .select("id,title,category,image_url,is_pro,description")
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) {

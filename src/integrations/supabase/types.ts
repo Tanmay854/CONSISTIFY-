@@ -326,6 +326,27 @@ export type Database = {
         }
         Relationships: []
       }
+      view_counts: {
+        Row: {
+          content_id: string
+          content_type: string
+          total_views: number
+          updated_at: string
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          total_views?: number
+          updated_at?: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          total_views?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -339,6 +360,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      refresh_view_counts: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "uploader" | "user" | "super_admin"

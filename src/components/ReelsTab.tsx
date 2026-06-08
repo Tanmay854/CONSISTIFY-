@@ -274,7 +274,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
     const to = from + PAGE_SIZE - 1;
     const { data } = await supabase
       .from("reels")
-      .select("*")
+      .select("id,title,description,category,video_url,video_fit,trim_start,trim_end,author_name,uploaded_by,created_at")
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) {
