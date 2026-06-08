@@ -124,7 +124,7 @@ const MusicTab = () => {
     const to = from + PAGE_SIZE - 1;
     const { data } = await supabase
       .from("music")
-      .select("*")
+      .select("id,title,artist,category,duration,audio_url,image_url,uploaded_by,created_at")
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) {
