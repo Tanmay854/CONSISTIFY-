@@ -82,14 +82,24 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showIcon, setShowIcon] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
+  const infoTimerRef = useRef<number | null>(null);
 
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
 
-  // Only mount the video element (and attach HLS) for the active reel
-  // and its immediate neighbors so swipes feel instant without burning memory.
-  const shouldMount = hasVideo && distance <= 1;
-  const preload = distance === 0 ? "auto" : distance === 1 ? "metadata" : "none";
+  // Preload a wider window so swipes feel instant like Instagram.
+  const shouldMount = hasVideo && distance <= 2;
+  const preload = distance <= 1 ? "auto" : "metadata";
+
+  const revealInfo = () => {
+    setShowInfo(true);
+    if (infoTimerRef.current) window.clearTimeout(infoTimerRef.current);
+    infoTimerRef.current = window.setTimeout(() => setShowInfo(false), 3500);
+  };
+
+  useEffect(() => () => { if (infoTimerRef.current) window.clearTimeout(infoTimerRef.current); }, []);
 
   useEffect(() => {
     setIsPlaying(isActive);
@@ -120,6 +130,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   }, [isPlaying, isActive, shouldMount, muted, trimStart]);
 
   const togglePlay = () => {
+    revealInfo();
     if (!hasVideo) return;
     setIsPlaying((p) => !p);
     setShowIcon(true);
@@ -144,6 +155,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
           onLoadedMetadata={(e) => {
             if (trimStart > 0) e.currentTarget.currentTime = trimStart;
           }}
+          onWaiting={() => setIsLoading(true)}
+          onPlaying={() => setIsLoading(false)}
+          onCanPlay={() => setIsLoading(false)}
+          onLoadedData={() => setIsLoading(false)}
           onTimeUpdate={(e) => {
             const v = e.currentTarget;
             const end = trimEnd ?? Math.min(v.duration || 180, 180);
@@ -159,6 +174,12 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
 
 
       <div className="absolute inset-0 bg-background/40 pointer-events-none" />
+
+      {hasVideo && isActive && isLoading && !showIcon && isPlaying && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <div className="w-10 h-10 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+        </div>
+      )}
 
       {hasVideo && (showIcon || !isPlaying) && (
         <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
@@ -199,17 +220,21 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
         </button>
       )}
 
-      <div className="absolute bottom-24 left-4 right-16 z-20 pointer-events-none">
+      <div
+        className={`absolute bottom-24 left-4 right-16 z-20 pointer-events-none transition-all duration-300 ease-out ${
+          showInfo ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+        }`}
+      >
         <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
           {reel.title}
         </p>
-        {reel.author_name && (
+        {reel.author_name && reel.author_name.toLowerCase() !== "anonymous" && (
           <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate mt-0.5">
             {reel.author_name}
           </p>
         )}
         {reel.description && (
-          <p className="text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1.5 line-clamp-3 whitespace-pre-wrap">
+          <p className="text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1.5 line-clamp-4 whitespace-pre-wrap">
             {reel.description}
           </p>
         )}
