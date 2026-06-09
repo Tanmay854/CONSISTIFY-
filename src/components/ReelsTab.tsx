@@ -90,13 +90,17 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const trimEnd = reel.trim_end ?? null;
 
   // Preload a wider window so swipes feel instant like Instagram.
-  const shouldMount = hasVideo && distance <= 2;
-  const preload = distance <= 1 ? "auto" : "metadata";
+  const shouldMount = hasVideo && distance <= 3;
+  const preload = "auto";
 
-  const revealInfo = () => {
-    setShowInfo(true);
-    if (infoTimerRef.current) window.clearTimeout(infoTimerRef.current);
-    infoTimerRef.current = window.setTimeout(() => setShowInfo(false), 3500);
+  const toggleDescription = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowInfo((s) => {
+      const next = !s;
+      if (infoTimerRef.current) window.clearTimeout(infoTimerRef.current);
+      if (next) infoTimerRef.current = window.setTimeout(() => setShowInfo(false), 5000);
+      return next;
+    });
   };
 
   useEffect(() => () => { if (infoTimerRef.current) window.clearTimeout(infoTimerRef.current); }, []);
