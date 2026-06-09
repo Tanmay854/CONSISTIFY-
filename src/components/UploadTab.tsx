@@ -93,6 +93,29 @@ const UploadTab = () => {
     return data.publicUrl;
   };
 
+  // Music + photos go to Bunny Storage via the edge function (scales to 20+ TB).
+  const uploadToBunny = async (file: File, kind: "audio" | "image"): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setError("Sign in required"); return null; }
+    const form = new FormData();
+    form.append("file", file);
+    form.append("kind", kind);
+    const res = await fetch(
+      `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bunny-storage-upload`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      },
+    );
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.url) {
+      setError(json.error || "Upload failed");
+      return null;
+    }
+    return json.url as string;
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     setSuccess(false);
@@ -179,13 +202,13 @@ const UploadTab = () => {
             setLoading(false);
             return;
           }
-          audioUrl = await uploadFileToBucket("audio", musicFile);
+          audioUrl = await uploadToBunny(musicFile, "audio");
           if (!audioUrl) { setLoading(false); return; }
         }
 
         let coverUrl: string | null = null;
         if (musicCoverFile) {
-          coverUrl = await uploadFileToBucket("quote-images", musicCoverFile);
+          coverUrl = await uploadToBunny(musicCoverFile, "image");
           if (!coverUrl) { setLoading(false); return; }
         }
         const { error: insertErr } = await supabase.from("music").insert({
@@ -200,7 +223,7 @@ const UploadTab = () => {
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "photo") {
         if (!photoTitle.trim() || !photoFile) { setError("Title and image required"); setLoading(false); return; }
-        const url = await uploadFileToBucket("quote-images", photoFile);
+        const url = await uploadToBunny(photoFile, "image");
         if (!url) { setLoading(false); return; }
         const { error: insertErr } = await supabase.from("quotes").insert({
           title: photoTitle.trim(),
