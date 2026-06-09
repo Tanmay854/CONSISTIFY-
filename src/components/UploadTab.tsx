@@ -223,7 +223,7 @@ const UploadTab = () => {
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "photo") {
         if (!photoTitle.trim() || !photoFile) { setError("Title and image required"); setLoading(false); return; }
-        const url = await uploadFileToBucket("quote-images", photoFile);
+        const url = await uploadToBunny(photoFile, "image");
         if (!url) { setLoading(false); return; }
         const { error: insertErr } = await supabase.from("quotes").insert({
           title: photoTitle.trim(),
