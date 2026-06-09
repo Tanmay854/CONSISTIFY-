@@ -134,7 +134,6 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   }, [isPlaying, isActive, shouldMount, muted, trimStart]);
 
   const togglePlay = () => {
-    revealInfo();
     if (!hasVideo) return;
     setIsPlaying((p) => !p);
     setShowIcon(true);
