@@ -220,17 +220,21 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
         </button>
       )}
 
-      <div className="absolute bottom-24 left-4 right-16 z-20 pointer-events-none">
+      <div
+        className={`absolute bottom-24 left-4 right-16 z-20 pointer-events-none transition-all duration-300 ease-out ${
+          showInfo ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+        }`}
+      >
         <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
           {reel.title}
         </p>
-        {reel.author_name && (
+        {reel.author_name && reel.author_name.toLowerCase() !== "anonymous" && (
           <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate mt-0.5">
             {reel.author_name}
           </p>
         )}
         {reel.description && (
-          <p className="text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1.5 line-clamp-3 whitespace-pre-wrap">
+          <p className="text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1.5 line-clamp-4 whitespace-pre-wrap">
             {reel.description}
           </p>
         )}
