@@ -82,12 +82,14 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showIcon, setShowIcon] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
+  const infoTimerRef = useRef<number | null>(null);
 
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
 
-  // Only mount the video element (and attach HLS) for the active reel
-  // and its immediate neighbors so swipes feel instant without burning memory.
+  // Preload a wider window so swipes feel instant like Instagram.
   const shouldMount = hasVideo && distance <= 1;
   const preload = distance === 0 ? "auto" : distance === 1 ? "metadata" : "none";
 
