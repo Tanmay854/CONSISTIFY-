@@ -155,6 +155,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
           onLoadedMetadata={(e) => {
             if (trimStart > 0) e.currentTarget.currentTime = trimStart;
           }}
+          onWaiting={() => setIsLoading(true)}
+          onPlaying={() => setIsLoading(false)}
+          onCanPlay={() => setIsLoading(false)}
+          onLoadedData={() => setIsLoading(false)}
           onTimeUpdate={(e) => {
             const v = e.currentTarget;
             const end = trimEnd ?? Math.min(v.duration || 180, 180);
@@ -170,6 +174,12 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
 
 
       <div className="absolute inset-0 bg-background/40 pointer-events-none" />
+
+      {hasVideo && isActive && isLoading && !showIcon && isPlaying && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <div className="w-10 h-10 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+        </div>
+      )}
 
       {hasVideo && (showIcon || !isPlaying) && (
         <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
