@@ -93,6 +93,29 @@ const UploadTab = () => {
     return data.publicUrl;
   };
 
+  // Music + photos go to Bunny Storage via the edge function (scales to 20+ TB).
+  const uploadToBunny = async (file: File, kind: "audio" | "image"): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setError("Sign in required"); return null; }
+    const form = new FormData();
+    form.append("file", file);
+    form.append("kind", kind);
+    const res = await fetch(
+      `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bunny-storage-upload`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      },
+    );
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.url) {
+      setError(json.error || "Upload failed");
+      return null;
+    }
+    return json.url as string;
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     setSuccess(false);
