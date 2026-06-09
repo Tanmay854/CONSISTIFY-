@@ -202,13 +202,13 @@ const UploadTab = () => {
             setLoading(false);
             return;
           }
-          audioUrl = await uploadFileToBucket("audio", musicFile);
+          audioUrl = await uploadToBunny(musicFile, "audio");
           if (!audioUrl) { setLoading(false); return; }
         }
 
         let coverUrl: string | null = null;
         if (musicCoverFile) {
-          coverUrl = await uploadFileToBucket("quote-images", musicCoverFile);
+          coverUrl = await uploadToBunny(musicCoverFile, "image");
           if (!coverUrl) { setLoading(false); return; }
         }
         const { error: insertErr } = await supabase.from("music").insert({
