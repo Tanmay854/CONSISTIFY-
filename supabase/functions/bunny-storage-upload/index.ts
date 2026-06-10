@@ -66,7 +66,11 @@ Deno.serve(async (req) => {
     const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
     const path = `${folder}/${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
 
-    const putUrl = `https://storage.bunnycdn.com/${zone}/${path}`;
+    // Optional regional endpoint, e.g. "ny", "la", "sg", "se", "br", "jh", "syd"
+    // Leave BUNNY_STORAGE_REGION unset for the default Falkenstein (DE) region.
+    const region = (Deno.env.get("BUNNY_STORAGE_REGION") || "").trim().toLowerCase();
+    const host = region ? `${region}.storage.bunnycdn.com` : `storage.bunnycdn.com`;
+    const putUrl = `https://${host}/${zone}/${path}`;
     const putRes = await fetch(putUrl, {
       method: "PUT",
       headers: {
