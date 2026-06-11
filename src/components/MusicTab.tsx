@@ -58,6 +58,7 @@ const MusicTab = () => {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to load tracks");
       setTracks(json.tracks || []);
+      if (json.notice) setError(json.notice);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
       setTracks([]);
