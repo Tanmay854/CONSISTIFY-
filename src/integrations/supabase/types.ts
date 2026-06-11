@@ -83,6 +83,7 @@ export type Database = {
           duration: string | null
           id: string
           image_url: string | null
+          spotify_id: string | null
           title: string
           uploaded_by: string | null
         }
@@ -94,6 +95,7 @@ export type Database = {
           duration?: string | null
           id?: string
           image_url?: string | null
+          spotify_id?: string | null
           title: string
           uploaded_by?: string | null
         }
@@ -105,6 +107,7 @@ export type Database = {
           duration?: string | null
           id?: string
           image_url?: string | null
+          spotify_id?: string | null
           title?: string
           uploaded_by?: string | null
         }
