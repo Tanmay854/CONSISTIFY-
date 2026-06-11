@@ -184,26 +184,10 @@ const UploadTab = () => {
 
       } else if (activeType === "music") {
         if (!musicTitle.trim() || !musicArtist.trim()) { setError("Title and artist required"); setLoading(false); return; }
-        let audioUrl: string | null = null;
-        if (musicSource === "url") {
-          if (musicUrl.trim() && !isValidUrl(musicUrl.trim())) { setError("Invalid URL"); setLoading(false); return; }
-          audioUrl = musicUrl.trim() || null;
-        } else {
-          if (!musicFile) { setError("Select an audio file"); setLoading(false); return; }
-          const audioDuration = await new Promise<number>((resolve) => {
-            const a = document.createElement("audio");
-            a.preload = "metadata";
-            a.onloadedmetadata = () => resolve(a.duration);
-            a.onerror = () => resolve(0);
-            a.src = URL.createObjectURL(musicFile);
-          });
-          if (audioDuration > 540) {
-            setError(`Music must be 9 minutes or less (yours is ${Math.floor(audioDuration / 60)}:${String(Math.floor(audioDuration % 60)).padStart(2, "0")})`);
-            setLoading(false);
-            return;
-          }
-          audioUrl = await uploadToBunny(musicFile, "audio");
-          if (!audioUrl) { setLoading(false); return; }
+        const spotifyId = extractSpotifyTrackId(musicUrl.trim());
+        if (!spotifyId) {
+          setError("Paste a valid Spotify track link (e.g. https://open.spotify.com/track/…)");
+          setLoading(false); return;
         }
 
         let coverUrl: string | null = null;
@@ -216,7 +200,7 @@ const UploadTab = () => {
           artist: musicArtist.trim(),
           duration: musicDuration.trim() || null,
           category: musicCategory,
-          audio_url: audioUrl,
+          spotify_id: spotifyId,
           image_url: coverUrl,
           uploaded_by: user?.id,
         });
@@ -475,29 +459,16 @@ const UploadTab = () => {
                     </select>
                   </div>
                 </div>
-                <SourceToggle
-                  value={musicSource}
-                  onChange={(v) => setMusicSource(v as MusicSource)}
-                  options={[
-                    { id: "file", label: "From device", icon: FileVideo },
-                    { id: "url", label: "Audio URL", icon: Link2 },
-                  ]}
-                />
-                {musicSource === "file" ? (
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={(e) => setMusicFile(e.target.files?.[0] || null)}
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
-                  />
-                ) : (
+                <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Spotify track link</label>
                   <input
                     value={musicUrl}
                     onChange={(e) => setMusicUrl(e.target.value)}
-                    placeholder="https://example.com/audio.mp3"
+                    placeholder="https://open.spotify.com/track/…"
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
                   />
-                )}
+                  <p className="text-muted-foreground text-[10px] mt-1.5">Open a track in Spotify → Share → Copy link.</p>
+                </div>
                 <div>
                   <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Cover image (optional)</label>
                   <input
