@@ -51,6 +51,19 @@ Deno.serve(async (req) => {
       `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=${limit}&market=US`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
+    if (searchRes.status === 403) {
+      // Spotify blocks Client Credentials for apps whose owner account is not Premium
+      // (enforced on newly-created Developer apps since late 2024). Return a graceful
+      // empty state with a notice so the UI doesn't blank-screen.
+      return new Response(
+        JSON.stringify({
+          tracks: [],
+          notice:
+            "Spotify requires the Developer app owner to have an active Premium subscription before tracks can be fetched. Upgrade the owner account, then retry in a few hours.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     if (!searchRes.ok) throw new Error(`Spotify search failed: ${searchRes.status} ${await searchRes.text()}`);
     const data = await searchRes.json();
 
