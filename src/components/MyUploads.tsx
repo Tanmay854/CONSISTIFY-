@@ -160,11 +160,8 @@ const MyUploads = () => {
   const handleDelete = async (table: "reels" | "music" | "quotes", id: string, fileUrl: string | null, bucket: string | null) => {
     if (!confirm("Delete this item permanently?")) return;
     setBusy(true);
-    if (fileUrl && bucket) {
-      const path = extractStoragePath(fileUrl, bucket);
-      if (path) await supabase.storage.from(bucket).remove([path]);
-    }
-    await supabase.from(table).delete().eq("id", id);
+    const res = await deleteContent(table, id, fileUrl, bucket);
+    if (!res.ok) alert(res.error || "Delete failed");
     await fetchAll();
     setBusy(false);
   };

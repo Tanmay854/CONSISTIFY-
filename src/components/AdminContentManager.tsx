@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Trash2, Film, Music2, Image as ImageIcon, User, Search, X } from "lucide-react";
+import { deleteContent } from "@/lib/deleteContent";
 
 type Tab = "videos" | "music" | "photos";
 
@@ -13,12 +14,6 @@ interface BaseItem {
 interface Reel extends BaseItem { video_url: string; }
 interface Music extends BaseItem { artist: string; category: string; audio_url: string | null; }
 interface Quote extends BaseItem { image_url: string; category: string; }
-
-const extractStoragePath = (url: string, bucket: string): string | null => {
-  const marker = `/storage/v1/object/public/${bucket}/`;
-  const idx = url.indexOf(marker);
-  return idx >= 0 ? url.slice(idx + marker.length) : null;
-};
 
 const isYoutube = (url: string) => /youtube\.com|youtu\.be/.test(url);
 
@@ -58,11 +53,8 @@ const AdminContentManager = () => {
   const handleDelete = async (table: "reels" | "music" | "quotes", id: string, fileUrl: string | null, bucket: string | null) => {
     if (!confirm("Permanently delete this item?")) return;
     setBusy(true);
-    if (fileUrl && bucket) {
-      const path = extractStoragePath(fileUrl, bucket);
-      if (path) await supabase.storage.from(bucket).remove([path]);
-    }
-    await supabase.from(table).delete().eq("id", id);
+    const res = await deleteContent(table, id, fileUrl, bucket);
+    if (!res.ok) alert(res.error || "Delete failed");
     await fetchAll();
     setBusy(false);
   };
