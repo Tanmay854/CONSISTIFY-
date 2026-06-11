@@ -4,6 +4,7 @@ import * as tus from "tus-js-client";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MyUploads from "@/components/MyUploads";
+import { extractSpotifyTrackId } from "@/lib/spotifyUrl";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"];
 
