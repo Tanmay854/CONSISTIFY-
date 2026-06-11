@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Pencil, Check, X, Scissors, Trash2, Film, Music2, Image as ImageIcon, Search, Eye, BarChart3 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import StatsChart from "@/components/StatsChart";
+import { deleteContent } from "@/lib/deleteContent";
 
 interface Reel {
   id: string;
