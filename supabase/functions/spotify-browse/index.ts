@@ -112,23 +112,27 @@ Deno.serve(async (req) => {
 
     // Featured "playlists": build mosaic tiles from top tracks' albums (visually similar grid)
     const tracks = (topRes?.tracks?.items || []).filter(Boolean);
-    const featuredPlaylists = tracks.slice(0, 6).map((t: any) => ({
-      id: t.album?.id || t.id,
-      name: t.album?.name || t.name,
-      image: t.album?.images?.[0]?.url || null,
-      description: t.artists?.map((a: any) => a.name).join(", ") || "",
-      uri: t.album?.uri || t.uri,
+    const newReleases = (newReleasesRes?.albums?.items || []).filter(Boolean).map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      artist: a.artists?.map((x: any) => x.name).join(", ") || "",
+      image: a.images?.[0]?.url || null,
+      uri: a.uri,
+    }));
+
+    // Use distinct new-release albums as the "Featured" 2-col grid (visually varied).
+    const featuredPlaylists = newReleases.slice(0, 6).map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      image: a.image,
+      description: a.artist,
+      uri: a.uri,
     }));
 
     const payload = {
       featuredPlaylists,
-      newReleases: (newReleasesRes?.albums?.items || []).filter(Boolean).map((a: any) => ({
-        id: a.id,
-        name: a.name,
-        artist: a.artists?.map((x: any) => x.name).join(", ") || "",
-        image: a.images?.[0]?.url || null,
-        uri: a.uri,
-      })),
+      newReleases,
+
       recommendedArtists: (artistsRes?.artists?.items || [])
         .filter((a: any) => a && a.images?.length)
         .slice(0, 15)
