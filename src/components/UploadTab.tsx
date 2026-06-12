@@ -68,7 +68,6 @@ const UploadTab = () => {
 
   const resetFields = () => {
     setVideoTitle(""); setVideoDescription(""); setVideoFile(null);
-    setMusicTitle(""); setMusicArtist(""); setMusicDuration(""); setMusicUrl(""); setMusicFile(null); setMusicCoverFile(null);
     setPhotoTitle(""); setPhotoDescription(""); setPhotoFile(null);
     setAdTitle(""); setAdLink(""); setAdUrl(""); setAdFile(null);
   };
