@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       }
       // Spotify rejects `type=playlist` for many app tiers post-Nov-2024; query track+artist only.
       const data = await sp(
-        `/search?q=${encodeURIComponent(q)}&type=track,artist&limit=20&market=US`,
+        `/search?q=${encodeURIComponent(q)}&type=track,artist&limit=10&market=US`,
         token,
       );
       return new Response(
@@ -105,9 +105,9 @@ Deno.serve(async (req) => {
     // - featured playlists / top charts: derive from search hits
     const year = new Date().getFullYear();
     const [newReleasesRes, artistsRes, topRes] = await Promise.all([
-      sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=20&market=US`, token),
-      sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=15&market=US`, token),
-      sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=track&limit=20&market=US`, token),
+      sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=10&market=US`, token),
+      sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=10&market=US`, token),
+      sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=track&limit=10&market=US`, token),
     ]);
 
     // Featured "playlists": build mosaic tiles from top tracks' albums (visually similar grid)
