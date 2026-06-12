@@ -32,15 +32,8 @@ const UploadTab = () => {
   const videoPreviewUrl = canPreviewVideo ? URL.createObjectURL(videoFile!) : null;
 
 
-  // Music fields
-  const [musicSource, setMusicSource] = useState<MusicSource>("file");
-  const [musicTitle, setMusicTitle] = useState("");
-  const [musicArtist, setMusicArtist] = useState("");
-  const [musicDuration, setMusicDuration] = useState("");
-  const [musicCategory, setMusicCategory] = useState("Workout");
-  const [musicUrl, setMusicUrl] = useState("");
-  const [musicFile, setMusicFile] = useState<File | null>(null);
-  const [musicCoverFile, setMusicCoverFile] = useState<File | null>(null);
+  // (Music uploads removed — Music tab is now powered by Spotify.)
+
 
   // Photo fields
   const [photoTitle, setPhotoTitle] = useState("");
