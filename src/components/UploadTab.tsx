@@ -173,29 +173,6 @@ const UploadTab = () => {
         const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playbackUrl, category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
 
-      } else if (activeType === "music") {
-        if (!musicTitle.trim() || !musicArtist.trim()) { setError("Title and artist required"); setLoading(false); return; }
-        const spotifyId = extractSpotifyTrackId(musicUrl.trim());
-        if (!spotifyId) {
-          setError("Paste a valid Spotify track link (e.g. https://open.spotify.com/track/…)");
-          setLoading(false); return;
-        }
-
-        let coverUrl: string | null = null;
-        if (musicCoverFile) {
-          coverUrl = await uploadToBunny(musicCoverFile, "image");
-          if (!coverUrl) { setLoading(false); return; }
-        }
-        const { error: insertErr } = await supabase.from("music").insert({
-          title: musicTitle.trim(),
-          artist: musicArtist.trim(),
-          duration: musicDuration.trim() || null,
-          category: musicCategory,
-          spotify_id: spotifyId,
-          image_url: coverUrl,
-          uploaded_by: user?.id,
-        });
-        if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "photo") {
         if (!photoTitle.trim() || !photoFile) { setError("Title and image required"); setLoading(false); return; }
         const url = await uploadToBunny(photoFile, "image");
