@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { Film, Music2, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
+import { Film, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
 import * as tus from "tus-js-client";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MyUploads from "@/components/MyUploads";
-import { extractSpotifyTrackId } from "@/lib/spotifyUrl";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"];
 
-type UploadType = "video" | "music" | "photo" | "ad";
-type MusicSource = "url" | "file";
+type UploadType = "video" | "photo" | "ad";
 type AdSource = "url" | "file";
 
 const UploadTab = () => {
@@ -34,15 +32,8 @@ const UploadTab = () => {
   const videoPreviewUrl = canPreviewVideo ? URL.createObjectURL(videoFile!) : null;
 
 
-  // Music fields
-  const [musicSource, setMusicSource] = useState<MusicSource>("file");
-  const [musicTitle, setMusicTitle] = useState("");
-  const [musicArtist, setMusicArtist] = useState("");
-  const [musicDuration, setMusicDuration] = useState("");
-  const [musicCategory, setMusicCategory] = useState("Workout");
-  const [musicUrl, setMusicUrl] = useState("");
-  const [musicFile, setMusicFile] = useState<File | null>(null);
-  const [musicCoverFile, setMusicCoverFile] = useState<File | null>(null);
+  // (Music uploads removed — Music tab is now powered by Spotify.)
+
 
   // Photo fields
   const [photoTitle, setPhotoTitle] = useState("");
@@ -77,7 +68,6 @@ const UploadTab = () => {
 
   const resetFields = () => {
     setVideoTitle(""); setVideoDescription(""); setVideoFile(null);
-    setMusicTitle(""); setMusicArtist(""); setMusicDuration(""); setMusicUrl(""); setMusicFile(null); setMusicCoverFile(null);
     setPhotoTitle(""); setPhotoDescription(""); setPhotoFile(null);
     setAdTitle(""); setAdLink(""); setAdUrl(""); setAdFile(null);
   };
@@ -183,29 +173,6 @@ const UploadTab = () => {
         const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playbackUrl, category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
 
-      } else if (activeType === "music") {
-        if (!musicTitle.trim() || !musicArtist.trim()) { setError("Title and artist required"); setLoading(false); return; }
-        const spotifyId = extractSpotifyTrackId(musicUrl.trim());
-        if (!spotifyId) {
-          setError("Paste a valid Spotify track link (e.g. https://open.spotify.com/track/…)");
-          setLoading(false); return;
-        }
-
-        let coverUrl: string | null = null;
-        if (musicCoverFile) {
-          coverUrl = await uploadToBunny(musicCoverFile, "image");
-          if (!coverUrl) { setLoading(false); return; }
-        }
-        const { error: insertErr } = await supabase.from("music").insert({
-          title: musicTitle.trim(),
-          artist: musicArtist.trim(),
-          duration: musicDuration.trim() || null,
-          category: musicCategory,
-          spotify_id: spotifyId,
-          image_url: coverUrl,
-          uploaded_by: user?.id,
-        });
-        if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "photo") {
         if (!photoTitle.trim() || !photoFile) { setError("Title and image required"); setLoading(false); return; }
         const url = await uploadToBunny(photoFile, "image");
@@ -261,7 +228,7 @@ const UploadTab = () => {
 
   const types: { id: UploadType; label: string; icon: typeof Film }[] = [
     { id: "video", label: "Video", icon: Film },
-    { id: "music", label: "Music", icon: Music2 },
+    
     { id: "photo", label: "Photo", icon: Image },
     ...(isAdmin ? [{ id: "ad" as UploadType, label: "Ad", icon: Megaphone }] : []),
   ];
@@ -415,71 +382,6 @@ const UploadTab = () => {
                     <p className="text-muted-foreground text-[10px] mt-1.5 text-center">Viewers will see the video in this mode.</p>
                   </div>
                 )}
-              </>
-            )}
-
-
-            {activeType === "music" && (
-              <>
-                <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title</label>
-                  <input
-                    value={musicTitle}
-                    onChange={(e) => setMusicTitle(e.target.value)}
-                    placeholder="Track title"
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Artist</label>
-                  <input
-                    value={musicArtist}
-                    onChange={(e) => setMusicArtist(e.target.value)}
-                    placeholder="Artist name"
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Duration</label>
-                    <input
-                      value={musicDuration}
-                      onChange={(e) => setMusicDuration(e.target.value)}
-                      placeholder="3:45"
-                      className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Category</label>
-                    <select
-                      value={musicCategory}
-                      onChange={(e) => setMusicCategory(e.target.value)}
-                      className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Spotify track link</label>
-                  <input
-                    value={musicUrl}
-                    onChange={(e) => setMusicUrl(e.target.value)}
-                    placeholder="https://open.spotify.com/track/…"
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
-                  />
-                  <p className="text-muted-foreground text-[10px] mt-1.5">Open a track in Spotify → Share → Copy link.</p>
-                </div>
-                <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Cover image (optional)</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setMusicCoverFile(e.target.files?.[0] || null)}
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
-                  />
-                  {musicCoverFile && <p className="text-muted-foreground text-[10px] mt-1">{musicCoverFile.name}</p>}
-                </div>
               </>
             )}
 

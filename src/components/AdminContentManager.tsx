@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Film, Music2, Image as ImageIcon, User, Search, X } from "lucide-react";
+import { Trash2, Film, Image as ImageIcon, User, Search, X } from "lucide-react";
 import { deleteContent } from "@/lib/deleteContent";
 
-type Tab = "videos" | "music" | "photos";
+type Tab = "videos" | "photos";
 
 interface BaseItem {
   id: string;
@@ -12,7 +12,6 @@ interface BaseItem {
   created_at: string;
 }
 interface Reel extends BaseItem { video_url: string; }
-interface Music extends BaseItem { artist: string; category: string; audio_url: string | null; }
 interface Quote extends BaseItem { image_url: string; category: string; }
 
 const isYoutube = (url: string) => /youtube\.com|youtu\.be/.test(url);
@@ -20,7 +19,6 @@ const isYoutube = (url: string) => /youtube\.com|youtu\.be/.test(url);
 const AdminContentManager = () => {
   const [tab, setTab] = useState<Tab>("videos");
   const [reels, setReels] = useState<Reel[]>([]);
-  const [music, setMusic] = useState<Music[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -29,14 +27,12 @@ const AdminContentManager = () => {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [r, m, q, p] = await Promise.all([
+    const [r, q, p] = await Promise.all([
       supabase.from("reels").select("*").order("created_at", { ascending: false }),
-      supabase.from("music").select("*").order("created_at", { ascending: false }),
       supabase.from("quotes").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("user_id, display_name"),
     ]);
     setReels((r.data as Reel[]) || []);
-    setMusic((m.data as Music[]) || []);
     setQuotes((q.data as Quote[]) || []);
     const map: Record<string, string> = {};
     (p.data || []).forEach((row: { user_id: string; display_name: string | null }) => {
@@ -50,7 +46,7 @@ const AdminContentManager = () => {
 
   const nameFor = (uid: string | null) => uid ? (profiles[uid] || "Unknown") : "Legacy/Anonymous";
 
-  const handleDelete = async (table: "reels" | "music" | "quotes", id: string, fileUrl: string | null, bucket: string | null) => {
+  const handleDelete = async (table: "reels" | "quotes", id: string, fileUrl: string | null, bucket: string | null) => {
     if (!confirm("Permanently delete this item?")) return;
     setBusy(true);
     const res = await deleteContent(table, id, fileUrl, bucket);
@@ -64,12 +60,10 @@ const AdminContentManager = () => {
     !q || title.toLowerCase().includes(q) || nameFor(uid).toLowerCase().includes(q) || extra.toLowerCase().includes(q);
 
   const fReels = useMemo(() => reels.filter((r) => matches(r.title, r.uploaded_by)), [reels, q, profiles]);
-  const fMusic = useMemo(() => music.filter((m) => matches(m.title, m.uploaded_by, m.artist)), [music, q, profiles]);
   const fQuotes = useMemo(() => quotes.filter((qq) => matches(qq.title, qq.uploaded_by)), [quotes, q, profiles]);
 
   const tabs: { id: Tab; label: string; icon: typeof Film; count: number }[] = [
     { id: "videos", label: "Videos", icon: Film, count: fReels.length },
-    { id: "music", label: "Music", icon: Music2, count: fMusic.length },
     { id: "photos", label: "Photos", icon: ImageIcon, count: fQuotes.length },
   ];
 
@@ -80,7 +74,7 @@ const AdminContentManager = () => {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by title, uploader, artist..."
+          placeholder="Search by title or uploader..."
           className="w-full bg-secondary text-foreground rounded-lg pl-9 pr-9 py-2 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
         />
         {query && (
@@ -119,18 +113,6 @@ const AdminContentManager = () => {
               </div>
             ))}
             {tab === "videos" && fReels.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos."}</p>}
-
-            {tab === "music" && fMusic.map((m) => (
-              <div key={m.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
-                <Music2 size={18} className="text-primary flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-foreground text-sm font-medium truncate">{m.title} <span className="text-muted-foreground font-normal">· {m.artist}</span></p>
-                  <p className="text-muted-foreground text-xs truncate flex items-center gap-1"><User size={10} /> {nameFor(m.uploaded_by)}</p>
-                </div>
-                <button onClick={() => handleDelete("music", m.id, m.audio_url, "audio")} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
-              </div>
-            ))}
-            {tab === "music" && fMusic.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No music."}</p>}
 
             {tab === "photos" && fQuotes.map((qq) => (
               <div key={qq.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
