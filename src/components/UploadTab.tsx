@@ -386,71 +386,8 @@ const UploadTab = () => {
             )}
 
 
-            {activeType === "music" && (
-              <>
-                <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title</label>
-                  <input
-                    value={musicTitle}
-                    onChange={(e) => setMusicTitle(e.target.value)}
-                    placeholder="Track title"
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Artist</label>
-                  <input
-                    value={musicArtist}
-                    onChange={(e) => setMusicArtist(e.target.value)}
-                    placeholder="Artist name"
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Duration</label>
-                    <input
-                      value={musicDuration}
-                      onChange={(e) => setMusicDuration(e.target.value)}
-                      placeholder="3:45"
-                      className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Category</label>
-                    <select
-                      value={musicCategory}
-                      onChange={(e) => setMusicCategory(e.target.value)}
-                      className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Spotify track link</label>
-                  <input
-                    value={musicUrl}
-                    onChange={(e) => setMusicUrl(e.target.value)}
-                    placeholder="https://open.spotify.com/track/…"
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
-                  />
-                  <p className="text-muted-foreground text-[10px] mt-1.5">Open a track in Spotify → Share → Copy link.</p>
-                </div>
-                <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Cover image (optional)</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setMusicCoverFile(e.target.files?.[0] || null)}
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
-                  />
-                  {musicCoverFile && <p className="text-muted-foreground text-[10px] mt-1">{musicCoverFile.name}</p>}
-                </div>
-              </>
-            )}
 
-            {activeType === "photo" && (
+
               <>
                 <div>
                   <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title</label>
