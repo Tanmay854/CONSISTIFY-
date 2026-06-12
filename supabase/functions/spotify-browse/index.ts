@@ -29,7 +29,8 @@ async function sp(path: string, token: string): Promise<any | null> {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!r.ok) {
-    console.warn(`Spotify ${path} -> ${r.status}`);
+    const body = await r.text().catch(() => "");
+    console.warn(`Spotify ${path} -> ${r.status} ${body.slice(0, 300)}`);
     return null;
   }
   return await r.json();
