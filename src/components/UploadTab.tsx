@@ -228,7 +228,7 @@ const UploadTab = () => {
 
   const types: { id: UploadType; label: string; icon: typeof Film }[] = [
     { id: "video", label: "Video", icon: Film },
-    { id: "music", label: "Music", icon: Music2 },
+    
     { id: "photo", label: "Photo", icon: Image },
     ...(isAdmin ? [{ id: "ad" as UploadType, label: "Ad", icon: Megaphone }] : []),
   ];
