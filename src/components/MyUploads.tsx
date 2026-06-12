@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Check, X, Scissors, Trash2, Film, Music2, Image as ImageIcon, Search, Eye, BarChart3 } from "lucide-react";
+import { Pencil, Check, X, Scissors, Trash2, Film, Image as ImageIcon, Search, Eye, BarChart3 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import StatsChart from "@/components/StatsChart";
 import { deleteContent } from "@/lib/deleteContent";
@@ -15,15 +15,6 @@ interface Reel {
   trim_start: number | null;
   trim_end: number | null;
 }
-interface Music {
-  id: string;
-  title: string;
-  artist: string;
-  category: string;
-  audio_url: string | null;
-  created_at: string;
-  uploaded_by: string | null;
-}
 interface Quote {
   id: string;
   title: string;
@@ -33,17 +24,11 @@ interface Quote {
   uploaded_by: string | null;
 }
 
-type Tab = "videos" | "music" | "photos";
+type Tab = "videos" | "photos";
 
 const getYoutubeId = (url: string): string | null => {
   const m = url.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
-};
-
-const extractStoragePath = (url: string, bucket: string): string | null => {
-  const marker = `/storage/v1/object/public/${bucket}/`;
-  const idx = url.indexOf(marker);
-  return idx >= 0 ? url.slice(idx + marker.length) : null;
 };
 
 const VideoTrimmer = ({ reel, onSave }: { reel: Reel; onSave: (start: number, end: number) => void }) => {
@@ -88,7 +73,6 @@ const MyUploads = () => {
   const { user, isAdmin } = useAuth();
   const [tab, setTab] = useState<Tab>("videos");
   const [reels, setReels] = useState<Reel[]>([]);
-  const [music, setMusic] = useState<Music[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -107,19 +91,15 @@ const MyUploads = () => {
     if (!user) return;
     setLoading(true);
     const filterOwn = (q: ReturnType<typeof supabase.from>) => isAdmin ? q : q.eq("uploaded_by", user.id);
-    const [r, m, q] = await Promise.all([
+    const [r, q] = await Promise.all([
       filterOwn(supabase.from("reels").select("*").order("created_at", { ascending: false })),
-      filterOwn(supabase.from("music").select("*").order("created_at", { ascending: false })),
       filterOwn(supabase.from("quotes").select("*").order("created_at", { ascending: false })),
     ]);
     setReels((r.data as Reel[]) || []);
-    setMusic((m.data as Music[]) || []);
     setQuotes((q.data as Quote[]) || []);
 
-    // Aggregate view counts for items shown
     const ids = [
       ...((r.data as Reel[]) || []).map((x) => ({ t: "reel", id: x.id })),
-      ...((m.data as Music[]) || []).map((x) => ({ t: "music", id: x.id })),
       ...((q.data as Quote[]) || []).map((x) => ({ t: "quote", id: x.id })),
     ];
     if (ids.length) {
@@ -141,7 +121,7 @@ const MyUploads = () => {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleSaveTitle = async (table: "reels" | "music" | "quotes", id: string) => {
+  const handleSaveTitle = async (table: "reels" | "quotes", id: string) => {
     if (!editTitle.trim()) return;
     setBusy(true);
     await supabase.from(table).update({ title: editTitle.trim() }).eq("id", id);
@@ -158,7 +138,7 @@ const MyUploads = () => {
     setBusy(false);
   };
 
-  const handleDelete = async (table: "reels" | "music" | "quotes", id: string, fileUrl: string | null, bucket: string | null) => {
+  const handleDelete = async (table: "reels" | "quotes", id: string, fileUrl: string | null, bucket: string | null) => {
     if (!confirm("Delete this item permanently?")) return;
     setBusy(true);
     const res = await deleteContent(table, id, fileUrl, bucket);
@@ -168,12 +148,10 @@ const MyUploads = () => {
   };
 
   const fReels = filterFn(reels);
-  const fMusic = filterFn(music, (m) => `${m.artist} ${m.category}`);
   const fQuotes = filterFn(quotes, (q) => q.category);
 
   const tabs: { id: Tab; label: string; icon: typeof Film; count: number }[] = [
     { id: "videos", label: "Videos", icon: Film, count: fReels.length },
-    { id: "music", label: "Music", icon: Music2, count: fMusic.length },
     { id: "photos", label: "Photos", icon: ImageIcon, count: fQuotes.length },
   ];
 
@@ -249,47 +227,6 @@ const MyUploads = () => {
                   </div>
                   {isTrimming && <VideoTrimmer reel={reel} onSave={(s, e) => handleSaveTrim(reel.id, s, e)} />}
                   {statsOpen === `reel:${reel.id}` && <StatsChart contentType="reel" contentId={reel.id} />}
-                </div>
-              );
-            })
-          )}
-
-          {tab === "music" && (
-            fMusic.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No music yet."}</p> :
-            fMusic.map((m) => {
-              const isEditing = editingId === m.id;
-              return (
-                <div key={m.id} className="bg-secondary rounded-xl p-3">
-                  <div className="flex gap-3 items-center">
-                    <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
-                      <Music2 size={20} className="text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      {isEditing ? (
-                        <div className="flex gap-2 items-center">
-                          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="flex-1 bg-background text-foreground rounded-lg px-2 py-1 text-sm" autoFocus />
-                          <button onClick={() => handleSaveTitle("music", m.id)} disabled={busy} className="text-primary"><Check size={16} /></button>
-                          <button onClick={() => setEditingId(null)} className="text-muted-foreground"><X size={16} /></button>
-                        </div>
-                      ) : (
-                        <>
-                          <p className="text-foreground text-sm font-medium truncate">{m.title}</p>
-                          <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
-                            <span>{m.artist} · {m.category}</span>
-                            <span className="flex items-center gap-1"><Eye size={11} /> {views[`music:${m.id}`] || 0}</span>
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    {!isEditing && (
-                      <div className="flex gap-2 flex-shrink-0">
-                        <button onClick={() => { setEditingId(m.id); setEditTitle(m.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
-                        <button onClick={() => setStatsOpen(statsOpen === `music:${m.id}` ? null : `music:${m.id}`)} className={statsOpen === `music:${m.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
-                        <button onClick={() => handleDelete("music", m.id, m.audio_url, "audio")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-                      </div>
-                    )}
-                  </div>
-                  {statsOpen === `music:${m.id}` && <StatsChart contentType="music" contentId={m.id} label="Listens" />}
                 </div>
               );
             })
