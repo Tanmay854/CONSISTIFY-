@@ -385,9 +385,7 @@ const UploadTab = () => {
               </>
             )}
 
-
-
-
+            {activeType === "photo" && (
               <>
                 <div>
                   <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title</label>
