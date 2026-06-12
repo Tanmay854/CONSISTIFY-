@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { Film, Music2, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
+import { Film, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
 import * as tus from "tus-js-client";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MyUploads from "@/components/MyUploads";
-import { extractSpotifyTrackId } from "@/lib/spotifyUrl";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"];
 
-type UploadType = "video" | "music" | "photo" | "ad";
-type MusicSource = "url" | "file";
+type UploadType = "video" | "photo" | "ad";
 type AdSource = "url" | "file";
 
 const UploadTab = () => {
