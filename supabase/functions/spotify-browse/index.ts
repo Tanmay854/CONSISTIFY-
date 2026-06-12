@@ -71,8 +71,9 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      // Spotify rejects `type=playlist` for many app tiers post-Nov-2024; query track+artist only.
       const data = await sp(
-        `/search?q=${encodeURIComponent(q)}&type=track,artist,playlist&limit=20&market=US`,
+        `/search?q=${encodeURIComponent(q)}&type=track,artist&limit=20&market=US`,
         token,
       );
       return new Response(
@@ -91,64 +92,65 @@ Deno.serve(async (req) => {
             image: a.images?.[0]?.url || null,
             uri: a.uri,
           })),
-          playlists: (data?.playlists?.items || []).filter(Boolean).map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            image: p.images?.[0]?.url || null,
-            owner: p.owner?.display_name || "",
-            uri: p.uri,
-          })),
+          playlists: [],
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // home: fetch in parallel, degrade per-section
-    const [featured, newReleases, artists, topPlaylist] = await Promise.all([
-      sp("/browse/featured-playlists?limit=8&country=US", token),
-      sp("/browse/new-releases?limit=12&country=US", token),
-      sp(`/artists?ids=${RECOMMENDED_ARTIST_IDS.join(",")}`, token),
-      // Global Top 50 playlist
-      sp("/playlists/37i9dQZEVXbMDoHDwVN2tF?fields=tracks.items(track(id,name,artists,album(images),duration_ms,uri))", token),
+    // home: use /search (works for all apps) since /browse/* is deprecated/restricted.
+    // - new releases: tracks tagged with current year
+    // - recommended artists: popular artist search
+    // - featured playlists / top charts: derive from search hits
+    const year = new Date().getFullYear();
+    const [newReleasesRes, artistsRes, topRes] = await Promise.all([
+      sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=20&market=US`, token),
+      sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=15&market=US`, token),
+      sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=track&limit=20&market=US`, token),
     ]);
 
+    // Featured "playlists": build mosaic tiles from top tracks' albums (visually similar grid)
+    const tracks = (topRes?.tracks?.items || []).filter(Boolean);
+    const featuredPlaylists = tracks.slice(0, 6).map((t: any) => ({
+      id: t.album?.id || t.id,
+      name: t.album?.name || t.name,
+      image: t.album?.images?.[0]?.url || null,
+      description: t.artists?.map((a: any) => a.name).join(", ") || "",
+      uri: t.album?.uri || t.uri,
+    }));
+
     const payload = {
-      featuredPlaylists: (featured?.playlists?.items || []).filter(Boolean).map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        image: p.images?.[0]?.url || null,
-        description: p.description || "",
-        uri: p.uri,
-      })),
-      newReleases: (newReleases?.albums?.items || []).filter(Boolean).map((a: any) => ({
+      featuredPlaylists,
+      newReleases: (newReleasesRes?.albums?.items || []).filter(Boolean).map((a: any) => ({
         id: a.id,
         name: a.name,
         artist: a.artists?.map((x: any) => x.name).join(", ") || "",
         image: a.images?.[0]?.url || null,
         uri: a.uri,
       })),
-      recommendedArtists: (artists?.artists || []).filter(Boolean).map((a: any) => ({
-        id: a.id,
-        name: a.name,
-        image: a.images?.[0]?.url || null,
-        uri: a.uri,
-      })),
-      topCharts: (topPlaylist?.tracks?.items || [])
-        .filter((it: any) => it?.track)
-        .slice(0, 20)
-        .map((it: any) => ({
-          id: it.track.id,
-          name: it.track.name,
-          artist: it.track.artists?.map((a: any) => a.name).join(", ") || "",
-          image: it.track.album?.images?.[0]?.url || null,
-          duration_ms: it.track.duration_ms,
-          uri: it.track.uri,
+      recommendedArtists: (artistsRes?.artists?.items || [])
+        .filter((a: any) => a && a.images?.length)
+        .slice(0, 15)
+        .map((a: any) => ({
+          id: a.id,
+          name: a.name,
+          image: a.images?.[0]?.url || null,
+          uri: a.uri,
         })),
+      topCharts: tracks.slice(0, 20).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        artist: t.artists?.map((a: any) => a.name).join(", ") || "",
+        image: t.album?.images?.[0]?.url || null,
+        duration_ms: t.duration_ms,
+        uri: t.uri,
+      })),
     };
 
     return new Response(JSON.stringify(payload), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (e) {
     console.error(e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), {
