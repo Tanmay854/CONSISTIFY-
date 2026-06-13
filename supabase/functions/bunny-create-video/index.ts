@@ -76,7 +76,6 @@ Deno.serve(async (req) => {
     const signature = await sha256Hex(`${libraryId}${apiKey}${expire}${guid}`);
 
     const playbackUrl = `https://${cdnHost}/${guid}/playlist.m3u8`;
-    const playerUrl = `https://player.mediadelivery.net/play/${libraryId}/${guid}`;
     const thumbnailUrl = `https://${cdnHost}/${guid}/thumbnail.jpg`;
 
     return new Response(JSON.stringify({
@@ -86,7 +85,6 @@ Deno.serve(async (req) => {
       signature,
       tusEndpoint: "https://video.bunnycdn.com/tusupload",
       playbackUrl,
-      playerUrl,
       thumbnailUrl,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
