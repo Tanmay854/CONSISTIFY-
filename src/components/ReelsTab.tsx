@@ -24,6 +24,15 @@ const attachHls = (video: HTMLVideoElement, url: string): (() => void) => {
   return () => {};
 };
 
+// Detect Bunny Stream player URLs and convert to embed iframe URL
+// player.mediadelivery.net/play/{libraryId}/{guid} → iframe.mediadelivery.net/embed/{libraryId}/{guid}
+const getBunnyEmbedUrl = (url: string, muted: boolean, autoplay: boolean): string | null => {
+  const match = url.match(/player\.mediadelivery\.net\/play\/(\d+)\/([a-f0-9-]+)/i);
+  if (!match) return null;
+  const [, libraryId, guid] = match;
+  return `https://iframe.mediadelivery.net/embed/${libraryId}/${guid}?autoplay=${autoplay}&loop=true&muted=${muted}&preload=true&responsive=true`;
+};
+
 interface Reel {
   id: string;
   title: string;
@@ -89,6 +98,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
 
+  // Check if this is a Bunny Stream player URL → use iframe embed
+  const bunnyEmbedUrl = hasVideo ? getBunnyEmbedUrl(reel.video_url, muted, isActive && isPlaying) : null;
+  const useIframe = !!bunnyEmbedUrl;
+
   // Preload a wider window so swipes feel instant like Instagram.
   const shouldMount = hasVideo && distance <= 3;
   const preload = "auto";
@@ -112,15 +125,15 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
     }
   }, [isActive, reel.id]);
 
-  // Attach HLS once per mounted card; never tear down on swipe between neighbors.
+  // Attach HLS only for non-Bunny-player URLs
   useEffect(() => {
-    if (!shouldMount || !videoRef.current) return;
+    if (!shouldMount || !videoRef.current || useIframe) return;
     const cleanup = attachHls(videoRef.current, reel.video_url);
     return cleanup;
-  }, [shouldMount, reel.video_url]);
+  }, [shouldMount, reel.video_url, useIframe]);
 
   useEffect(() => {
-    if (!shouldMount || !videoRef.current) return;
+    if (!shouldMount || !videoRef.current || useIframe) return;
     const v = videoRef.current;
     v.muted = muted;
     if (isActive) {
@@ -131,10 +144,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       v.pause();
       try { v.currentTime = trimStart; } catch { /* empty */ }
     }
-  }, [isPlaying, isActive, shouldMount, muted, trimStart]);
+  }, [isPlaying, isActive, shouldMount, muted, trimStart, useIframe]);
 
   const togglePlay = () => {
-    if (!hasVideo) return;
+    if (!hasVideo || useIframe) return;
     setIsPlaying((p) => !p);
     setShowIcon(true);
     setTimeout(() => setShowIcon(false), 600);
@@ -145,7 +158,17 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       className="relative h-screen w-full snap-start flex items-center justify-center overflow-hidden cursor-pointer"
       onClick={togglePlay}
     >
-      {shouldMount ? (
+      {shouldMount && useIframe ? (
+        // Bunny Stream iframe embed — handles playback natively
+        <iframe
+          key={`${reel.id}-${isActive}-${isPlaying}`}
+          src={getBunnyEmbedUrl(reel.video_url, muted, isActive && isPlaying) || ""}
+          className="absolute inset-0 w-full h-full border-0"
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          onLoad={() => setIsLoading(false)}
+        />
+      ) : shouldMount && !useIframe ? (
         <video
           ref={videoRef}
           className="absolute inset-0 w-full h-full"
@@ -175,16 +198,16 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
         <div className={`absolute inset-0 bg-gradient-to-b ${gradient}`} />
       )}
 
+      {/* Only show overlay for non-iframe videos */}
+      {!useIframe && <div className="absolute inset-0 bg-background/40 pointer-events-none" />}
 
-      <div className="absolute inset-0 bg-background/40 pointer-events-none" />
-
-      {hasVideo && isActive && isLoading && !showIcon && isPlaying && (
+      {hasVideo && !useIframe && isActive && isLoading && !showIcon && isPlaying && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
           <div className="w-10 h-10 rounded-full border-2 border-white/30 border-t-white animate-spin" />
         </div>
       )}
 
-      {hasVideo && (showIcon || !isPlaying) && (
+      {hasVideo && !useIframe && (showIcon || !isPlaying) && (
         <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
           <div className="bg-black/50 rounded-full p-6 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
             <Play className="w-12 h-12 text-white fill-white" />
@@ -223,12 +246,40 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
         </button>
       )}
 
-      <div className="absolute bottom-20 left-4 right-16 z-20">
-        <button
-          type="button"
-          onClick={toggleDescription}
-          className="block text-left max-w-full"
-        >
+      {/* Only show title overlay for non-iframe or when iframe is not active */}
+      {!useIframe && (
+        <div className="absolute bottom-20 left-4 right-16 z-20">
+          <button
+            type="button"
+            onClick={toggleDescription}
+            className="block text-left max-w-full"
+          >
+            <p className="text-white/95 font-medium text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
+              {reel.title}
+            </p>
+            {reel.author_name && reel.author_name.toLowerCase() !== "anonymous" && (
+              <p className="text-white/70 text-[10px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate mt-0.5">
+                {reel.author_name}
+              </p>
+            )}
+          </button>
+          {reel.description && (
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-out ${
+                showInfo ? "max-h-48 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
+              }`}
+            >
+              <p className="text-white/90 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] line-clamp-6 whitespace-pre-wrap">
+                {reel.description}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Title overlay for iframe videos */}
+      {useIframe && (
+        <div className="absolute bottom-20 left-4 right-16 z-30 pointer-events-none">
           <p className="text-white/95 font-medium text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
             {reel.title}
           </p>
@@ -237,20 +288,8 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
               {reel.author_name}
             </p>
           )}
-        </button>
-        {reel.description && (
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-out ${
-              showInfo ? "max-h-48 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
-            }`}
-          >
-            <p className="text-white/90 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] line-clamp-6 whitespace-pre-wrap">
-              {reel.description}
-            </p>
-          </div>
-        )}
-      </div>
-
+        </div>
+      )}
     </div>
   );
 };
