@@ -80,9 +80,9 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
     if (error) { setLoading(false); return; }
 
-    // 3. Save the playback URL into the reels table
+    // 3. Save the player URL into the reels table
     const { error: insErr } = await supabase.from("reels").insert({
-      title: title.trim(), video_url: data.playbackUrl,
+      title: title.trim(), video_url: data.playerUrl,
     });
     setLoading(false);
     if (insErr) { setError(insErr.message); return; }
@@ -123,7 +123,7 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
             <div>
               <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Video file</label>
               <input ref={fileInputRef} type="file" accept="video/*" onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-primary file:text-primary-foreground file:text-xs file:font-semibold" />
+                className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-primary file:text-primary-foreground file:cursor-pointer outline-none" />
               {file && <p className="text-muted-foreground text-xs mt-1.5">{file.name} · {(file.size / 1024 / 1024).toFixed(1)} MB</p>}
               {loading && progress > 0 && (
                 <div className="mt-3">
