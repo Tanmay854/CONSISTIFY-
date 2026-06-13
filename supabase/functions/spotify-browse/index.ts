@@ -71,15 +71,15 @@ async function buildHome(token: string) {
   const year = new Date().getFullYear();
   const catResults = await Promise.all(
     CATEGORIES.map((c) =>
-      sp(`/search?q=${encodeURIComponent(c.query)}&type=track&limit=15&market=US`, token).then((d) => ({
+      sp(`/search?q=${encodeURIComponent(c.query)}&type=track&limit=10&market=US`, token).then((d) => ({
         id: c.id, title: c.title,
         tracks: (d?.tracks?.items || []).filter(Boolean).map(mapTrack),
       })),
     ),
   );
   const [newReleasesRes, artistsRes] = await Promise.all([
-    sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=12&market=US`, token),
-    sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=12&market=US`, token),
+    sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=10&market=US`, token),
+    sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=10&market=US`, token),
   ]);
   return {
     categories: catResults,
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
       }
       const token = await getToken();
       const data = await sp(
-        `/search?q=${encodeURIComponent(q)}&type=track,artist&limit=15&market=US`, token,
+        `/search?q=${encodeURIComponent(q)}&type=track,artist&limit=10&market=US`, token,
       );
       return new Response(
         JSON.stringify({
