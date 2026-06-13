@@ -169,8 +169,8 @@ const UploadTab = () => {
         if (uploadErr) { setError("Upload failed: " + uploadErr); setLoading(false); return; }
 
 
-        // 3. Save Bunny playback URL into reels
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playbackUrl, category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
+        // 3. Save Bunny player URL into reels
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playerUrl, category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
 
       } else if (activeType === "photo") {
@@ -333,7 +333,7 @@ const UploadTab = () => {
                     type="file"
                     accept="video/*"
                     onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:cursor-pointer outline-none"
                   />
                   {videoFile && <p className="text-muted-foreground text-[10px] mt-1">{videoFile.name}</p>}
                 </div>
@@ -422,7 +422,7 @@ const UploadTab = () => {
                     type="file"
                     accept="image/*"
                     onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:cursor-pointer outline-none"
                   />
                 </div>
               </>
@@ -475,7 +475,7 @@ const UploadTab = () => {
                     type="file"
                     accept={adPlacement === "music" ? "audio/*" : "video/*,image/*"}
                     onChange={(e) => setAdFile(e.target.files?.[0] || null)}
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
+                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:cursor-pointer outline-none"
                   />
                 ) : (
                   <input
@@ -500,7 +500,7 @@ const UploadTab = () => {
               disabled={loading}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
             >
-              {success ? (<><Check size={18} />Published!</>) : loading ? (activeType === "video" && uploadProgress > 0 ? `Uploading ${uploadProgress}%` : "Publishing...") : (<><Upload size={16} />Publish</>)}
+              {success ? (<><Check size={18} />Published!</>) : loading ? (activeType === "video" && uploadProgress > 0 ? `Uploading ${uploadProgress}%` : "Publishing...") : (<><Upload size={16} />Upload</>)}
             </button>
           </div>
         </>
