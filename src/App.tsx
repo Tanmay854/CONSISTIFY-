@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import SpotifyCallback from "./pages/SpotifyCallback.tsx";
 
 const queryClient = new QueryClient();
 
@@ -23,7 +24,11 @@ const PasswordRecoveryRedirect = () => {
       search.has("code") ||
       search.get("type") === "recovery";
 
-    if (hasRecoveryToken && location.pathname !== "/reset-password") {
+    if (
+      hasRecoveryToken &&
+      location.pathname !== "/reset-password" &&
+      location.pathname !== "/spotify-callback"
+    ) {
       navigate(`/reset-password${window.location.search}${window.location.hash}`, { replace: true });
     }
   }, [location.pathname, navigate]);
@@ -41,6 +46,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/spotify-callback" element={<SpotifyCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
