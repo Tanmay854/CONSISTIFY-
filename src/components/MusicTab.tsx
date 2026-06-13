@@ -1,27 +1,29 @@
 import { useEffect, useState, useCallback } from "react";
-import { Search, X, Music2, Play } from "lucide-react";
+import { Search, X, Music2, Play, Plus, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { openSpotify } from "@/lib/spotifyLink";
+import { useAuth } from "@/hooks/useAuth";
+import { beginSpotifyLogin, callSpotifyUser } from "@/lib/spotifyConnect";
+import MyAlbumsSheet from "./MyAlbumsSheet";
+import { toast } from "@/hooks/use-toast";
 
 const SPOTIFY_GREEN = "#1DB954";
 
-interface PlaylistItem { id: string; name: string; image: string | null; description?: string; uri: string; }
 interface ArtistItem { id: string; name: string; image: string | null; uri: string; }
 interface AlbumItem { id: string; name: string; artist: string; image: string | null; uri: string; }
 interface TrackItem { id: string; name: string; artist: string; image: string | null; duration_ms?: number; uri: string; }
+interface CategoryBucket { id: string; title: string; tracks: TrackItem[]; }
+interface PlaylistItem { id: string; name: string; image: string | null; uri: string; tracks?: number; }
 
 interface HomeData {
-  featuredPlaylists: PlaylistItem[];
+  categories: CategoryBucket[];
   newReleases: AlbumItem[];
   recommendedArtists: ArtistItem[];
-  topCharts: TrackItem[];
 }
 
-interface SearchData {
-  tracks: TrackItem[];
-  artists: ArtistItem[];
-  playlists: PlaylistItem[];
-}
+interface SearchData { tracks: TrackItem[]; artists: ArtistItem[]; }
+
+interface MyAlbum { id: string; name: string; cover_url: string | null; }
 
 const fmtDur = (ms?: number) => {
   if (!ms) return "";
@@ -29,7 +31,6 @@ const fmtDur = (ms?: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
-// Deterministic vivid gradient from artist id (for colorful artist tile backgrounds)
 const gradientFor = (seed: string) => {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
@@ -48,6 +49,7 @@ const SpotifyBadge = () => (
 );
 
 const MusicTab = () => {
+  const { user } = useAuth();
   const [home, setHome] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +57,17 @@ const MusicTab = () => {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<SearchData | null>(null);
+
+  // Custom albums
+  const [myAlbums, setMyAlbums] = useState<MyAlbum[]>([]);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingAlbum, setEditingAlbum] = useState<MyAlbum | null>(null);
+
+  // Spotify connection
+  const [connected, setConnected] = useState(false);
+  const [spotifyName, setSpotifyName] = useState<string | null>(null);
+  const [userPlaylists, setUserPlaylists] = useState<PlaylistItem[]>([]);
+  const [likedSongs, setLikedSongs] = useState<TrackItem[]>([]);
 
   const callFn = useCallback(async (params: Record<string, string>) => {
     const url = new URL(
@@ -82,6 +95,49 @@ const MusicTab = () => {
     })();
   }, [callFn]);
 
+  // Load my albums
+  const loadAlbums = useCallback(async () => {
+    if (!user) { setMyAlbums([]); return; }
+    const { data } = await supabase.from("user_albums")
+      .select("id,name,cover_url")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    setMyAlbums((data || []) as MyAlbum[]);
+  }, [user]);
+  useEffect(() => { loadAlbums(); }, [loadAlbums]);
+
+  // Load Spotify connection status + content
+  const loadSpotify = useCallback(async () => {
+    if (!user) { setConnected(false); return; }
+    const { data } = await supabase.from("spotify_connections")
+      .select("display_name").eq("user_id", user.id).maybeSingle();
+    if (!data) { setConnected(false); return; }
+    setConnected(true);
+    setSpotifyName(data.display_name);
+    try {
+      const [pl, lk] = await Promise.all([
+        callSpotifyUser("me-playlists"),
+        callSpotifyUser("me-liked"),
+      ]);
+      setUserPlaylists(pl.items || []);
+      setLikedSongs(lk.items || []);
+    } catch (e) {
+      console.warn("Spotify user content failed", e);
+    }
+  }, [user]);
+  useEffect(() => { loadSpotify(); }, [loadSpotify]);
+
+  const disconnectSpotify = async () => {
+    try {
+      await callSpotifyUser("disconnect", { method: "POST" });
+      setConnected(false); setSpotifyName(null);
+      setUserPlaylists([]); setLikedSongs([]);
+      toast({ title: "Spotify disconnected" });
+    } catch (e) {
+      toast({ title: "Failed to disconnect", variant: "destructive" });
+    }
+  };
+
   // Debounced search
   useEffect(() => {
     const q = query.trim();
@@ -92,7 +148,7 @@ const MusicTab = () => {
         const d = await callFn({ action: "search", q });
         setResults(d);
       } catch {
-        setResults({ tracks: [], artists: [], playlists: [] });
+        setResults({ tracks: [], artists: [] });
       } finally {
         setSearching(false);
       }
@@ -108,6 +164,30 @@ const MusicTab = () => {
         <SpotifyBadge />
       </div>
 
+      {/* Connect Spotify */}
+      {user && (
+        <div className="px-5 pt-3">
+          {connected ? (
+            <div className="flex items-center justify-between bg-white/5 rounded-full px-4 py-2">
+              <span className="text-xs text-white/80">
+                Connected{spotifyName ? ` as ${spotifyName}` : ""}
+              </span>
+              <button onClick={disconnectSpotify} className="text-white/50 hover:text-white" aria-label="Disconnect">
+                <LogOut size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={beginSpotifyLogin}
+              className="w-full rounded-full py-2.5 text-sm font-semibold text-black"
+              style={{ backgroundColor: SPOTIFY_GREEN }}
+            >
+              Connect Spotify
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Search */}
       <div className="px-5 pt-3">
         <div className="relative">
@@ -115,7 +195,7 @@ const MusicTab = () => {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search songs, artists, playlists"
+            placeholder="Search songs, artists"
             className="w-full bg-white/10 text-white rounded-full pl-10 pr-9 py-2.5 text-sm placeholder:text-white/50 outline-none focus:ring-1"
             style={{ boxShadow: query ? `0 0 0 1px ${SPOTIFY_GREEN}` : undefined }}
           />
@@ -133,33 +213,19 @@ const MusicTab = () => {
           {searching && <p className="text-white/50 text-xs text-center py-4">Searching…</p>}
           {!searching && results && (
             <>
-              {results.tracks.length === 0 && results.artists.length === 0 && results.playlists.length === 0 && (
+              {results.tracks.length === 0 && results.artists.length === 0 && (
                 <p className="text-white/50 text-sm text-center py-8">No results</p>
               )}
-
               {results.tracks.length > 0 && (
                 <Section title="Songs">
                   <div className="space-y-0.5">
-                    {results.tracks.map((t) => (
-                      <TrackRow key={t.id} track={t} />
-                    ))}
+                    {results.tracks.map((t) => <TrackRow key={t.id} track={t} />)}
                   </div>
                 </Section>
               )}
-
               {results.artists.length > 0 && (
                 <Section title="Artists">
-                  <HScroll>
-                    {results.artists.map((a) => <ArtistTile key={a.id} artist={a} />)}
-                  </HScroll>
-                </Section>
-              )}
-
-              {results.playlists.length > 0 && (
-                <Section title="Playlists">
-                  <HScroll>
-                    {results.playlists.map((p) => <PlaylistTile key={p.id} playlist={p} />)}
-                  </HScroll>
+                  <HScroll>{results.artists.map((a) => <ArtistTile key={a.id} artist={a} />)}</HScroll>
                 </Section>
               )}
             </>
@@ -167,9 +233,72 @@ const MusicTab = () => {
         </div>
       )}
 
-      {/* Home content */}
       {!query.trim() && (
         <div className="mt-5 space-y-7">
+          {/* My Albums */}
+          {user && (
+            <Section title="My Albums">
+              <HScroll>
+                <button
+                  onClick={() => { setEditingAlbum(null); setSheetOpen(true); }}
+                  className="w-28 flex-shrink-0 flex flex-col items-center justify-center active:scale-95 transition-transform"
+                >
+                  <div
+                    className="w-28 h-28 rounded-md flex items-center justify-center border-2 border-dashed border-white/20"
+                    style={{ color: SPOTIFY_GREEN }}
+                  >
+                    <Plus size={28} />
+                  </div>
+                  <p className="text-white text-xs font-semibold mt-2 text-center">New album</p>
+                </button>
+                {myAlbums.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => { setEditingAlbum(a); setSheetOpen(true); }}
+                    className="w-28 flex-shrink-0 text-left active:scale-95 transition-transform"
+                  >
+                    <div className="w-28 h-28 rounded-md overflow-hidden bg-white/10 shadow-lg">
+                      {a.cover_url
+                        ? <img src={a.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                        : <div className="w-full h-full flex items-center justify-center"><Music2 size={28} className="text-white/40" /></div>}
+                    </div>
+                    <p className="text-white text-xs font-semibold mt-2 truncate">{a.name}</p>
+                  </button>
+                ))}
+              </HScroll>
+            </Section>
+          )}
+
+          {/* Your Playlists (when connected) */}
+          {connected && userPlaylists.length > 0 && (
+            <Section title="Your Playlists">
+              <HScroll>
+                {userPlaylists.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => openSpotify(p.uri)}
+                    className="w-36 flex-shrink-0 text-left active:scale-95 transition-transform"
+                  >
+                    <div className="w-36 h-36 rounded-md overflow-hidden bg-white/10 shadow-lg">
+                      {p.image && <img src={p.image} alt="" className="w-full h-full object-cover" loading="lazy" />}
+                    </div>
+                    <p className="text-white text-xs font-semibold mt-2 truncate">{p.name}</p>
+                    {p.tracks ? <p className="text-white/60 text-[11px]">{p.tracks} tracks</p> : null}
+                  </button>
+                ))}
+              </HScroll>
+            </Section>
+          )}
+
+          {/* Liked Songs (when connected) */}
+          {connected && likedSongs.length > 0 && (
+            <Section title="Liked Songs">
+              <div className="px-3 space-y-0.5">
+                {likedSongs.slice(0, 20).map((t, i) => <TrackRow key={t.id} track={t} index={i + 1} />)}
+              </div>
+            </Section>
+          )}
+
           {loading && (
             <div className="px-5 space-y-3">
               {[1, 2, 3].map((i) => <div key={i} className="h-32 rounded-lg bg-white/5 animate-pulse" />)}
@@ -179,30 +308,32 @@ const MusicTab = () => {
 
           {home && (
             <>
-              {home.featuredPlaylists.length > 0 && (
-                <Section title="Featured Playlists" px>
-                  <div className="grid grid-cols-2 gap-2.5 px-5">
-                    {home.featuredPlaylists.slice(0, 6).map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => openSpotify(p.uri)}
-                        className="flex items-center gap-2 bg-white/10 hover:bg-white/15 rounded-md overflow-hidden text-left active:scale-95 transition-transform"
-                      >
-                        <div className="w-14 h-14 bg-white/10 flex-shrink-0">
-                          {p.image && <img src={p.image} alt="" className="w-full h-full object-cover" loading="lazy" />}
-                        </div>
-                        <span className="text-white text-xs font-semibold pr-2 line-clamp-2">{p.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </Section>
-              )}
+              {/* Motivational categories */}
+              {home.categories.map((cat) => (
+                cat.tracks.length > 0 && (
+                  <Section key={cat.id} title={cat.title}>
+                    <HScroll>
+                      {cat.tracks.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => openSpotify(t.uri)}
+                          className="w-36 flex-shrink-0 text-left active:scale-95 transition-transform"
+                        >
+                          <div className="w-36 h-36 rounded-md overflow-hidden bg-white/10 shadow-lg">
+                            {t.image && <img src={t.image} alt="" className="w-full h-full object-cover" loading="lazy" />}
+                          </div>
+                          <p className="text-white text-xs font-semibold mt-2 truncate">{t.name}</p>
+                          <p className="text-white/60 text-[11px] truncate">{t.artist}</p>
+                        </button>
+                      ))}
+                    </HScroll>
+                  </Section>
+                )
+              ))}
 
               {home.recommendedArtists.length > 0 && (
                 <Section title="Recommended Artists">
-                  <HScroll>
-                    {home.recommendedArtists.map((a) => <ArtistTile key={a.id} artist={a} />)}
-                  </HScroll>
+                  <HScroll>{home.recommendedArtists.map((a) => <ArtistTile key={a.id} artist={a} />)}</HScroll>
                 </Section>
               )}
 
@@ -225,16 +356,6 @@ const MusicTab = () => {
                   </HScroll>
                 </Section>
               )}
-
-              {home.topCharts.length > 0 && (
-                <Section title="Top Charts">
-                  <div className="px-3 space-y-0.5">
-                    {home.topCharts.map((t, i) => (
-                      <TrackRow key={t.id} track={t} index={i + 1} />
-                    ))}
-                  </div>
-                </Section>
-              )}
             </>
           )}
         </div>
@@ -243,15 +364,20 @@ const MusicTab = () => {
       <div className="mt-10 flex justify-center">
         <SpotifyBadge />
       </div>
+
+      <MyAlbumsSheet
+        open={sheetOpen}
+        album={editingAlbum}
+        onClose={() => setSheetOpen(false)}
+        onAlbumChanged={loadAlbums}
+      />
     </div>
   );
 };
 
-// — subcomponents —
-
-const Section = ({ title, children, px }: { title: string; children: React.ReactNode; px?: boolean }) => (
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section>
-    <h3 className={`text-white font-bold text-lg mb-2.5 ${px === false ? "" : "px-5"}`}>{title}</h3>
+    <h3 className="text-white font-bold text-lg mb-2.5 px-5">{title}</h3>
     {children}
   </section>
 );
@@ -265,27 +391,10 @@ const ArtistTile = ({ artist }: { artist: ArtistItem }) => (
     onClick={() => openSpotify(artist.uri)}
     className="w-28 flex-shrink-0 text-left active:scale-95 transition-transform"
   >
-    <div
-      className="w-28 h-28 rounded-full overflow-hidden shadow-xl"
-      style={{ background: gradientFor(artist.id) }}
-    >
-      {artist.image && (
-        <img src={artist.image} alt={artist.name} className="w-full h-full object-cover" loading="lazy" />
-      )}
+    <div className="w-28 h-28 rounded-full overflow-hidden shadow-xl" style={{ background: gradientFor(artist.id) }}>
+      {artist.image && <img src={artist.image} alt={artist.name} className="w-full h-full object-cover" loading="lazy" />}
     </div>
     <p className="text-white text-xs font-semibold mt-2 text-center truncate">{artist.name}</p>
-  </button>
-);
-
-const PlaylistTile = ({ playlist }: { playlist: PlaylistItem }) => (
-  <button
-    onClick={() => openSpotify(playlist.uri)}
-    className="w-36 flex-shrink-0 text-left active:scale-95 transition-transform"
-  >
-    <div className="w-36 h-36 rounded-md overflow-hidden bg-white/10 shadow-lg">
-      {playlist.image && <img src={playlist.image} alt="" className="w-full h-full object-cover" loading="lazy" />}
-    </div>
-    <p className="text-white text-xs font-semibold mt-2 truncate">{playlist.name}</p>
   </button>
 );
 
@@ -309,7 +418,7 @@ const TrackRow = ({ track, index }: { track: TrackItem; index?: number }) => (
     {track.duration_ms ? (
       <span className="text-white/50 text-xs tabular-nums">{fmtDur(track.duration_ms)}</span>
     ) : (
-      <Play size={14} className="text-white/60" style={{ color: SPOTIFY_GREEN }} fill={SPOTIFY_GREEN} />
+      <Play size={14} fill={SPOTIFY_GREEN} style={{ color: SPOTIFY_GREEN }} />
     )}
   </button>
 );
