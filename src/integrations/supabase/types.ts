@@ -113,6 +113,24 @@ export type Database = {
         }
         Relationships: []
       }
+      music_cache: {
+        Row: {
+          key: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          payload: Json
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -248,6 +266,42 @@ export type Database = {
         }
         Relationships: []
       }
+      spotify_connections: {
+        Row: {
+          access_token: string
+          created_at: string
+          display_name: string | null
+          expires_at: string
+          refresh_token: string
+          scope: string
+          spotify_user_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          display_name?: string | null
+          expires_at: string
+          refresh_token: string
+          scope?: string
+          spotify_user_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          display_name?: string | null
+          expires_at?: string
+          refresh_token?: string
+          scope?: string
+          spotify_user_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       uploader_applications: {
         Row: {
           created_at: string
@@ -282,6 +336,77 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_album_tracks: {
+        Row: {
+          added_at: string
+          album_id: string
+          artist: string
+          id: string
+          image: string | null
+          name: string
+          position: number
+          spotify_track_id: string
+          uri: string
+        }
+        Insert: {
+          added_at?: string
+          album_id: string
+          artist?: string
+          id?: string
+          image?: string | null
+          name: string
+          position?: number
+          spotify_track_id: string
+          uri: string
+        }
+        Update: {
+          added_at?: string
+          album_id?: string
+          artist?: string
+          id?: string
+          image?: string | null
+          name?: string
+          position?: number
+          spotify_track_id?: string
+          uri?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_album_tracks_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "user_albums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_albums: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string
           updated_at?: string
           user_id?: string
         }
