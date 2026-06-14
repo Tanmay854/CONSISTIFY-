@@ -124,16 +124,6 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
 
-  // Check if this is a Bunny Stream video → use iframe embed for reliability
-  const bunnyGuid = hasVideo ? getBunnyGuid(reel.video_url) : null;
-  const [bunnyLibraryId, setBunnyLibraryId] = useState<string | null>(null);
-  useEffect(() => {
-    if (!bunnyGuid) return;
-    getBunnyLibraryId().then(setBunnyLibraryId);
-  }, [bunnyGuid]);
-  const useIframe = !!bunnyGuid && !!bunnyLibraryId;
-  const bunnyEmbedUrl = useIframe ? buildBunnyEmbedUrl(bunnyLibraryId!, bunnyGuid!, muted, isActive && isPlaying) : null;
-
   // Preload a wider window so swipes feel instant like Instagram.
   const shouldMount = hasVideo && distance <= 3;
   const preload = "auto";
@@ -157,12 +147,30 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
     }
   }, [isActive, reel.id]);
 
-  // Attach HLS only for non-Bunny-player URLs
+  // Attach HLS / progressive source
   useEffect(() => {
-    if (!shouldMount || !videoRef.current || useIframe) return;
-    const cleanup = attachHls(videoRef.current, reel.video_url);
+    if (!shouldMount || !videoRef.current) return;
+    const v = videoRef.current;
+    const cleanup = attachHls(
+      v,
+      reel.video_url,
+      () => {
+        // Manifest parsed → try to start playback if this card is active
+        if (isActive && isPlaying) {
+          v.play().catch(() => {
+            v.muted = true;
+            v.play().catch(() => setIsLoading(false));
+          });
+        }
+      },
+      (msg) => {
+        // Fatal HLS error — drop the spinner so the UI doesn't hang
+        console.error("[ReelsTab] HLS error:", msg, reel.video_url);
+        setIsLoading(false);
+      },
+    );
     return cleanup;
-  }, [shouldMount, reel.video_url, useIframe]);
+  }, [shouldMount, reel.video_url]);
 
   useEffect(() => {
     if (!shouldMount || !videoRef.current || useIframe) return;
