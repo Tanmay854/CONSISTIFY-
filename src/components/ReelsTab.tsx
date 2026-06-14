@@ -173,7 +173,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   }, [shouldMount, reel.video_url]);
 
   useEffect(() => {
-    if (!shouldMount || !videoRef.current || useIframe) return;
+    if (!shouldMount || !videoRef.current) return;
     const v = videoRef.current;
     v.muted = muted;
     if (isActive) {
@@ -191,10 +191,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       v.pause();
       try { v.currentTime = trimStart; } catch { /* empty */ }
     }
-  }, [isPlaying, isActive, shouldMount, muted, trimStart, useIframe]);
+  }, [isPlaying, isActive, shouldMount, muted, trimStart]);
 
   const togglePlay = () => {
-    if (!hasVideo || useIframe) return;
+    if (!hasVideo) return;
     setIsPlaying((p) => !p);
     setShowIcon(true);
     setTimeout(() => setShowIcon(false), 600);
