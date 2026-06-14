@@ -24,14 +24,34 @@ const attachHls = (video: HTMLVideoElement, url: string): (() => void) => {
   return () => {};
 };
 
-// Detect Bunny Stream player URLs and convert to embed iframe URL
-// player.mediadelivery.net/play/{libraryId}/{guid} → iframe.mediadelivery.net/embed/{libraryId}/{guid}
-const getBunnyEmbedUrl = (url: string, muted: boolean, autoplay: boolean): string | null => {
-  const match = url.match(/player\.mediadelivery\.net\/play\/(\d+)\/([a-f0-9-]+)/i);
-  if (!match) return null;
-  const [, libraryId, guid] = match;
-  return `https://iframe.mediadelivery.net/embed/${libraryId}/${guid}?autoplay=${autoplay}&loop=true&muted=${muted}&preload=true&responsive=true`;
+// Cached Bunny Stream library ID (fetched once from edge function).
+let bunnyLibraryIdPromise: Promise<string | null> | null = null;
+const getBunnyLibraryId = (): Promise<string | null> => {
+  if (!bunnyLibraryIdPromise) {
+    bunnyLibraryIdPromise = supabase.functions
+      .invoke("bunny-public-config")
+      .then(({ data }) => (data?.libraryId ? String(data.libraryId) : null))
+      .catch(() => null);
+  }
+  return bunnyLibraryIdPromise;
 };
+
+// Extract the Bunny Stream video GUID from any known URL format.
+const getBunnyGuid = (url: string): string | null => {
+  // 1. CDN playlist URL: https://vz-xxx.b-cdn.net/{guid}/playlist.m3u8
+  let m = url.match(/\.b-cdn\.net\/([0-9a-f-]{36})\//i);
+  if (m) return m[1];
+  // 2. Player URL: player.mediadelivery.net/play/{libraryId}/{guid}
+  m = url.match(/player\.mediadelivery\.net\/play\/\d+\/([0-9a-f-]{36})/i);
+  if (m) return m[1];
+  // 3. Embed URL: iframe.mediadelivery.net/embed/{libraryId}/{guid}
+  m = url.match(/iframe\.mediadelivery\.net\/embed\/\d+\/([0-9a-f-]{36})/i);
+  if (m) return m[1];
+  return null;
+};
+
+const buildBunnyEmbedUrl = (libraryId: string, guid: string, muted: boolean, autoplay: boolean): string =>
+  `https://iframe.mediadelivery.net/embed/${libraryId}/${guid}?autoplay=${autoplay}&loop=true&muted=${muted}&preload=true&responsive=true`;
 
 interface Reel {
   id: string;
@@ -98,9 +118,15 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
 
-  // Check if this is a Bunny Stream player URL → use iframe embed
-  const bunnyEmbedUrl = hasVideo ? getBunnyEmbedUrl(reel.video_url, muted, isActive && isPlaying) : null;
-  const useIframe = !!bunnyEmbedUrl;
+  // Check if this is a Bunny Stream video → use iframe embed for reliability
+  const bunnyGuid = hasVideo ? getBunnyGuid(reel.video_url) : null;
+  const [bunnyLibraryId, setBunnyLibraryId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!bunnyGuid) return;
+    getBunnyLibraryId().then(setBunnyLibraryId);
+  }, [bunnyGuid]);
+  const useIframe = !!bunnyGuid && !!bunnyLibraryId;
+  const bunnyEmbedUrl = useIframe ? buildBunnyEmbedUrl(bunnyLibraryId!, bunnyGuid!, muted, isActive && isPlaying) : null;
 
   // Preload a wider window so swipes feel instant like Instagram.
   const shouldMount = hasVideo && distance <= 3;
@@ -169,7 +195,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
         // Bunny Stream iframe embed — handles playback natively
         <iframe
           key={`${reel.id}-${isActive}-${isPlaying}`}
-          src={getBunnyEmbedUrl(reel.video_url, muted, isActive && isPlaying) || ""}
+          src={bunnyEmbedUrl || ""}
           className="absolute inset-0 w-full h-full border-0"
           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
