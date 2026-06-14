@@ -5,53 +5,59 @@ import { supabase } from "@/integrations/supabase/client";
 import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
 
-const attachHls = (video: HTMLVideoElement, url: string): (() => void) => {
-  if (!url.toLowerCase().includes(".m3u8")) {
+// Attach an HLS (.m3u8) or progressive source to a <video>. Returns a cleanup fn.
+// onReady fires when the stream is parsed and a play() can be attempted.
+// onFail fires on a fatal error so the spinner can be cleared and UI can recover.
+const attachHls = (
+  video: HTMLVideoElement,
+  url: string,
+  onReady?: () => void,
+  onFail?: (msg: string) => void,
+): (() => void) => {
+  const isHls = url.toLowerCase().includes(".m3u8");
+  if (!isHls) {
     video.src = url;
     return () => {};
   }
+  // Safari / iOS — native HLS
   if (video.canPlayType("application/vnd.apple.mpegurl")) {
     video.src = url;
     return () => {};
   }
   if (Hls.isSupported()) {
-    const hls = new Hls({ enableWorker: true });
+    const hls = new Hls({ enableWorker: true, lowLatencyMode: false });
+    hls.on(Hls.Events.MANIFEST_PARSED, () => { onReady?.(); });
+    hls.on(Hls.Events.ERROR, (_e, data) => {
+      if (!data.fatal) return;
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+        try { hls.startLoad(); } catch { /* empty */ }
+      } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        try { hls.recoverMediaError(); } catch { onFail?.(data.details || "media error"); }
+      } else {
+        onFail?.(data.details || "fatal hls error");
+        try { hls.destroy(); } catch { /* empty */ }
+      }
+    });
     hls.loadSource(url);
     hls.attachMedia(video);
-    return () => hls.destroy();
+    return () => { try { hls.destroy(); } catch { /* empty */ } };
   }
+  // Last-resort: let the browser try
   video.src = url;
   return () => {};
 };
 
-// Cached Bunny Stream library ID (fetched once from edge function).
-let bunnyLibraryIdPromise: Promise<string | null> | null = null;
-const getBunnyLibraryId = (): Promise<string | null> => {
-  if (!bunnyLibraryIdPromise) {
-    bunnyLibraryIdPromise = supabase.functions
-      .invoke("bunny-public-config")
-      .then(({ data }) => (data?.libraryId ? String(data.libraryId) : null))
-      .catch(() => null);
-  }
-  return bunnyLibraryIdPromise;
-};
-
-// Extract the Bunny Stream video GUID from any known URL format.
-const getBunnyGuid = (url: string): string | null => {
-  // 1. CDN playlist URL: https://vz-xxx.b-cdn.net/{guid}/playlist.m3u8
-  let m = url.match(/\.b-cdn\.net\/([0-9a-f-]{36})\//i);
-  if (m) return m[1];
-  // 2. Player URL: player.mediadelivery.net/play/{libraryId}/{guid}
-  m = url.match(/player\.mediadelivery\.net\/play\/\d+\/([0-9a-f-]{36})/i);
-  if (m) return m[1];
-  // 3. Embed URL: iframe.mediadelivery.net/embed/{libraryId}/{guid}
-  m = url.match(/iframe\.mediadelivery\.net\/embed\/\d+\/([0-9a-f-]{36})/i);
-  if (m) return m[1];
-  return null;
-};
-
-const buildBunnyEmbedUrl = (libraryId: string, guid: string, muted: boolean, autoplay: boolean): string =>
-  `https://iframe.mediadelivery.net/embed/${libraryId}/${guid}?autoplay=${autoplay}&loop=true&muted=${muted}&preload=true&responsive=true`;
+interface Reel {
+  id: string;
+  title: string;
+  video_url: string;
+  author_name: string | null;
+  description: string | null;
+  created_at: string;
+  trim_start: number | null;
+  trim_end: number | null;
+  video_fit?: string | null;
+}
 
 interface Reel {
   id: string;
