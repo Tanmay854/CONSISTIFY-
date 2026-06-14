@@ -195,7 +195,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
         // Bunny Stream iframe embed — handles playback natively
         <iframe
           key={`${reel.id}-${isActive}-${isPlaying}`}
-          src={getBunnyEmbedUrl(reel.video_url, muted, isActive && isPlaying) || ""}
+          src={bunnyEmbedUrl || ""}
           className="absolute inset-0 w-full h-full border-0"
           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
