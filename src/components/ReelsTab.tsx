@@ -138,8 +138,15 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
     v.muted = muted;
     if (isActive) {
       try { v.currentTime = trimStart; } catch { /* empty */ }
-      if (isPlaying) v.play().catch(() => {});
-      else v.pause();
+      if (isPlaying) {
+        v.play().catch(() => {
+          // Autoplay likely blocked because the video is unmuted. Force mute and retry.
+          v.muted = true;
+          v.play().catch(() => { setIsLoading(false); });
+        });
+      } else {
+        v.pause();
+      }
     } else {
       v.pause();
       try { v.currentTime = trimStart; } catch { /* empty */ }
