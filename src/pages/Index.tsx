@@ -16,7 +16,11 @@ const AppContent = () => {
   const [activeTab, setActiveTab] = useState<Tab>("reels");
   const [showSettings, setShowSettings] = useState(false);
   const [muted, setMuted] = useState<boolean>(() => {
-    try { return localStorage.getItem("video_muted") === "1"; } catch { return false; }
+    // Default to muted so browsers allow autoplay. User can unmute via the button.
+    try {
+      const v = localStorage.getItem("video_muted");
+      return v === null ? true : v === "1";
+    } catch { return true; }
   });
 
   useEffect(() => {
