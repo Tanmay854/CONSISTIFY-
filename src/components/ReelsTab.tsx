@@ -461,4 +461,4 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
   );
 };
 
-export default ReelsTabh;
+export default ReelsTab;
