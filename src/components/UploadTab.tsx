@@ -85,7 +85,7 @@ const UploadTab = () => {
   };
 
   // Music + photos go to Bunny Storage via the edge function (scales to 20+ TB).
-  const uploadToBunny = async (file: File, kind: "audio" | "image"): Promise<string | null> => {
+  const uploadToBunny = async (file: File, kind: "audio" | "image"): Promise<{ url: string; path: string | null } | null> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setError("Sign in required"); return null; }
     const form = new FormData();
@@ -101,10 +101,10 @@ const UploadTab = () => {
     );
     const json = await res.json().catch(() => ({}));
     if (!res.ok || !json.url) {
-      setError(json.error || "Upload failed");
+      setError(json.detail ? `${json.error || "Upload failed"}: ${json.detail}` : json.error || "Upload failed");
       return null;
     }
-    return json.url as string;
+    return { url: json.url as string, path: typeof json.path === "string" ? json.path : null };
   };
 
   const handleSubmit = async () => {
@@ -169,19 +169,20 @@ const UploadTab = () => {
         if (uploadErr) { setError("Upload failed: " + uploadErr); setLoading(false); return; }
 
 
-        // 3. Save Bunny playback URL into reels
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playbackUrl, category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
+        // 3. Save Bunny playback URL and exact Stream identifiers into reels
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playbackUrl, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
 
       } else if (activeType === "photo") {
         if (!photoTitle.trim() || !photoFile) { setError("Title and image required"); setLoading(false); return; }
-        const url = await uploadToBunny(photoFile, "image");
-        if (!url) { setLoading(false); return; }
+        const uploaded = await uploadToBunny(photoFile, "image");
+        if (!uploaded) { setLoading(false); return; }
         const { error: insertErr } = await supabase.from("quotes").insert({
           title: photoTitle.trim(),
           description: photoDescription.trim() || null,
           category: photoCategory.toUpperCase(),
-          image_url: url,
+          image_url: uploaded.url,
+          bunny_storage_path: uploaded.path,
           is_pro: false,
           uploaded_by: user?.id,
         });
