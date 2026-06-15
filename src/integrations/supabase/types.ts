@@ -154,6 +154,7 @@ export type Database = {
       }
       quotes: {
         Row: {
+          bunny_storage_path: string | null
           category: string
           created_at: string
           description: string | null
@@ -164,6 +165,7 @@ export type Database = {
           uploaded_by: string | null
         }
         Insert: {
+          bunny_storage_path?: string | null
           category?: string
           created_at?: string
           description?: string | null
@@ -174,6 +176,7 @@ export type Database = {
           uploaded_by?: string | null
         }
         Update: {
+          bunny_storage_path?: string | null
           category?: string
           created_at?: string
           description?: string | null
@@ -188,6 +191,8 @@ export type Database = {
       reels: {
         Row: {
           author_name: string | null
+          bunny_library_id: string | null
+          bunny_video_guid: string | null
           category: string
           created_at: string
           description: string | null
@@ -201,6 +206,8 @@ export type Database = {
         }
         Insert: {
           author_name?: string | null
+          bunny_library_id?: string | null
+          bunny_video_guid?: string | null
           category?: string
           created_at?: string
           description?: string | null
@@ -214,6 +221,8 @@ export type Database = {
         }
         Update: {
           author_name?: string | null
+          bunny_library_id?: string | null
+          bunny_video_guid?: string | null
           category?: string
           created_at?: string
           description?: string | null
