@@ -129,6 +129,7 @@ const isValidUrl = (url: string): boolean => {
 
 const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: Reel; isActive: boolean; distance: number; index: number; muted: boolean; onReport: (r: Reel) => void }) => {
   const hasVideo = reel.video_url && reel.video_url.length > 0 && isValidUrl(reel.video_url);
+  const playableUrl = hasVideo ? getPlayableVideoUrl(reel.video_url) : "";
   const gradient = gradients[index % gradients.length];
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -169,7 +170,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
     const v = videoRef.current;
     const cleanup = attachHls(
       v,
-      reel.video_url,
+      playableUrl,
       () => {
         // Manifest parsed → try to start playback if this card is active
         if (isActive && isPlaying) {
@@ -181,12 +182,12 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       },
       (msg) => {
         // Fatal HLS error — drop the spinner so the UI doesn't hang
-        console.error("[ReelsTab] HLS error:", msg, reel.video_url);
+        console.error("[ReelsTab] HLS error:", msg, playableUrl);
         setIsLoading(false);
       },
     );
     return cleanup;
-  }, [shouldMount, reel.video_url]);
+  }, [shouldMount, playableUrl]);
 
   useEffect(() => {
     if (!shouldMount || !videoRef.current) return;
@@ -385,7 +386,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
     const to = from + PAGE_SIZE - 1;
     const { data } = await supabase
       .from("reels")
-      .select("id,title,description,category,video_url,video_fit,trim_start,trim_end,author_name,uploaded_by,created_at")
+      .select("id,title,description,category,video_url,bunny_video_guid,bunny_library_id,video_fit,trim_start,trim_end,author_name,uploaded_by,created_at")
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) {
