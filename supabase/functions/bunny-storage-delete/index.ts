@@ -7,12 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const cleanHost = (value: string) => value.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+const cleanPath = (value: string) => value.trim().replace(/^\/+/, "").split("?")[0];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const zone = Deno.env.get("BUNNY_STORAGE_ZONE_NAME");
     const password = Deno.env.get("BUNNY_STORAGE_PASSWORD");
-    const cdnHost = Deno.env.get("BUNNY_STORAGE_CDN_HOSTNAME");
+    const cdnHost = cleanHost(Deno.env.get("BUNNY_STORAGE_CDN_HOSTNAME") || "");
     if (!zone || !password || !cdnHost) {
       return new Response(JSON.stringify({ error: "Bunny Storage not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -36,20 +39,20 @@ Deno.serve(async (req) => {
     if (!allowed) return new Response(JSON.stringify({ error: "Forbidden" }),
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { fileUrl } = await req.json().catch(() => ({}));
-    if (typeof fileUrl !== "string" || !fileUrl) {
-      return new Response(JSON.stringify({ error: "fileUrl required" }),
+    const { fileUrl, filePath } = await req.json().catch(() => ({}));
+    if ((typeof filePath !== "string" || !filePath) && (typeof fileUrl !== "string" || !fileUrl)) {
+      return new Response(JSON.stringify({ error: "filePath or fileUrl required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Only delete files on our own Bunny Storage CDN — skip Supabase storage / external URLs.
     const marker = `${cdnHost}/`;
-    const idx = fileUrl.indexOf(marker);
-    if (idx < 0) {
+    const idx = typeof fileUrl === "string" ? fileUrl.indexOf(marker) : -1;
+    if (idx < 0 && typeof filePath !== "string") {
       return new Response(JSON.stringify({ skipped: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const path = fileUrl.slice(idx + marker.length).split("?")[0];
+    const path = cleanPath(typeof filePath === "string" && filePath ? filePath : fileUrl.slice(idx + marker.length));
 
     const region = (Deno.env.get("BUNNY_STORAGE_REGION") || "").trim().toLowerCase();
     const host = region ? `${region}.storage.bunnycdn.com` : `storage.bunnycdn.com`;
