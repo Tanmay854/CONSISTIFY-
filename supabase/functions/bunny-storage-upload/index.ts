@@ -7,13 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const cleanHost = (value: string) => value.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const zone = Deno.env.get("BUNNY_STORAGE_ZONE_NAME");
     const password = Deno.env.get("BUNNY_STORAGE_PASSWORD");
-    const cdnHost = Deno.env.get("BUNNY_STORAGE_CDN_HOSTNAME");
+    const cdnHost = cleanHost(Deno.env.get("BUNNY_STORAGE_CDN_HOSTNAME") || "");
     if (!zone || !password || !cdnHost) {
       return new Response(JSON.stringify({ error: "Bunny Storage not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
