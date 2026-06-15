@@ -12,13 +12,15 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+const cleanHost = (value: string) => value.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const apiKey = Deno.env.get("BUNNY_STREAM_API_KEY");
     const libraryId = Deno.env.get("BUNNY_STREAM_LIBRARY_ID");
-    const cdnHost = Deno.env.get("BUNNY_STREAM_CDN_HOSTNAME");
+    const cdnHost = cleanHost(Deno.env.get("BUNNY_STREAM_CDN_HOSTNAME") || "");
     if (!apiKey || !libraryId || !cdnHost) {
       return new Response(JSON.stringify({ error: "Bunny.net not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },

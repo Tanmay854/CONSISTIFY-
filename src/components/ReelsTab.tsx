@@ -25,12 +25,24 @@ const attachHls = (
     return () => {};
   }
   if (Hls.isSupported()) {
+    let retries = 0;
+    let retryTimer: number | null = null;
     const hls = new Hls({ enableWorker: true, lowLatencyMode: false });
     hls.on(Hls.Events.MANIFEST_PARSED, () => { onReady?.(); });
     hls.on(Hls.Events.ERROR, (_e, data) => {
       if (!data.fatal) return;
       if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-        try { hls.startLoad(); } catch { /* empty */ }
+        if (retries < 24) {
+          retries += 1;
+          retryTimer = window.setTimeout(() => {
+            try {
+              hls.loadSource(url);
+              hls.startLoad();
+            } catch { /* empty */ }
+          }, Math.min(2500 * retries, 10000));
+          return;
+        }
+        onFail?.(data.details || "network error");
       } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
         try { hls.recoverMediaError(); } catch { onFail?.(data.details || "media error"); }
       } else {
@@ -40,11 +52,25 @@ const attachHls = (
     });
     hls.loadSource(url);
     hls.attachMedia(video);
-    return () => { try { hls.destroy(); } catch { /* empty */ } };
+    return () => {
+      if (retryTimer) window.clearTimeout(retryTimer);
+      try { hls.destroy(); } catch { /* empty */ }
+    };
   }
   // Last-resort: let the browser try
   video.src = url;
   return () => {};
+};
+
+const getPlayableVideoUrl = (url: string): string => {
+  const trimmed = url.trim();
+  const streamCdn = trimmed.match(/^(https?:\/\/[^/]+\.b-cdn\.net)\/([0-9a-fA-F-]{36})(?:\/|$)/);
+  if (streamCdn) return `${streamCdn[1]}/${streamCdn[2]}/playlist.m3u8`;
+
+  const mediaDelivery = trimmed.match(/mediadelivery\.net\/(?:embed|play)\/(\d+)\/([0-9a-fA-F-]{36})/i);
+  if (mediaDelivery) return `https://vz-${mediaDelivery[1]}.b-cdn.net/${mediaDelivery[2]}/playlist.m3u8`;
+
+  return trimmed;
 };
 
 interface Reel {
@@ -57,18 +83,8 @@ interface Reel {
   trim_start: number | null;
   trim_end: number | null;
   video_fit?: string | null;
-}
-
-interface Reel {
-  id: string;
-  title: string;
-  video_url: string;
-  author_name: string | null;
-  description: string | null;
-  created_at: string;
-  trim_start: number | null;
-  trim_end: number | null;
-  video_fit?: string | null;
+  bunny_video_guid?: string | null;
+  bunny_library_id?: string | null;
 }
 
 
@@ -113,6 +129,7 @@ const isValidUrl = (url: string): boolean => {
 
 const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: Reel; isActive: boolean; distance: number; index: number; muted: boolean; onReport: (r: Reel) => void }) => {
   const hasVideo = reel.video_url && reel.video_url.length > 0 && isValidUrl(reel.video_url);
+  const playableUrl = hasVideo ? getPlayableVideoUrl(reel.video_url) : "";
   const gradient = gradients[index % gradients.length];
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -153,7 +170,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
     const v = videoRef.current;
     const cleanup = attachHls(
       v,
-      reel.video_url,
+      playableUrl,
       () => {
         // Manifest parsed → try to start playback if this card is active
         if (isActive && isPlaying) {
@@ -165,12 +182,12 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       },
       (msg) => {
         // Fatal HLS error — drop the spinner so the UI doesn't hang
-        console.error("[ReelsTab] HLS error:", msg, reel.video_url);
+        console.error("[ReelsTab] HLS error:", msg, playableUrl);
         setIsLoading(false);
       },
     );
     return cleanup;
-  }, [shouldMount, reel.video_url]);
+  }, [shouldMount, playableUrl]);
 
   useEffect(() => {
     if (!shouldMount || !videoRef.current) return;
@@ -369,7 +386,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
     const to = from + PAGE_SIZE - 1;
     const { data } = await supabase
       .from("reels")
-      .select("id,title,description,category,video_url,video_fit,trim_start,trim_end,author_name,uploaded_by,created_at")
+      .select("id,title,description,category,video_url,bunny_video_guid,bunny_library_id,video_fit,trim_start,trim_end,author_name,uploaded_by,created_at")
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) {

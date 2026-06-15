@@ -7,19 +7,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Pull the Bunny Stream GUID out of an HLS URL like
-// https://vz-xxxx.b-cdn.net/<guid>/playlist.m3u8
+// Pull the Bunny Stream GUID out of HLS, player, or embed URLs.
 function extractGuid(url: string): string | null {
-  const m = url.match(/b-cdn\.net\/([0-9a-fA-F-]{36})\//);
+  const m = url.match(/(?:b-cdn\.net|mediadelivery\.net)\/(?:embed\/\d+\/|play\/\d+\/)?([0-9a-fA-F-]{36})(?:\/|$)/);
   return m ? m[1] : null;
 }
+
+const cleanId = (value: unknown): string | null => {
+  const text = typeof value === "string" ? value.trim() : typeof value === "number" ? String(value) : "";
+  return text && /^[0-9]+$/.test(text) ? text : null;
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const apiKey = Deno.env.get("BUNNY_STREAM_API_KEY");
-    const libraryId = Deno.env.get("BUNNY_STREAM_LIBRARY_ID");
-    if (!apiKey || !libraryId) {
+    const defaultLibraryId = Deno.env.get("BUNNY_STREAM_LIBRARY_ID");
+    if (!apiKey || !defaultLibraryId) {
       return new Response(JSON.stringify({ error: "Bunny.net not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -42,20 +46,23 @@ Deno.serve(async (req) => {
     if (!allowed) return new Response(JSON.stringify({ error: "Forbidden" }),
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { videoUrl } = await req.json().catch(() => ({}));
-    if (typeof videoUrl !== "string" || !videoUrl) {
-      return new Response(JSON.stringify({ error: "videoUrl required" }),
+    const { videoUrl, videoGuid, libraryId } = await req.json().catch(() => ({}));
+    if ((!videoGuid || typeof videoGuid !== "string") && (typeof videoUrl !== "string" || !videoUrl)) {
+      return new Response(JSON.stringify({ error: "videoGuid or videoUrl required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const guid = extractGuid(videoUrl);
+    const guid = typeof videoGuid === "string" && /^[0-9a-fA-F-]{36}$/.test(videoGuid.trim())
+      ? videoGuid.trim()
+      : extractGuid(videoUrl);
     if (!guid) {
       // Not a Bunny Stream URL (e.g. YouTube embed) — nothing to delete in Bunny.
       return new Response(JSON.stringify({ skipped: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    const resolvedLibraryId = cleanId(libraryId) || defaultLibraryId;
 
     const delRes = await fetch(
-      `https://video.bunnycdn.com/library/${libraryId}/videos/${guid}`,
+      `https://video.bunnycdn.com/library/${resolvedLibraryId}/videos/${guid}`,
       { method: "DELETE", headers: { AccessKey: apiKey, accept: "application/json" } },
     );
     // 200 = deleted, 404 = already gone (treat as success)

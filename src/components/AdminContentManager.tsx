@@ -11,8 +11,8 @@ interface BaseItem {
   uploaded_by: string | null;
   created_at: string;
 }
-interface Reel extends BaseItem { video_url: string; }
-interface Quote extends BaseItem { image_url: string; category: string; }
+interface Reel extends BaseItem { video_url: string; bunny_video_guid: string | null; bunny_library_id: string | null; }
+interface Quote extends BaseItem { image_url: string; category: string; bunny_storage_path: string | null; }
 
 const isYoutube = (url: string) => /youtube\.com|youtu\.be/.test(url);
 
@@ -46,10 +46,10 @@ const AdminContentManager = () => {
 
   const nameFor = (uid: string | null) => uid ? (profiles[uid] || "Unknown") : "Legacy/Anonymous";
 
-  const handleDelete = async (table: "reels" | "quotes", id: string, fileUrl: string | null, bucket: string | null) => {
+  const handleDelete = async (table: "reels" | "quotes", id: string, fileUrl: string | null, bucket: string | null, bunnyRef = {}) => {
     if (!confirm("Permanently delete this item?")) return;
     setBusy(true);
-    const res = await deleteContent(table, id, fileUrl, bucket);
+    const res = await deleteContent(table, id, fileUrl, bucket, bunnyRef);
     if (!res.ok) alert(res.error || "Delete failed");
     await fetchAll();
     setBusy(false);
@@ -109,7 +109,7 @@ const AdminContentManager = () => {
                   <p className="text-foreground text-sm font-medium truncate">{r.title}</p>
                   <p className="text-muted-foreground text-xs truncate flex items-center gap-1"><User size={10} /> {nameFor(r.uploaded_by)}</p>
                 </div>
-                <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos")} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
+                <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos", { videoGuid: r.bunny_video_guid, libraryId: r.bunny_library_id })} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
             ))}
             {tab === "videos" && fReels.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos."}</p>}
@@ -121,7 +121,7 @@ const AdminContentManager = () => {
                   <p className="text-foreground text-sm font-medium truncate">{qq.title}</p>
                   <p className="text-muted-foreground text-xs truncate flex items-center gap-1"><User size={10} /> {nameFor(qq.uploaded_by)}</p>
                 </div>
-                <button onClick={() => handleDelete("quotes", qq.id, qq.image_url, "quote-images")} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
+                <button onClick={() => handleDelete("quotes", qq.id, qq.image_url, "quote-images", { storagePath: qq.bunny_storage_path })} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
             ))}
             {tab === "photos" && fQuotes.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No photos."}</p>}

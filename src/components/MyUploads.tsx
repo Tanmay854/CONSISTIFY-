@@ -10,6 +10,8 @@ interface Reel {
   id: string;
   title: string;
   video_url: string;
+  bunny_video_guid: string | null;
+  bunny_library_id: string | null;
   created_at: string;
   uploaded_by: string | null;
   trim_start: number | null;
@@ -20,6 +22,7 @@ interface Quote {
   title: string;
   category: string;
   image_url: string;
+  bunny_storage_path: string | null;
   created_at: string;
   uploaded_by: string | null;
 }
@@ -138,10 +141,10 @@ const MyUploads = () => {
     setBusy(false);
   };
 
-  const handleDelete = async (table: "reels" | "quotes", id: string, fileUrl: string | null, bucket: string | null) => {
+  const handleDelete = async (table: "reels" | "quotes", id: string, fileUrl: string | null, bucket: string | null, bunnyRef = {}) => {
     if (!confirm("Delete this item permanently?")) return;
     setBusy(true);
-    const res = await deleteContent(table, id, fileUrl, bucket);
+    const res = await deleteContent(table, id, fileUrl, bucket, bunnyRef);
     if (!res.ok) alert(res.error || "Delete failed");
     await fetchAll();
     setBusy(false);
@@ -215,7 +218,7 @@ const MyUploads = () => {
                             <button onClick={() => { setEditingId(reel.id); setEditTitle(reel.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
                             <button onClick={() => setTrimmingId(isTrimming ? null : reel.id)} className={isTrimming ? "text-primary" : "text-muted-foreground hover:text-primary"}><Scissors size={14} /></button>
                             <button onClick={() => setStatsOpen(statsOpen === `reel:${reel.id}` ? null : `reel:${reel.id}`)} className={statsOpen === `reel:${reel.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
-                            <button onClick={() => handleDelete("reels", reel.id, reel.video_url, ytId ? null : "videos")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+                            <button onClick={() => handleDelete("reels", reel.id, reel.video_url, ytId ? null : "videos", { videoGuid: reel.bunny_video_guid, libraryId: reel.bunny_library_id })} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
                           </div>
                         </div>
                       )}
@@ -261,7 +264,7 @@ const MyUploads = () => {
                           <div className="flex gap-2 flex-shrink-0">
                             <button onClick={() => { setEditingId(q.id); setEditTitle(q.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
                             <button onClick={() => setStatsOpen(statsOpen === `quote:${q.id}` ? null : `quote:${q.id}`)} className={statsOpen === `quote:${q.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
-                            <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images")} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+                            <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images", { storagePath: q.bunny_storage_path })} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
                           </div>
                         </div>
                       )}
