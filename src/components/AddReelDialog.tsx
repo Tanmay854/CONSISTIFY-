@@ -80,9 +80,12 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
     if (error) { setLoading(false); return; }
 
-    // 3. Save the playback URL into the reels table
+    // 3. Save the playback URL and exact Bunny Stream identifiers into the reels table
     const { error: insErr } = await supabase.from("reels").insert({
-      title: title.trim(), video_url: data.playbackUrl,
+      title: title.trim(),
+      video_url: data.playbackUrl,
+      bunny_video_guid: data.guid,
+      bunny_library_id: String(data.libraryId),
     });
     setLoading(false);
     if (insErr) { setError(insErr.message); return; }
