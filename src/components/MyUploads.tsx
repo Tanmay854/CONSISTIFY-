@@ -8,7 +8,8 @@ import { deleteContent } from "@/lib/deleteContent";
 
 interface Reel {
   id: string;
-  title: string;
+  public_id: string | null;
+  title: string | null;
   video_url: string;
   bunny_video_guid: string | null;
   bunny_library_id: string | null;
@@ -19,13 +20,15 @@ interface Reel {
 }
 interface Quote {
   id: string;
-  title: string;
+  public_id: string | null;
+  title: string | null;
   category: string;
   image_url: string;
   bunny_storage_path: string | null;
   created_at: string;
   uploaded_by: string | null;
 }
+
 
 type Tab = "videos" | "photos";
 
@@ -87,8 +90,9 @@ const MyUploads = () => {
   const [statsOpen, setStatsOpen] = useState<string | null>(null);
 
   const q = query.trim().toLowerCase();
-  const filterFn = <T extends { title: string }>(items: T[], extra?: (i: T) => string) =>
-    !q ? items : items.filter((i) => i.title.toLowerCase().includes(q) || (extra?.(i) ?? "").toLowerCase().includes(q));
+  const filterFn = <T extends { title: string | null }>(items: T[], extra?: (i: T) => string) =>
+    !q ? items : items.filter((i) => (i.title || "").toLowerCase().includes(q) || (extra?.(i) ?? "").toLowerCase().includes(q));
+
 
   const fetchAll = useCallback(async () => {
     if (!user) return;
@@ -202,7 +206,7 @@ const MyUploads = () => {
                 <div key={reel.id} className="bg-secondary rounded-xl p-3">
                   <div className="flex gap-3">
                     <div className="w-24 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      {thumb ? <img src={thumb} alt={reel.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Video</div>}
+                      {thumb ? <img src={thumb} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Video</div>}
                     </div>
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
@@ -213,9 +217,13 @@ const MyUploads = () => {
                         </div>
                       ) : (
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-foreground text-sm font-medium truncate">{reel.title}</p>
+                          <div className="min-w-0 flex items-center gap-2">
+                            {reel.public_id && <span className="font-mono text-[10px] tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">#{reel.public_id}</span>}
+                            <p className="text-foreground text-sm font-medium truncate">{reel.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
+                          </div>
+
                           <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => { setEditingId(reel.id); setEditTitle(reel.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
+                            <button onClick={() => { setEditingId(reel.id); setEditTitle(reel.title || ""); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
                             <button onClick={() => setTrimmingId(isTrimming ? null : reel.id)} className={isTrimming ? "text-primary" : "text-muted-foreground hover:text-primary"}><Scissors size={14} /></button>
                             <button onClick={() => setStatsOpen(statsOpen === `reel:${reel.id}` ? null : `reel:${reel.id}`)} className={statsOpen === `reel:${reel.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
                             <button onClick={() => handleDelete("reels", reel.id, reel.video_url, ytId ? null : "videos", { videoGuid: reel.bunny_video_guid, libraryId: reel.bunny_library_id })} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
@@ -243,7 +251,7 @@ const MyUploads = () => {
                 <div key={q.id} className="bg-secondary rounded-xl p-3">
                   <div className="flex gap-3">
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      <img src={q.image_url} alt={q.title} className="w-full h-full object-cover" />
+                      <img src={q.image_url} alt={q.title || "photo"} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
@@ -255,14 +263,18 @@ const MyUploads = () => {
                       ) : (
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="text-foreground text-sm font-medium truncate">{q.title}</p>
+                            <div className="flex items-center gap-2">
+                              {q.public_id && <span className="font-mono text-[10px] tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">#{q.public_id}</span>}
+                              <p className="text-foreground text-sm font-medium truncate">{q.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
+                            </div>
+
                             <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
                               <span>{q.category}</span>
                               <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
                             </p>
                           </div>
                           <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => { setEditingId(q.id); setEditTitle(q.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
+                            <button onClick={() => { setEditingId(q.id); setEditTitle(q.title || ""); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
                             <button onClick={() => setStatsOpen(statsOpen === `quote:${q.id}` ? null : `quote:${q.id}`)} className={statsOpen === `quote:${q.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
                             <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images", { storagePath: q.bunny_storage_path })} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
                           </div>

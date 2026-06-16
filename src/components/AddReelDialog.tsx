@@ -27,25 +27,29 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
   };
 
   const handleUrlSubmit = async () => {
-    if (!title.trim() || !isValidUrl(videoUrl.trim())) {
-      setError("Enter a title and valid URL"); return;
+    if (!isValidUrl(videoUrl.trim())) {
+      setError("Enter a valid URL"); return;
     }
     setLoading(true); setError(null);
     const { error: insErr } = await supabase.from("reels").insert({
-      title: title.trim(), video_url: videoUrl.trim(),
+      title: title.trim() || null, video_url: videoUrl.trim(),
     });
     setLoading(false);
     if (insErr) { setError(insErr.message); return; }
     reset(); onAdded(); onClose();
   };
 
+
   const handleFileUpload = async () => {
-    if (!title.trim() || !file) { setError("Enter a title and select a video"); return; }
+    if (!file) { setError("Select a video"); return; }
     setLoading(true); setError(null); setProgress(0);
+
+    const fallbackTitle = file.name.replace(/\.[^.]+$/, "") || "Untitled";
+    const titleForBunny = title.trim() || fallbackTitle;
 
     // 1. Ask edge function to create the Bunny video + signature
     const { data, error: fnErr } = await supabase.functions.invoke("bunny-create-video", {
-      body: { title: title.trim() },
+      body: { title: titleForBunny },
     });
     if (fnErr || !data?.guid) {
       setError(fnErr?.message || data?.error || "Failed to start upload");
@@ -57,7 +61,6 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
       const upload = new tus.Upload(file, {
         endpoint: data.tusEndpoint,
         retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
-        // Small chunks + no resume storage so mobile WebViews don't OOM
         chunkSize: 2 * 1024 * 1024,
         parallelUploads: 1,
         storeFingerprintForResuming: false,
@@ -68,7 +71,7 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
           VideoId: data.guid,
           LibraryId: String(data.libraryId),
         },
-        metadata: { filetype: file.type, title: title.trim() },
+        metadata: { filetype: file.type, title: titleForBunny },
         onError: (err) => reject(err),
         onProgress: (sent, total) => setProgress(Math.round((sent / total) * 100)),
         onSuccess: () => resolve(),
@@ -82,7 +85,7 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
     // 3. Save the playback URL and exact Bunny Stream identifiers into the reels table
     const { error: insErr } = await supabase.from("reels").insert({
-      title: title.trim(),
+      title: title.trim() || null,
       video_url: data.playbackUrl,
       bunny_video_guid: data.guid,
       bunny_library_id: String(data.libraryId),
@@ -91,6 +94,7 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
     if (insErr) { setError(insErr.message); return; }
     reset(); onAdded(); onClose();
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
@@ -111,9 +115,10 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
         <div className="space-y-4">
           <div>
-            <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title</label>
+            <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title <span className="text-muted-foreground/60 normal-case">(optional)</span></label>
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Rise and Grind"
               className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary" />
+
           </div>
 
           {mode === "url" ? (
@@ -142,8 +147,9 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
           {error && <p className="text-destructive text-xs">{error}</p>}
 
           <button onClick={mode === "url" ? handleUrlSubmit : handleFileUpload}
-            disabled={loading || !title.trim() || (mode === "url" ? !videoUrl.trim() : !file)}
+            disabled={loading || (mode === "url" ? !videoUrl.trim() : !file)}
             className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50">
+
             {loading ? (mode === "upload" ? `Uploading${progress ? ` ${progress}%` : "..."}` : "Adding...") : (mode === "upload" ? "Upload Video" : "Add Video")}
           </button>
         </div>

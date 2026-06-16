@@ -161,7 +161,8 @@ export type Database = {
           id: string
           image_url: string
           is_pro: boolean
-          title: string
+          public_id: string
+          title: string | null
           uploaded_by: string | null
         }
         Insert: {
@@ -172,7 +173,8 @@ export type Database = {
           id?: string
           image_url: string
           is_pro?: boolean
-          title: string
+          public_id?: string
+          title?: string | null
           uploaded_by?: string | null
         }
         Update: {
@@ -183,7 +185,8 @@ export type Database = {
           id?: string
           image_url?: string
           is_pro?: boolean
-          title?: string
+          public_id?: string
+          title?: string | null
           uploaded_by?: string | null
         }
         Relationships: []
@@ -197,7 +200,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
-          title: string
+          public_id: string
+          title: string | null
           trim_end: number | null
           trim_start: number | null
           uploaded_by: string | null
@@ -212,7 +216,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          title: string
+          public_id?: string
+          title?: string | null
           trim_end?: number | null
           trim_start?: number | null
           uploaded_by?: string | null
@@ -227,7 +232,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          title?: string
+          public_id?: string
+          title?: string | null
           trim_end?: number | null
           trim_start?: number | null
           uploaded_by?: string | null
@@ -489,6 +495,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gen_public_id6: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

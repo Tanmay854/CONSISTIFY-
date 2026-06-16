@@ -7,12 +7,14 @@ type Tab = "videos" | "photos";
 
 interface BaseItem {
   id: string;
-  title: string;
+  public_id: string | null;
+  title: string | null;
   uploaded_by: string | null;
   created_at: string;
 }
 interface Reel extends BaseItem { video_url: string; bunny_video_guid: string | null; bunny_library_id: string | null; }
 interface Quote extends BaseItem { image_url: string; category: string; bunny_storage_path: string | null; }
+
 
 const isYoutube = (url: string) => /youtube\.com|youtu\.be/.test(url);
 
@@ -56,11 +58,16 @@ const AdminContentManager = () => {
   };
 
   const q = query.trim().toLowerCase();
-  const matches = (title: string, uid: string | null, extra = "") =>
-    !q || title.toLowerCase().includes(q) || nameFor(uid).toLowerCase().includes(q) || extra.toLowerCase().includes(q);
+  const matches = (title: string | null, uid: string | null, publicId: string | null) => {
+    if (!q) return true;
+    const t = (title || "").toLowerCase();
+    const pid = (publicId || "").toLowerCase();
+    return t.includes(q) || pid.includes(q) || nameFor(uid).toLowerCase().includes(q);
+  };
 
-  const fReels = useMemo(() => reels.filter((r) => matches(r.title, r.uploaded_by)), [reels, q, profiles]);
-  const fQuotes = useMemo(() => quotes.filter((qq) => matches(qq.title, qq.uploaded_by)), [quotes, q, profiles]);
+  const fReels = useMemo(() => reels.filter((r) => matches(r.title, r.uploaded_by, r.public_id)), [reels, q, profiles]);
+  const fQuotes = useMemo(() => quotes.filter((qq) => matches(qq.title, qq.uploaded_by, qq.public_id)), [quotes, q, profiles]);
+
 
   const tabs: { id: Tab; label: string; icon: typeof Film; count: number }[] = [
     { id: "videos", label: "Videos", icon: Film, count: fReels.length },
@@ -74,9 +81,10 @@ const AdminContentManager = () => {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by title or uploader..."
+          placeholder="Search by ID, title or uploader..."
           className="w-full bg-secondary text-foreground rounded-lg pl-9 pr-9 py-2 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
         />
+
         {query && (
           <button onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
             <X size={14} />
@@ -106,8 +114,15 @@ const AdminContentManager = () => {
               <div key={r.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
                 <Film size={18} className="text-primary flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-foreground text-sm font-medium truncate">{r.title}</p>
-                  <p className="text-muted-foreground text-xs truncate flex items-center gap-1"><User size={10} /> {nameFor(r.uploaded_by)}</p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {r.public_id && (
+                      <span className="font-mono text-[10px] tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">
+                        #{r.public_id}
+                      </span>
+                    )}
+                    <p className="text-foreground text-sm font-medium truncate">{r.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
+                  </div>
+                  <p className="text-muted-foreground text-xs truncate flex items-center gap-1 mt-0.5"><User size={10} /> {nameFor(r.uploaded_by)}</p>
                 </div>
                 <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos", { videoGuid: r.bunny_video_guid, libraryId: r.bunny_library_id })} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
@@ -116,14 +131,22 @@ const AdminContentManager = () => {
 
             {tab === "photos" && fQuotes.map((qq) => (
               <div key={qq.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
-                <img src={qq.image_url} alt={qq.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                <img src={qq.image_url} alt={qq.title || "photo"} className="w-10 h-10 rounded object-cover flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-foreground text-sm font-medium truncate">{qq.title}</p>
-                  <p className="text-muted-foreground text-xs truncate flex items-center gap-1"><User size={10} /> {nameFor(qq.uploaded_by)}</p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {qq.public_id && (
+                      <span className="font-mono text-[10px] tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">
+                        #{qq.public_id}
+                      </span>
+                    )}
+                    <p className="text-foreground text-sm font-medium truncate">{qq.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
+                  </div>
+                  <p className="text-muted-foreground text-xs truncate flex items-center gap-1 mt-0.5"><User size={10} /> {nameFor(qq.uploaded_by)}</p>
                 </div>
                 <button onClick={() => handleDelete("quotes", qq.id, qq.image_url, "quote-images", { storagePath: qq.bunny_storage_path })} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
             ))}
+
             {tab === "photos" && fQuotes.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No photos."}</p>}
           </>
         )}

@@ -75,7 +75,7 @@ const getPlayableVideoUrl = (url: string): string => {
 
 interface Reel {
   id: string;
-  title: string;
+  title: string | null;
   video_url: string;
   author_name: string | null;
   description: string | null;
@@ -86,6 +86,7 @@ interface Reel {
   bunny_video_guid?: string | null;
   bunny_library_id?: string | null;
 }
+
 
 
 interface Ad {
@@ -471,7 +472,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
           onClose={() => setReportTarget(null)}
           contentType="video"
           contentId={reportTarget.id}
-          contentTitle={reportTarget.title}
+          contentTitle={reportTarget.title || "Untitled"}
         />
       )}
     </>

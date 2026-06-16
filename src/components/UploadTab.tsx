@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Film, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
 import * as tus from "tus-js-client";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MyUploads from "@/components/MyUploads";
+import { cropImageToAspect, type PhotoAspect } from "@/lib/cropImage";
+
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"];
 
@@ -40,6 +42,16 @@ const UploadTab = () => {
   const [photoDescription, setPhotoDescription] = useState("");
   const [photoCategory, setPhotoCategory] = useState("Motivation");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoAspect, setPhotoAspect] = useState<PhotoAspect>("original");
+  const photoPreviewUrl = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile]);
+  useEffect(() => () => { if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl); }, [photoPreviewUrl]);
+  const aspectClass: Record<PhotoAspect, string> = {
+    original: "aspect-auto",
+    "9:16": "aspect-[9/16]",
+    "1:1": "aspect-square",
+    "4:5": "aspect-[4/5]",
+  };
+
 
   // Ad fields
   const [adTitle, setAdTitle] = useState("");
@@ -114,8 +126,8 @@ const UploadTab = () => {
 
     try {
       if (activeType === "video") {
-        if (!videoTitle.trim()) { setError("Title required"); setLoading(false); return; }
         if (!videoFile) { setError("Select a video file from your device"); setLoading(false); return; }
+
         // Only probe duration for smaller files. Decoding a large local video in the
         // Android WebView for a duration check can OOM-crash the app.
         if (videoFile.size <= PREVIEW_MAX_BYTES) {
@@ -135,8 +147,10 @@ const UploadTab = () => {
 
         // 1. Ask edge function for a Bunny TUS upload ticket
         setUploadProgress(0);
+        const fallbackTitle = videoFile.name.replace(/\.[^.]+$/, "") || "Untitled";
+        const titleForBunny = videoTitle.trim() || fallbackTitle;
         const { data: ticket, error: fnErr } = await supabase.functions.invoke("bunny-create-video", {
-          body: { title: videoTitle.trim() },
+          body: { title: titleForBunny },
         });
         if (fnErr || !ticket?.guid) {
           setError(fnErr?.message || ticket?.error || "Failed to start upload");
@@ -159,7 +173,7 @@ const UploadTab = () => {
               VideoId: ticket.guid,
               LibraryId: String(ticket.libraryId),
             },
-            metadata: { filetype: videoFile.type, title: videoTitle.trim() },
+            metadata: { filetype: videoFile.type, title: titleForBunny },
             onError: (err) => resolve(err?.message || String(err)),
             onProgress: (sent, total) => setUploadProgress(Math.round((sent / total) * 100)),
             onSuccess: () => resolve(null),
@@ -170,15 +184,22 @@ const UploadTab = () => {
 
 
         // 3. Save Bunny playback URL and exact Stream identifiers into reels
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playbackUrl, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim() || null, description: videoDescription.trim() || null, video_url: ticket.playbackUrl, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
 
       } else if (activeType === "photo") {
-        if (!photoTitle.trim() || !photoFile) { setError("Title and image required"); setLoading(false); return; }
-        const uploaded = await uploadToBunny(photoFile, "image");
+        if (!photoFile) { setError("Select an image"); setLoading(false); return; }
+        let fileToUpload = photoFile;
+        try {
+          fileToUpload = await cropImageToAspect(photoFile, photoAspect);
+        } catch {
+          // fall back to original on crop failure
+          fileToUpload = photoFile;
+        }
+        const uploaded = await uploadToBunny(fileToUpload, "image");
         if (!uploaded) { setLoading(false); return; }
         const { error: insertErr } = await supabase.from("quotes").insert({
-          title: photoTitle.trim(),
+          title: photoTitle.trim() || null,
           description: photoDescription.trim() || null,
           category: photoCategory.toUpperCase(),
           image_url: uploaded.url,
@@ -186,6 +207,7 @@ const UploadTab = () => {
           is_pro: false,
           uploaded_by: user?.id,
         });
+
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "ad") {
         if (!adTitle.trim()) { setError("Ad title required"); setLoading(false); return; }
@@ -300,7 +322,7 @@ const UploadTab = () => {
             {activeType === "video" && (
               <>
                 <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title</label>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title <span className="text-muted-foreground/60 normal-case">(optional)</span></label>
                   <input
                     value={videoTitle}
                     onChange={(e) => setVideoTitle(e.target.value)}
@@ -389,7 +411,7 @@ const UploadTab = () => {
             {activeType === "photo" && (
               <>
                 <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title</label>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title <span className="text-muted-foreground/60 normal-case">(optional)</span></label>
                   <input
                     value={photoTitle}
                     onChange={(e) => setPhotoTitle(e.target.value)}
@@ -426,8 +448,45 @@ const UploadTab = () => {
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
                   />
                 </div>
+
+                {photoFile && (
+                  <div>
+                    <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Aspect ratio</label>
+                    <div className="grid grid-cols-4 gap-2 mb-2">
+                      {([
+                        { id: "original", label: "Original" },
+                        { id: "9:16", label: "9:16" },
+                        { id: "1:1", label: "1:1" },
+                        { id: "4:5", label: "4:5" },
+                      ] as const).map((m) => {
+                        const active = photoAspect === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setPhotoAspect(m.id)}
+                            className={`py-2 rounded-lg text-[11px] font-semibold transition-all ${active ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                          >
+                            {m.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {photoPreviewUrl && (
+                      <div className={`relative w-full ${aspectClass[photoAspect]} max-h-72 bg-black rounded-xl overflow-hidden mx-auto`}>
+                        <img
+                          src={photoPreviewUrl}
+                          alt="preview"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">The image is center-cropped to this ratio before upload.</p>
+                  </div>
+                )}
               </>
             )}
+
 
             {activeType === "ad" && (
               <>

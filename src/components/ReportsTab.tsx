@@ -16,7 +16,7 @@ interface Report {
 
 type Filter = "admitted" | "rejected" | "all";
 
-interface ContentInfo { title: string; uploaderName: string; }
+interface ContentInfo { title: string; uploaderName: string; publicId: string | null; }
 
 const ReportsTab = () => {
   const { isAdmin } = useAuth();
@@ -42,15 +42,16 @@ const ReportsTab = () => {
     });
 
     const tableFor = { video: "reels" as const, music: "music" as const, photo: "quotes" as const };
-    const fetched: Array<{ id: string; title: string; uploaded_by: string | null }> = [];
+    const fetched: Array<{ id: string; title: string; uploaded_by: string | null; publicId: string | null }> = [];
     const uploaderIds = new Set<string>();
 
     await Promise.all((Object.keys(byType) as Array<keyof typeof byType>).map(async (type) => {
       const ids = byType[type];
       if (!ids.length) return;
-      const { data: items } = await supabase.from(tableFor[type]).select("id, title, uploaded_by").in("id", ids);
+      const selectCols = type === "music" ? "id, title, uploaded_by" : "id, title, uploaded_by, public_id";
+      const { data: items } = await supabase.from(tableFor[type]).select(selectCols).in("id", ids);
       (items as any[] | null)?.forEach((it) => {
-        fetched.push({ id: it.id, title: it.title ?? "(untitled)", uploaded_by: it.uploaded_by });
+        fetched.push({ id: it.id, title: it.title ?? "(untitled)", uploaded_by: it.uploaded_by, publicId: it.public_id ?? null });
         if (it.uploaded_by) uploaderIds.add(it.uploaded_by);
       });
     }));
@@ -63,8 +64,9 @@ const ReportsTab = () => {
 
     const map: Record<string, ContentInfo> = {};
     fetched.forEach((f) => {
-      map[f.id] = { title: f.title, uploaderName: f.uploaded_by ? (profiles[f.uploaded_by] || "Unknown") : "Unknown" };
+      map[f.id] = { title: f.title, uploaderName: f.uploaded_by ? (profiles[f.uploaded_by] || "Unknown") : "Unknown", publicId: f.publicId };
     });
+
     setContentMap(map);
     setLoading(false);
   }, [filter]);
@@ -124,13 +126,21 @@ const ReportsTab = () => {
               </div>
             </div>
             <div className="space-y-0.5">
-              <p className="text-foreground text-sm font-semibold">
-                {contentMap[r.content_id]?.title ?? "(content unavailable)"}
-              </p>
+              <div className="flex items-center gap-2 min-w-0">
+                {contentMap[r.content_id]?.publicId && (
+                  <span className="font-mono text-[10px] tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">
+                    #{contentMap[r.content_id]!.publicId}
+                  </span>
+                )}
+                <p className="text-foreground text-sm font-semibold truncate">
+                  {contentMap[r.content_id]?.title ?? "(content unavailable)"}
+                </p>
+              </div>
               <p className="text-muted-foreground text-[11px]">
                 Uploaded by: <span className="text-foreground">{contentMap[r.content_id]?.uploaderName ?? "Unknown"}</span>
               </p>
             </div>
+
             <p className="text-foreground text-sm">{r.issue_description}</p>
             {r.reporter_email && <p className="text-muted-foreground text-[10px]">From: {r.reporter_email}</p>}
             <p className="text-muted-foreground text-[10px]">Content ID: {r.content_id.slice(0, 8)}… · {new Date(r.created_at).toLocaleString()}</p>
