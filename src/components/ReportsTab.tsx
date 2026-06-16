@@ -126,13 +126,21 @@ const ReportsTab = () => {
               </div>
             </div>
             <div className="space-y-0.5">
-              <p className="text-foreground text-sm font-semibold">
-                {contentMap[r.content_id]?.title ?? "(content unavailable)"}
-              </p>
+              <div className="flex items-center gap-2 min-w-0">
+                {contentMap[r.content_id]?.publicId && (
+                  <span className="font-mono text-[10px] tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">
+                    #{contentMap[r.content_id]!.publicId}
+                  </span>
+                )}
+                <p className="text-foreground text-sm font-semibold truncate">
+                  {contentMap[r.content_id]?.title ?? "(content unavailable)"}
+                </p>
+              </div>
               <p className="text-muted-foreground text-[11px]">
                 Uploaded by: <span className="text-foreground">{contentMap[r.content_id]?.uploaderName ?? "Unknown"}</span>
               </p>
             </div>
+
             <p className="text-foreground text-sm">{r.issue_description}</p>
             {r.reporter_email && <p className="text-muted-foreground text-[10px]">From: {r.reporter_email}</p>}
             <p className="text-muted-foreground text-[10px]">Content ID: {r.content_id.slice(0, 8)}… · {new Date(r.created_at).toLocaleString()}</p>
