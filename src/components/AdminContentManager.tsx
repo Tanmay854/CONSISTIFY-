@@ -7,12 +7,14 @@ type Tab = "videos" | "photos";
 
 interface BaseItem {
   id: string;
-  title: string;
+  public_id: string | null;
+  title: string | null;
   uploaded_by: string | null;
   created_at: string;
 }
 interface Reel extends BaseItem { video_url: string; bunny_video_guid: string | null; bunny_library_id: string | null; }
 interface Quote extends BaseItem { image_url: string; category: string; bunny_storage_path: string | null; }
+
 
 const isYoutube = (url: string) => /youtube\.com|youtu\.be/.test(url);
 
