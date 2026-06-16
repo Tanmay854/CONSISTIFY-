@@ -7,14 +7,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const cleanHost = (value: string) => value.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+const cleanEnv = (value: string) => value.trim().replace(/^['"]|['"]$/g, "").trim();
+const cleanHost = (value: string) => cleanEnv(value).replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+const cleanZone = (value: string) => cleanEnv(value)
+  .replace(/^https?:\/\//i, "")
+  .replace(/^(?:[a-z0-9-]+\.)?storage\.bunnycdn\.com\/?/i, "")
+  .replace(/^\/+|\/+$/g, "")
+  .split("/")[0];
 const cleanPath = (value: string) => value.trim().replace(/^\/+/, "").split("?")[0];
+const storageHosts = () => {
+  const aliases: Record<string, string> = {
+    de: "", germany: "", default: "", ny: "ny", newyork: "ny", "new-york": "ny",
+    la: "la", losangeles: "la", "los-angeles": "la", sg: "sg", singapore: "sg",
+    se: "se", stockholm: "se", br: "br", brazil: "br", jh: "jh", johannesburg: "jh",
+    syd: "syd", sydney: "syd",
+  };
+  const rawRegion = cleanEnv(Deno.env.get("BUNNY_STORAGE_REGION") || "").toLowerCase();
+  const region = aliases[rawRegion] ?? rawRegion.replace(/[^a-z0-9-]/g, "");
+  if (region) return [`${region}.storage.bunnycdn.com`];
+  return ["storage.bunnycdn.com", "ny.storage.bunnycdn.com", "la.storage.bunnycdn.com", "sg.storage.bunnycdn.com", "se.storage.bunnycdn.com", "br.storage.bunnycdn.com", "jh.storage.bunnycdn.com", "syd.storage.bunnycdn.com"];
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const zone = Deno.env.get("BUNNY_STORAGE_ZONE_NAME");
-    const password = Deno.env.get("BUNNY_STORAGE_PASSWORD");
+    const zone = cleanZone(Deno.env.get("BUNNY_STORAGE_ZONE_NAME") || "");
+    const password = cleanEnv(Deno.env.get("BUNNY_STORAGE_PASSWORD") || "");
     const cdnHost = cleanHost(Deno.env.get("BUNNY_STORAGE_CDN_HOSTNAME") || "");
     if (!zone || !password || !cdnHost) {
       return new Response(JSON.stringify({ error: "Bunny Storage not configured" }),
@@ -54,17 +72,29 @@ Deno.serve(async (req) => {
     }
     const path = cleanPath(typeof filePath === "string" && filePath ? filePath : fileUrl.slice(idx + marker.length));
 
-    const region = (Deno.env.get("BUNNY_STORAGE_REGION") || "").trim().toLowerCase();
-    const host = region ? `${region}.storage.bunnycdn.com` : `storage.bunnycdn.com`;
-    const delRes = await fetch(`https://${host}/${zone}/${path}`, {
-      method: "DELETE",
-      headers: { AccessKey: password },
-    });
-    if (!delRes.ok && delRes.status !== 404) {
-      const t = await delRes.text();
-      return new Response(JSON.stringify({ error: "Bunny storage delete failed", detail: t }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const attempts: Array<{ host: string; status: number; detail: string }> = [];
+    let sawNotFound = false;
+    for (const host of storageHosts()) {
+      const delRes = await fetch(`https://${host}/${zone}/${path}`, {
+        method: "DELETE",
+        headers: { AccessKey: password },
+      });
+      if (delRes.ok) {
+        return new Response(JSON.stringify({ deleted: true, path }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (delRes.status === 404) sawNotFound = true;
+      attempts.push({ host, status: delRes.status, detail: (await delRes.text()).slice(0, 200) });
     }
+    if (sawNotFound && !attempts.some((attempt) => attempt.status === 401 || attempt.status === 403)) {
+      return new Response(JSON.stringify({ deleted: true, path }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    return new Response(JSON.stringify({
+      error: "Bunny storage delete failed",
+      detail: "Bunny Storage rejected the delete. Check that BUNNY_STORAGE_ZONE_NAME, BUNNY_STORAGE_PASSWORD, and BUNNY_STORAGE_REGION belong to the same Bunny Storage Zone.",
+      attempts,
+    }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     return new Response(JSON.stringify({ deleted: true, path }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
