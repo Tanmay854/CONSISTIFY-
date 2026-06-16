@@ -42,6 +42,16 @@ const UploadTab = () => {
   const [photoDescription, setPhotoDescription] = useState("");
   const [photoCategory, setPhotoCategory] = useState("Motivation");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoAspect, setPhotoAspect] = useState<PhotoAspect>("original");
+  const photoPreviewUrl = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile]);
+  useEffect(() => () => { if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl); }, [photoPreviewUrl]);
+  const aspectClass: Record<PhotoAspect, string> = {
+    original: "aspect-auto",
+    "9:16": "aspect-[9/16]",
+    "1:1": "aspect-square",
+    "4:5": "aspect-[4/5]",
+  };
+
 
   // Ad fields
   const [adTitle, setAdTitle] = useState("");
