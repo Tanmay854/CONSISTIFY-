@@ -8,7 +8,8 @@ import { deleteContent } from "@/lib/deleteContent";
 
 interface Reel {
   id: string;
-  title: string;
+  public_id: string | null;
+  title: string | null;
   video_url: string;
   bunny_video_guid: string | null;
   bunny_library_id: string | null;
@@ -19,13 +20,15 @@ interface Reel {
 }
 interface Quote {
   id: string;
-  title: string;
+  public_id: string | null;
+  title: string | null;
   category: string;
   image_url: string;
   bunny_storage_path: string | null;
   created_at: string;
   uploaded_by: string | null;
 }
+
 
 type Tab = "videos" | "photos";
 
