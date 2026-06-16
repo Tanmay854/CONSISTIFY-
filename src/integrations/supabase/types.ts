@@ -173,7 +173,7 @@ export type Database = {
           id?: string
           image_url: string
           is_pro?: boolean
-          public_id: string
+          public_id?: string
           title?: string | null
           uploaded_by?: string | null
         }
@@ -216,7 +216,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          public_id: string
+          public_id?: string
           title?: string | null
           trim_end?: number | null
           trim_start?: number | null
