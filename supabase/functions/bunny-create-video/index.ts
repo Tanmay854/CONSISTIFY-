@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
 
   try {
     const apiKey = Deno.env.get("BUNNY_STREAM_API_KEY");
-    const libraryId = Deno.env.get("BUNNY_STREAM_LIBRARY_ID");
+    const libraryId = (Deno.env.get("BUNNY_STREAM_LIBRARY_ID") || "").replace(/\D/g, "");
     const cdnHost = cleanHost(Deno.env.get("BUNNY_STREAM_CDN_HOSTNAME") || "");
     if (!apiKey || !libraryId || !cdnHost) {
       return new Response(JSON.stringify({ error: "Bunny.net not configured" }), {
