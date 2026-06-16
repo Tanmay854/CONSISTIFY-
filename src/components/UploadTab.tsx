@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Film, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
 import * as tus from "tus-js-client";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MyUploads from "@/components/MyUploads";
+import { cropImageToAspect, type PhotoAspect } from "@/lib/cropImage";
+
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"];
 
