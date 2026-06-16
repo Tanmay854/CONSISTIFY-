@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const apiKey = Deno.env.get("BUNNY_STREAM_API_KEY");
-    const defaultLibraryId = Deno.env.get("BUNNY_STREAM_LIBRARY_ID");
+    const defaultLibraryId = (Deno.env.get("BUNNY_STREAM_LIBRARY_ID") || "").replace(/\D/g, "");
     if (!apiKey || !defaultLibraryId) {
       return new Response(JSON.stringify({ error: "Bunny.net not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
