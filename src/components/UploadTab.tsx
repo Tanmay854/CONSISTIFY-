@@ -322,7 +322,7 @@ const UploadTab = () => {
             {activeType === "video" && (
               <>
                 <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title</label>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title <span className="text-muted-foreground/60 normal-case">(optional)</span></label>
                   <input
                     value={videoTitle}
                     onChange={(e) => setVideoTitle(e.target.value)}
