@@ -147,8 +147,9 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
           {error && <p className="text-destructive text-xs">{error}</p>}
 
           <button onClick={mode === "url" ? handleUrlSubmit : handleFileUpload}
-            disabled={loading || !title.trim() || (mode === "url" ? !videoUrl.trim() : !file)}
+            disabled={loading || (mode === "url" ? !videoUrl.trim() : !file)}
             className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50">
+
             {loading ? (mode === "upload" ? `Uploading${progress ? ` ${progress}%` : "..."}` : "Adding...") : (mode === "upload" ? "Upload Video" : "Add Video")}
           </button>
         </div>
