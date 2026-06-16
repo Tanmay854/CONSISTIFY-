@@ -27,17 +27,18 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
   };
 
   const handleUrlSubmit = async () => {
-    if (!title.trim() || !isValidUrl(videoUrl.trim())) {
-      setError("Enter a title and valid URL"); return;
+    if (!isValidUrl(videoUrl.trim())) {
+      setError("Enter a valid URL"); return;
     }
     setLoading(true); setError(null);
     const { error: insErr } = await supabase.from("reels").insert({
-      title: title.trim(), video_url: videoUrl.trim(),
+      title: title.trim() || null, video_url: videoUrl.trim(),
     });
     setLoading(false);
     if (insErr) { setError(insErr.message); return; }
     reset(); onAdded(); onClose();
   };
+
 
   const handleFileUpload = async () => {
     if (!title.trim() || !file) { setError("Enter a title and select a video"); return; }
