@@ -263,7 +263,11 @@ const MyUploads = () => {
                       ) : (
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="text-foreground text-sm font-medium truncate">{q.title}</p>
+                            <div className="flex items-center gap-2">
+                              {q.public_id && <span className="font-mono text-[10px] tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">#{q.public_id}</span>}
+                              <p className="text-foreground text-sm font-medium truncate">{q.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
+                            </div>
+
                             <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
                               <span>{q.category}</span>
                               <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
