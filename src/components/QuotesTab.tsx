@@ -6,12 +6,13 @@ import ReportDialog from "@/components/ReportDialog";
 
 interface QuoteCard {
   id: string;
-  title: string;
+  title: string | null;
   category: string;
   image_url: string;
   is_pro: boolean;
   description: string | null;
 }
+
 
 const PhotoCard = ({ quote, onReport }: { quote: QuoteCard; onReport: (q: QuoteCard) => void }) => {
   const ref = useRef<HTMLDivElement>(null);
