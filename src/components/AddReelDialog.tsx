@@ -115,9 +115,10 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
         <div className="space-y-4">
           <div>
-            <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title</label>
+            <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title <span className="text-muted-foreground/60 normal-case">(optional)</span></label>
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Rise and Grind"
               className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary" />
+
           </div>
 
           {mode === "url" ? (
