@@ -16,7 +16,7 @@ interface Report {
 
 type Filter = "admitted" | "rejected" | "all";
 
-interface ContentInfo { title: string; uploaderName: string; }
+interface ContentInfo { title: string; uploaderName: string; publicId: string | null; }
 
 const ReportsTab = () => {
   const { isAdmin } = useAuth();
