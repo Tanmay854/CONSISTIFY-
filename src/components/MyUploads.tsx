@@ -203,7 +203,7 @@ const MyUploads = () => {
                 <div key={reel.id} className="bg-secondary rounded-xl p-3">
                   <div className="flex gap-3">
                     <div className="w-24 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      {thumb ? <img src={thumb} alt={reel.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Video</div>}
+                      {thumb ? <img src={thumb} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Video</div>}
                     </div>
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
@@ -216,7 +216,7 @@ const MyUploads = () => {
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-foreground text-sm font-medium truncate">{reel.title}</p>
                           <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => { setEditingId(reel.id); setEditTitle(reel.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
+                            <button onClick={() => { setEditingId(reel.id); setEditTitle(reel.title || ""); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
                             <button onClick={() => setTrimmingId(isTrimming ? null : reel.id)} className={isTrimming ? "text-primary" : "text-muted-foreground hover:text-primary"}><Scissors size={14} /></button>
                             <button onClick={() => setStatsOpen(statsOpen === `reel:${reel.id}` ? null : `reel:${reel.id}`)} className={statsOpen === `reel:${reel.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
                             <button onClick={() => handleDelete("reels", reel.id, reel.video_url, ytId ? null : "videos", { videoGuid: reel.bunny_video_guid, libraryId: reel.bunny_library_id })} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
@@ -244,7 +244,7 @@ const MyUploads = () => {
                 <div key={q.id} className="bg-secondary rounded-xl p-3">
                   <div className="flex gap-3">
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      <img src={q.image_url} alt={q.title} className="w-full h-full object-cover" />
+                      <img src={q.image_url} alt={q.title || "photo"} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
@@ -263,7 +263,7 @@ const MyUploads = () => {
                             </p>
                           </div>
                           <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => { setEditingId(q.id); setEditTitle(q.title); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
+                            <button onClick={() => { setEditingId(q.id); setEditTitle(q.title || ""); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
                             <button onClick={() => setStatsOpen(statsOpen === `quote:${q.id}` ? null : `quote:${q.id}`)} className={statsOpen === `quote:${q.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
                             <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images", { storagePath: q.bunny_storage_path })} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
                           </div>
