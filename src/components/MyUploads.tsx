@@ -217,7 +217,11 @@ const MyUploads = () => {
                         </div>
                       ) : (
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-foreground text-sm font-medium truncate">{reel.title}</p>
+                          <div className="min-w-0 flex items-center gap-2">
+                            {reel.public_id && <span className="font-mono text-[10px] tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">#{reel.public_id}</span>}
+                            <p className="text-foreground text-sm font-medium truncate">{reel.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
+                          </div>
+
                           <div className="flex gap-2 flex-shrink-0">
                             <button onClick={() => { setEditingId(reel.id); setEditTitle(reel.title || ""); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
                             <button onClick={() => setTrimmingId(isTrimming ? null : reel.id)} className={isTrimming ? "text-primary" : "text-muted-foreground hover:text-primary"}><Scissors size={14} /></button>
