@@ -147,8 +147,10 @@ const UploadTab = () => {
 
         // 1. Ask edge function for a Bunny TUS upload ticket
         setUploadProgress(0);
+        const fallbackTitle = videoFile.name.replace(/\.[^.]+$/, "") || "Untitled";
+        const titleForBunny = videoTitle.trim() || fallbackTitle;
         const { data: ticket, error: fnErr } = await supabase.functions.invoke("bunny-create-video", {
-          body: { title: videoTitle.trim() },
+          body: { title: titleForBunny },
         });
         if (fnErr || !ticket?.guid) {
           setError(fnErr?.message || ticket?.error || "Failed to start upload");
@@ -171,7 +173,7 @@ const UploadTab = () => {
               VideoId: ticket.guid,
               LibraryId: String(ticket.libraryId),
             },
-            metadata: { filetype: videoFile.type, title: videoTitle.trim() },
+            metadata: { filetype: videoFile.type, title: titleForBunny },
             onError: (err) => resolve(err?.message || String(err)),
             onProgress: (sent, total) => setUploadProgress(Math.round((sent / total) * 100)),
             onSuccess: () => resolve(null),
@@ -182,15 +184,22 @@ const UploadTab = () => {
 
 
         // 3. Save Bunny playback URL and exact Stream identifiers into reels
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim(), description: videoDescription.trim() || null, video_url: ticket.playbackUrl, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim() || null, description: videoDescription.trim() || null, video_url: ticket.playbackUrl, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
 
       } else if (activeType === "photo") {
-        if (!photoTitle.trim() || !photoFile) { setError("Title and image required"); setLoading(false); return; }
-        const uploaded = await uploadToBunny(photoFile, "image");
+        if (!photoFile) { setError("Select an image"); setLoading(false); return; }
+        let fileToUpload = photoFile;
+        try {
+          fileToUpload = await cropImageToAspect(photoFile, photoAspect);
+        } catch {
+          // fall back to original on crop failure
+          fileToUpload = photoFile;
+        }
+        const uploaded = await uploadToBunny(fileToUpload, "image");
         if (!uploaded) { setLoading(false); return; }
         const { error: insertErr } = await supabase.from("quotes").insert({
-          title: photoTitle.trim(),
+          title: photoTitle.trim() || null,
           description: photoDescription.trim() || null,
           category: photoCategory.toUpperCase(),
           image_url: uploaded.url,
@@ -198,6 +207,7 @@ const UploadTab = () => {
           is_pro: false,
           uploaded_by: user?.id,
         });
+
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "ad") {
         if (!adTitle.trim()) { setError("Ad title required"); setLoading(false); return; }
