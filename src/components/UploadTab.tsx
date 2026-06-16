@@ -411,7 +411,7 @@ const UploadTab = () => {
             {activeType === "photo" && (
               <>
                 <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title</label>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Title <span className="text-muted-foreground/60 normal-case">(optional)</span></label>
                   <input
                     value={photoTitle}
                     onChange={(e) => setPhotoTitle(e.target.value)}
@@ -448,8 +448,45 @@ const UploadTab = () => {
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
                   />
                 </div>
+
+                {photoFile && (
+                  <div>
+                    <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Aspect ratio</label>
+                    <div className="grid grid-cols-4 gap-2 mb-2">
+                      {([
+                        { id: "original", label: "Original" },
+                        { id: "9:16", label: "9:16" },
+                        { id: "1:1", label: "1:1" },
+                        { id: "4:5", label: "4:5" },
+                      ] as const).map((m) => {
+                        const active = photoAspect === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setPhotoAspect(m.id)}
+                            className={`py-2 rounded-lg text-[11px] font-semibold transition-all ${active ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                          >
+                            {m.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {photoPreviewUrl && (
+                      <div className={`relative w-full ${aspectClass[photoAspect]} max-h-72 bg-black rounded-xl overflow-hidden mx-auto`}>
+                        <img
+                          src={photoPreviewUrl}
+                          alt="preview"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">The image is center-cropped to this ratio before upload.</p>
+                  </div>
+                )}
               </>
             )}
+
 
             {activeType === "ad" && (
               <>
