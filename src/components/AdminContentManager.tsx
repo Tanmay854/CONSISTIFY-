@@ -58,11 +58,16 @@ const AdminContentManager = () => {
   };
 
   const q = query.trim().toLowerCase();
-  const matches = (title: string, uid: string | null, extra = "") =>
-    !q || title.toLowerCase().includes(q) || nameFor(uid).toLowerCase().includes(q) || extra.toLowerCase().includes(q);
+  const matches = (title: string | null, uid: string | null, publicId: string | null) => {
+    if (!q) return true;
+    const t = (title || "").toLowerCase();
+    const pid = (publicId || "").toLowerCase();
+    return t.includes(q) || pid.includes(q) || nameFor(uid).toLowerCase().includes(q);
+  };
 
-  const fReels = useMemo(() => reels.filter((r) => matches(r.title, r.uploaded_by)), [reels, q, profiles]);
-  const fQuotes = useMemo(() => quotes.filter((qq) => matches(qq.title, qq.uploaded_by)), [quotes, q, profiles]);
+  const fReels = useMemo(() => reels.filter((r) => matches(r.title, r.uploaded_by, r.public_id)), [reels, q, profiles]);
+  const fQuotes = useMemo(() => quotes.filter((qq) => matches(qq.title, qq.uploaded_by, qq.public_id)), [quotes, q, profiles]);
+
 
   const tabs: { id: Tab; label: string; icon: typeof Film; count: number }[] = [
     { id: "videos", label: "Videos", icon: Film, count: fReels.length },
