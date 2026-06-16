@@ -471,7 +471,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
           onClose={() => setReportTarget(null)}
           contentType="video"
           contentId={reportTarget.id}
-          contentTitle={reportTarget.title}
+          contentTitle={reportTarget.title || "Untitled"}
         />
       )}
     </>

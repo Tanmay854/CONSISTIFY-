@@ -42,7 +42,7 @@ const PhotoCard = ({ quote, onReport }: { quote: QuoteCard; onReport: (q: QuoteC
     >
       <img
         src={quote.image_url}
-        alt={quote.title}
+        alt={quote.title || "quote"}
         className="absolute inset-0 w-full h-full object-cover"
         loading="lazy"
       />
@@ -141,7 +141,7 @@ const QuotesTab = () => {
           onClose={() => setReportTarget(null)}
           contentType="photo"
           contentId={reportTarget.id}
-          contentTitle={reportTarget.title}
+          contentTitle={reportTarget.title || "Untitled"}
         />
       )}
     </>
