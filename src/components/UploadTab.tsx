@@ -126,8 +126,8 @@ const UploadTab = () => {
 
     try {
       if (activeType === "video") {
-        if (!videoTitle.trim()) { setError("Title required"); setLoading(false); return; }
         if (!videoFile) { setError("Select a video file from your device"); setLoading(false); return; }
+
         // Only probe duration for smaller files. Decoding a large local video in the
         // Android WebView for a duration check can OOM-crash the app.
         if (videoFile.size <= PREVIEW_MAX_BYTES) {
