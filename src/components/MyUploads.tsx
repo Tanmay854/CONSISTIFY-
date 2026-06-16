@@ -87,8 +87,9 @@ const MyUploads = () => {
   const [statsOpen, setStatsOpen] = useState<string | null>(null);
 
   const q = query.trim().toLowerCase();
-  const filterFn = <T extends { title: string }>(items: T[], extra?: (i: T) => string) =>
-    !q ? items : items.filter((i) => i.title.toLowerCase().includes(q) || (extra?.(i) ?? "").toLowerCase().includes(q));
+  const filterFn = <T extends { title: string | null }>(items: T[], extra?: (i: T) => string) =>
+    !q ? items : items.filter((i) => (i.title || "").toLowerCase().includes(q) || (extra?.(i) ?? "").toLowerCase().includes(q));
+
 
   const fetchAll = useCallback(async () => {
     if (!user) return;
