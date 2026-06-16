@@ -41,12 +41,15 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
 
   const handleFileUpload = async () => {
-    if (!title.trim() || !file) { setError("Enter a title and select a video"); return; }
+    if (!file) { setError("Select a video"); return; }
     setLoading(true); setError(null); setProgress(0);
+
+    const fallbackTitle = file.name.replace(/\.[^.]+$/, "") || "Untitled";
+    const titleForBunny = title.trim() || fallbackTitle;
 
     // 1. Ask edge function to create the Bunny video + signature
     const { data, error: fnErr } = await supabase.functions.invoke("bunny-create-video", {
-      body: { title: title.trim() },
+      body: { title: titleForBunny },
     });
     if (fnErr || !data?.guid) {
       setError(fnErr?.message || data?.error || "Failed to start upload");
@@ -58,7 +61,6 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
       const upload = new tus.Upload(file, {
         endpoint: data.tusEndpoint,
         retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
-        // Small chunks + no resume storage so mobile WebViews don't OOM
         chunkSize: 2 * 1024 * 1024,
         parallelUploads: 1,
         storeFingerprintForResuming: false,
@@ -69,7 +71,7 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
           VideoId: data.guid,
           LibraryId: String(data.libraryId),
         },
-        metadata: { filetype: file.type, title: title.trim() },
+        metadata: { filetype: file.type, title: titleForBunny },
         onError: (err) => reject(err),
         onProgress: (sent, total) => setProgress(Math.round((sent / total) * 100)),
         onSuccess: () => resolve(),
@@ -83,7 +85,7 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
 
     // 3. Save the playback URL and exact Bunny Stream identifiers into the reels table
     const { error: insErr } = await supabase.from("reels").insert({
-      title: title.trim(),
+      title: title.trim() || null,
       video_url: data.playbackUrl,
       bunny_video_guid: data.guid,
       bunny_library_id: String(data.libraryId),
@@ -92,6 +94,7 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
     if (insErr) { setError(insErr.message); return; }
     reset(); onAdded(); onClose();
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-sm" onClick={onClose}>
