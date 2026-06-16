@@ -42,15 +42,16 @@ const ReportsTab = () => {
     });
 
     const tableFor = { video: "reels" as const, music: "music" as const, photo: "quotes" as const };
-    const fetched: Array<{ id: string; title: string; uploaded_by: string | null }> = [];
+    const fetched: Array<{ id: string; title: string; uploaded_by: string | null; publicId: string | null }> = [];
     const uploaderIds = new Set<string>();
 
     await Promise.all((Object.keys(byType) as Array<keyof typeof byType>).map(async (type) => {
       const ids = byType[type];
       if (!ids.length) return;
-      const { data: items } = await supabase.from(tableFor[type]).select("id, title, uploaded_by").in("id", ids);
+      const selectCols = type === "music" ? "id, title, uploaded_by" : "id, title, uploaded_by, public_id";
+      const { data: items } = await supabase.from(tableFor[type]).select(selectCols).in("id", ids);
       (items as any[] | null)?.forEach((it) => {
-        fetched.push({ id: it.id, title: it.title ?? "(untitled)", uploaded_by: it.uploaded_by });
+        fetched.push({ id: it.id, title: it.title ?? "(untitled)", uploaded_by: it.uploaded_by, publicId: it.public_id ?? null });
         if (it.uploaded_by) uploaderIds.add(it.uploaded_by);
       });
     }));
@@ -63,8 +64,9 @@ const ReportsTab = () => {
 
     const map: Record<string, ContentInfo> = {};
     fetched.forEach((f) => {
-      map[f.id] = { title: f.title, uploaderName: f.uploaded_by ? (profiles[f.uploaded_by] || "Unknown") : "Unknown" };
+      map[f.id] = { title: f.title, uploaderName: f.uploaded_by ? (profiles[f.uploaded_by] || "Unknown") : "Unknown", publicId: f.publicId };
     });
+
     setContentMap(map);
     setLoading(false);
   }, [filter]);
