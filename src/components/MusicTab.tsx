@@ -183,29 +183,34 @@ const MusicTab = () => {
         <SpotifyBadge />
       </div>
 
-      {/* Connect Spotify */}
-      {user && (
-        <div className="px-5 pt-3">
-          {connected ? (
-            <div className="flex items-center justify-between bg-white/5 rounded-full px-4 py-2">
-              <span className="text-xs text-white/80">
-                Connected{spotifyName ? ` as ${spotifyName}` : ""}
-              </span>
-              <button onClick={disconnectSpotify} className="text-white/50 hover:text-white" aria-label="Disconnect">
-                <LogOut size={14} />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={beginSpotifyLogin}
-              className="w-full rounded-full py-2.5 text-sm font-semibold text-black"
-              style={{ backgroundColor: SPOTIFY_GREEN }}
-            >
-              Connect Spotify
+      {/* Connect Spotify — available to every user; guests are routed to sign in */}
+      <div className="px-5 pt-3">
+        {user && connected ? (
+          <div className="flex items-center justify-between bg-white/5 rounded-full px-4 py-2">
+            <span className="text-xs text-white/80">
+              Connected{spotifyName ? ` as ${spotifyName}` : ""}
+            </span>
+            <button onClick={disconnectSpotify} className="text-white/50 hover:text-white" aria-label="Disconnect">
+              <LogOut size={14} />
             </button>
-          )}
-        </div>
-      )}
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              if (!user) {
+                toast({ title: "Sign in to connect Spotify" });
+                navigate("/auth");
+                return;
+              }
+              beginSpotifyLogin();
+            }}
+            className="w-full rounded-full py-2.5 text-sm font-semibold text-black"
+            style={{ backgroundColor: SPOTIFY_GREEN }}
+          >
+            Connect Spotify
+          </button>
+        )}
+      </div>
 
       {/* Search */}
       <div className="px-5 pt-3">
