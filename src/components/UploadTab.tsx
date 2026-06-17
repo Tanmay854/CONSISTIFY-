@@ -46,7 +46,7 @@ const UploadTab = () => {
   const photoPreviewUrl = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile]);
   useEffect(() => () => { if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl); }, [photoPreviewUrl]);
   const aspectClass: Record<PhotoAspect, string> = {
-    original: "aspect-auto",
+    original: "aspect-[3/4]",
     "9:16": "aspect-[9/16]",
     "1:1": "aspect-square",
     "4:5": "aspect-[4/5]",
