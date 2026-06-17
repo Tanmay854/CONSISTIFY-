@@ -259,22 +259,29 @@ const MusicTab = () => {
 
       {!query.trim() && (
         <div className="mt-5 space-y-7">
-          {/* My Albums */}
-          {user && (
-            <Section title="My Albums">
-              <HScroll>
-                <button
-                  onClick={() => { setEditingAlbum(null); setSheetOpen(true); }}
-                  className="w-28 flex-shrink-0 flex flex-col items-center justify-center active:scale-95 transition-transform"
+          {/* My Albums — available to every user; guests are routed to sign in */}
+          <Section title="My Albums">
+            <HScroll>
+              <button
+                onClick={() => {
+                  if (!user) {
+                    toast({ title: "Sign in to create albums" });
+                    navigate("/auth");
+                    return;
+                  }
+                  setEditingAlbum(null);
+                  setSheetOpen(true);
+                }}
+                className="w-28 flex-shrink-0 flex flex-col items-center justify-center active:scale-95 transition-transform"
+              >
+                <div
+                  className="w-28 h-28 rounded-md flex items-center justify-center border-2 border-dashed border-white/20"
+                  style={{ color: SPOTIFY_GREEN }}
                 >
-                  <div
-                    className="w-28 h-28 rounded-md flex items-center justify-center border-2 border-dashed border-white/20"
-                    style={{ color: SPOTIFY_GREEN }}
-                  >
-                    <Plus size={28} />
-                  </div>
-                  <p className="text-white text-xs font-semibold mt-2 text-center">New album</p>
-                </button>
+                  <Plus size={28} />
+                </div>
+                <p className="text-white text-xs font-semibold mt-2 text-center">New album</p>
+              </button>
                 {myAlbums.map((a) => (
                   <button
                     key={a.id}
