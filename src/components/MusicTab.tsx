@@ -1,11 +1,21 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Search, X, Music2, Play, Plus, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { openSpotify } from "@/lib/spotifyLink";
 import { useAuth } from "@/hooks/useAuth";
 import { beginSpotifyLogin, callSpotifyUser } from "@/lib/spotifyConnect";
 import MyAlbumsSheet from "./MyAlbumsSheet";
 import { toast } from "@/hooks/use-toast";
+
+const shuffle = <T,>(arr: T[]): T[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
 
 const SPOTIFY_GREEN = "#1DB954";
 
