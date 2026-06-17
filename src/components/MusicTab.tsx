@@ -97,7 +97,15 @@ const MusicTab = () => {
     (async () => {
       try {
         const d = await callFn({ action: "home" });
-        setHome(d);
+        // Shuffle each mount so recommendations rotate on every visit.
+        const shuffled: HomeData = {
+          categories: (d.categories || []).map((c: CategoryBucket) => ({
+            ...c, tracks: shuffle(c.tracks || []).slice(0, 12),
+          })),
+          newReleases: shuffle(d.newReleases || []).slice(0, 12),
+          recommendedArtists: shuffle(d.recommendedArtists || []).slice(0, 12),
+        };
+        setHome(shuffled);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load");
       } finally {
