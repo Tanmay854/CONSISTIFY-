@@ -11,7 +11,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-const HOME_CACHE_KEY = "home_v2";
+const HOME_CACHE_KEY = "home_v3";
 
 const CATEGORIES: { id: string; title: string; query: string }[] = [
   { id: "motivational", title: "Motivational Workout", query: "motivational workout" },
@@ -71,15 +71,15 @@ async function buildHome(token: string) {
   const year = new Date().getFullYear();
   const catResults = await Promise.all(
     CATEGORIES.map((c) =>
-      sp(`/search?q=${encodeURIComponent(c.query)}&type=track&limit=10&market=US`, token).then((d) => ({
+      sp(`/search?q=${encodeURIComponent(c.query)}&type=track&limit=50&market=US`, token).then((d) => ({
         id: c.id, title: c.title,
         tracks: (d?.tracks?.items || []).filter(Boolean).map(mapTrack),
       })),
     ),
   );
   const [newReleasesRes, artistsRes] = await Promise.all([
-    sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=10&market=US`, token),
-    sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=10&market=US`, token),
+    sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=50&market=US`, token),
+    sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=50&market=US`, token),
   ]);
   return {
     categories: catResults,

@@ -1,11 +1,21 @@
 import { useEffect, useState, useCallback } from "react";
 import { Search, X, Music2, Play, Plus, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { openSpotify } from "@/lib/spotifyLink";
 import { useAuth } from "@/hooks/useAuth";
 import { beginSpotifyLogin, callSpotifyUser } from "@/lib/spotifyConnect";
 import MyAlbumsSheet from "./MyAlbumsSheet";
 import { toast } from "@/hooks/use-toast";
+
+const shuffle = <T,>(arr: T[]): T[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
 
 const SPOTIFY_GREEN = "#1DB954";
 
@@ -50,6 +60,7 @@ const SpotifyBadge = () => (
 
 const MusicTab = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [home, setHome] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +97,15 @@ const MusicTab = () => {
     (async () => {
       try {
         const d = await callFn({ action: "home" });
-        setHome(d);
+        // Shuffle each mount so recommendations rotate on every visit.
+        const shuffled: HomeData = {
+          categories: (d.categories || []).map((c: CategoryBucket) => ({
+            ...c, tracks: shuffle(c.tracks || []).slice(0, 12),
+          })),
+          newReleases: shuffle((d.newReleases || []) as AlbumItem[]).slice(0, 12),
+          recommendedArtists: shuffle((d.recommendedArtists || []) as ArtistItem[]).slice(0, 12),
+        };
+        setHome(shuffled);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load");
       } finally {
@@ -164,29 +183,34 @@ const MusicTab = () => {
         <SpotifyBadge />
       </div>
 
-      {/* Connect Spotify */}
-      {user && (
-        <div className="px-5 pt-3">
-          {connected ? (
-            <div className="flex items-center justify-between bg-white/5 rounded-full px-4 py-2">
-              <span className="text-xs text-white/80">
-                Connected{spotifyName ? ` as ${spotifyName}` : ""}
-              </span>
-              <button onClick={disconnectSpotify} className="text-white/50 hover:text-white" aria-label="Disconnect">
-                <LogOut size={14} />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={beginSpotifyLogin}
-              className="w-full rounded-full py-2.5 text-sm font-semibold text-black"
-              style={{ backgroundColor: SPOTIFY_GREEN }}
-            >
-              Connect Spotify
+      {/* Connect Spotify — available to every user; guests are routed to sign in */}
+      <div className="px-5 pt-3">
+        {user && connected ? (
+          <div className="flex items-center justify-between bg-white/5 rounded-full px-4 py-2">
+            <span className="text-xs text-white/80">
+              Connected{spotifyName ? ` as ${spotifyName}` : ""}
+            </span>
+            <button onClick={disconnectSpotify} className="text-white/50 hover:text-white" aria-label="Disconnect">
+              <LogOut size={14} />
             </button>
-          )}
-        </div>
-      )}
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              if (!user) {
+                toast({ title: "Sign in to connect Spotify" });
+                navigate("/auth");
+                return;
+              }
+              beginSpotifyLogin();
+            }}
+            className="w-full rounded-full py-2.5 text-sm font-semibold text-black"
+            style={{ backgroundColor: SPOTIFY_GREEN }}
+          >
+            Connect Spotify
+          </button>
+        )}
+      </div>
 
       {/* Search */}
       <div className="px-5 pt-3">
@@ -235,39 +259,45 @@ const MusicTab = () => {
 
       {!query.trim() && (
         <div className="mt-5 space-y-7">
-          {/* My Albums */}
-          {user && (
-            <Section title="My Albums">
-              <HScroll>
-                <button
-                  onClick={() => { setEditingAlbum(null); setSheetOpen(true); }}
-                  className="w-28 flex-shrink-0 flex flex-col items-center justify-center active:scale-95 transition-transform"
+          {/* My Albums — available to every user; guests are routed to sign in */}
+          <Section title="My Albums">
+            <HScroll>
+              <button
+                onClick={() => {
+                  if (!user) {
+                    toast({ title: "Sign in to create albums" });
+                    navigate("/auth");
+                    return;
+                  }
+                  setEditingAlbum(null);
+                  setSheetOpen(true);
+                }}
+                className="w-28 flex-shrink-0 flex flex-col items-center justify-center active:scale-95 transition-transform"
+              >
+                <div
+                  className="w-28 h-28 rounded-md flex items-center justify-center border-2 border-dashed border-white/20"
+                  style={{ color: SPOTIFY_GREEN }}
                 >
-                  <div
-                    className="w-28 h-28 rounded-md flex items-center justify-center border-2 border-dashed border-white/20"
-                    style={{ color: SPOTIFY_GREEN }}
-                  >
-                    <Plus size={28} />
+                  <Plus size={28} />
+                </div>
+                <p className="text-white text-xs font-semibold mt-2 text-center">New album</p>
+              </button>
+              {myAlbums.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => { setEditingAlbum(a); setSheetOpen(true); }}
+                  className="w-28 flex-shrink-0 text-left active:scale-95 transition-transform"
+                >
+                  <div className="w-28 h-28 rounded-md overflow-hidden bg-white/10 shadow-lg">
+                    {a.cover_url
+                      ? <img src={a.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      : <div className="w-full h-full flex items-center justify-center"><Music2 size={28} className="text-white/40" /></div>}
                   </div>
-                  <p className="text-white text-xs font-semibold mt-2 text-center">New album</p>
+                  <p className="text-white text-xs font-semibold mt-2 truncate">{a.name}</p>
                 </button>
-                {myAlbums.map((a) => (
-                  <button
-                    key={a.id}
-                    onClick={() => { setEditingAlbum(a); setSheetOpen(true); }}
-                    className="w-28 flex-shrink-0 text-left active:scale-95 transition-transform"
-                  >
-                    <div className="w-28 h-28 rounded-md overflow-hidden bg-white/10 shadow-lg">
-                      {a.cover_url
-                        ? <img src={a.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                        : <div className="w-full h-full flex items-center justify-center"><Music2 size={28} className="text-white/40" /></div>}
-                    </div>
-                    <p className="text-white text-xs font-semibold mt-2 truncate">{a.name}</p>
-                  </button>
-                ))}
-              </HScroll>
-            </Section>
-          )}
+              ))}
+            </HScroll>
+          </Section>
 
           {/* Your Playlists (when connected) */}
           {connected && userPlaylists.length > 0 && (
