@@ -102,8 +102,8 @@ const MusicTab = () => {
           categories: (d.categories || []).map((c: CategoryBucket) => ({
             ...c, tracks: shuffle(c.tracks || []).slice(0, 12),
           })),
-          newReleases: shuffle(d.newReleases || []).slice(0, 12),
-          recommendedArtists: shuffle(d.recommendedArtists || []).slice(0, 12),
+          newReleases: shuffle((d.newReleases || []) as AlbumItem[]).slice(0, 12),
+          recommendedArtists: shuffle((d.recommendedArtists || []) as ArtistItem[]).slice(0, 12),
         };
         setHome(shuffled);
       } catch (e) {
