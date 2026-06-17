@@ -60,6 +60,7 @@ const SpotifyBadge = () => (
 
 const MusicTab = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [home, setHome] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
