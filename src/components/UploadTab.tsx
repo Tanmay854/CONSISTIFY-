@@ -477,7 +477,8 @@ const UploadTab = () => {
                         <img
                           src={photoPreviewUrl}
                           alt="preview"
-                          className="absolute inset-0 w-full h-full object-cover"
+                          className="absolute inset-0 w-full h-full"
+                          style={{ objectFit: photoAspect === "original" ? "contain" : "cover" }}
                         />
                       </div>
                     )}
