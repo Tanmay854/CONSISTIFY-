@@ -282,23 +282,22 @@ const MusicTab = () => {
                 </div>
                 <p className="text-white text-xs font-semibold mt-2 text-center">New album</p>
               </button>
-                {myAlbums.map((a) => (
-                  <button
-                    key={a.id}
-                    onClick={() => { setEditingAlbum(a); setSheetOpen(true); }}
-                    className="w-28 flex-shrink-0 text-left active:scale-95 transition-transform"
-                  >
-                    <div className="w-28 h-28 rounded-md overflow-hidden bg-white/10 shadow-lg">
-                      {a.cover_url
-                        ? <img src={a.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                        : <div className="w-full h-full flex items-center justify-center"><Music2 size={28} className="text-white/40" /></div>}
-                    </div>
-                    <p className="text-white text-xs font-semibold mt-2 truncate">{a.name}</p>
-                  </button>
-                ))}
-              </HScroll>
-            </Section>
-          )}
+              {myAlbums.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => { setEditingAlbum(a); setSheetOpen(true); }}
+                  className="w-28 flex-shrink-0 text-left active:scale-95 transition-transform"
+                >
+                  <div className="w-28 h-28 rounded-md overflow-hidden bg-white/10 shadow-lg">
+                    {a.cover_url
+                      ? <img src={a.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      : <div className="w-full h-full flex items-center justify-center"><Music2 size={28} className="text-white/40" /></div>}
+                  </div>
+                  <p className="text-white text-xs font-semibold mt-2 truncate">{a.name}</p>
+                </button>
+              ))}
+            </HScroll>
+          </Section>
 
           {/* Your Playlists (when connected) */}
           {connected && userPlaylists.length > 0 && (
