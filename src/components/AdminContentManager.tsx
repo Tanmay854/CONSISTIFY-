@@ -126,9 +126,17 @@ const AdminContentManager = () => {
           <div className="animate-pulse space-y-2">{[1,2,3].map((i) => <div key={i} className="h-16 bg-secondary rounded-lg" />)}</div>
         ) : (
           <>
-            {tab === "videos" && fReels.map((r) => (
+            {tab === "videos" && fReels.map((r) => {
+              const thumb = getVideoThumbnail(r.video_url);
+              return (
               <div key={r.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
-                <Film size={18} className="text-primary flex-shrink-0" />
+                <div className="w-16 h-16 rounded bg-background flex-shrink-0 overflow-hidden flex items-center justify-center">
+                  {thumb ? (
+                    <img src={thumb} alt={r.title || "video"} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  ) : (
+                    <Film size={20} className="text-primary" />
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
                     {r.public_id && (
@@ -142,7 +150,8 @@ const AdminContentManager = () => {
                 </div>
                 <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos", { videoGuid: r.bunny_video_guid, libraryId: r.bunny_library_id })} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
-            ))}
+              );
+            })}
             {tab === "videos" && fReels.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos."}</p>}
 
             {tab === "photos" && fQuotes.map((qq) => (
