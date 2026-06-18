@@ -86,9 +86,10 @@ const MusicTab = () => {
     );
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
     const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch(url.toString(), {
-      headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
-    });
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+    const headers: Record<string, string> = { apikey: anonKey };
+    headers.Authorization = `Bearer ${session?.access_token ?? anonKey}`;
+    const res = await fetch(url.toString(), { headers });
     if (!res.ok) throw new Error(`Spotify request failed (${res.status})`);
     return await res.json();
   }, []);
