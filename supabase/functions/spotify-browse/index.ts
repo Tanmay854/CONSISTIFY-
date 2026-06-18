@@ -82,15 +82,38 @@ async function buildHome(token: string) {
       })),
     ),
   );
-  const [newReleasesRes, artistsRes] = await Promise.all([
+  const [newReleasesA, newReleasesB, artistsPop, artistsHipHop, artistsRock] = await Promise.all([
     sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=50&market=US`, token),
+    sp(`/search?q=${encodeURIComponent(`year:${year - 1}`)}&type=album&limit=50&market=US`, token),
     sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=50&market=US`, token),
+    sp(`/search?q=${encodeURIComponent("genre:hip-hop")}&type=artist&limit=50&market=US`, token),
+    sp(`/search?q=${encodeURIComponent("genre:rock")}&type=artist&limit=50&market=US`, token),
   ]);
+  const allAlbums = [
+    ...(newReleasesA?.albums?.items || []),
+    ...(newReleasesB?.albums?.items || []),
+  ].filter(Boolean);
+  const seenAlbums = new Set<string>();
+  const newReleases = allAlbums.filter((a: any) => {
+    if (!a?.id || seenAlbums.has(a.id)) return false;
+    seenAlbums.add(a.id); return true;
+  }).map(mapAlbum);
+
+  const allArtists = [
+    ...(artistsPop?.artists?.items || []),
+    ...(artistsHipHop?.artists?.items || []),
+    ...(artistsRock?.artists?.items || []),
+  ].filter((a: any) => a && a.images?.length);
+  const seenArtists = new Set<string>();
+  const recommendedArtists = allArtists.filter((a: any) => {
+    if (seenArtists.has(a.id)) return false;
+    seenArtists.add(a.id); return true;
+  }).map(mapArtist);
+
   return {
     categories: catResults,
-    newReleases: (newReleasesRes?.albums?.items || []).filter(Boolean).map(mapAlbum),
-    recommendedArtists: (artistsRes?.artists?.items || [])
-      .filter((a: any) => a && a.images?.length).map(mapArtist),
+    newReleases,
+    recommendedArtists,
     updated_at: new Date().toISOString(),
   };
 }
