@@ -11,7 +11,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-const HOME_CACHE_KEY = "home_v3";
+const HOME_CACHE_KEY = "home_v5";
 
 const CATEGORIES: { id: string; title: string; query: string }[] = [
   { id: "motivational", title: "Motivational Workout", query: "motivational workout" },
@@ -19,6 +19,11 @@ const CATEGORIES: { id: string; title: string; query: string }[] = [
   { id: "morning", title: "Morning Energy", query: "morning energy" },
   { id: "gym", title: "Gym Workout", query: "gym workout" },
   { id: "meditation", title: "Meditation & Calm", query: "meditation calm" },
+  { id: "hiphop", title: "Hip-Hop Hits", query: "hip hop hits" },
+  { id: "running", title: "Running Beats", query: "running beats" },
+  { id: "chill", title: "Chill Vibes", query: "chill vibes" },
+  { id: "discipline", title: "Discipline & Grind", query: "discipline grind motivation" },
+  { id: "epic", title: "Epic Cinematic", query: "epic cinematic motivation" },
 ];
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
