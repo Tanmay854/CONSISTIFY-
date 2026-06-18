@@ -11,7 +11,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-const HOME_CACHE_KEY = "home_v3";
+const HOME_CACHE_KEY = "home_v5";
 
 const CATEGORIES: { id: string; title: string; query: string }[] = [
   { id: "motivational", title: "Motivational Workout", query: "motivational workout" },
@@ -19,6 +19,11 @@ const CATEGORIES: { id: string; title: string; query: string }[] = [
   { id: "morning", title: "Morning Energy", query: "morning energy" },
   { id: "gym", title: "Gym Workout", query: "gym workout" },
   { id: "meditation", title: "Meditation & Calm", query: "meditation calm" },
+  { id: "hiphop", title: "Hip-Hop Hits", query: "hip hop hits" },
+  { id: "running", title: "Running Beats", query: "running beats" },
+  { id: "chill", title: "Chill Vibes", query: "chill vibes" },
+  { id: "discipline", title: "Discipline & Grind", query: "discipline grind motivation" },
+  { id: "epic", title: "Epic Cinematic", query: "epic cinematic motivation" },
 ];
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
@@ -77,15 +82,38 @@ async function buildHome(token: string) {
       })),
     ),
   );
-  const [newReleasesRes, artistsRes] = await Promise.all([
+  const [newReleasesA, newReleasesB, artistsPop, artistsHipHop, artistsRock] = await Promise.all([
     sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=50&market=US`, token),
+    sp(`/search?q=${encodeURIComponent(`year:${year - 1}`)}&type=album&limit=50&market=US`, token),
     sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=50&market=US`, token),
+    sp(`/search?q=${encodeURIComponent("genre:hip-hop")}&type=artist&limit=50&market=US`, token),
+    sp(`/search?q=${encodeURIComponent("genre:rock")}&type=artist&limit=50&market=US`, token),
   ]);
+  const allAlbums = [
+    ...(newReleasesA?.albums?.items || []),
+    ...(newReleasesB?.albums?.items || []),
+  ].filter(Boolean);
+  const seenAlbums = new Set<string>();
+  const newReleases = allAlbums.filter((a: any) => {
+    if (!a?.id || seenAlbums.has(a.id)) return false;
+    seenAlbums.add(a.id); return true;
+  }).map(mapAlbum);
+
+  const allArtists = [
+    ...(artistsPop?.artists?.items || []),
+    ...(artistsHipHop?.artists?.items || []),
+    ...(artistsRock?.artists?.items || []),
+  ].filter((a: any) => a && a.images?.length);
+  const seenArtists = new Set<string>();
+  const recommendedArtists = allArtists.filter((a: any) => {
+    if (seenArtists.has(a.id)) return false;
+    seenArtists.add(a.id); return true;
+  }).map(mapArtist);
+
   return {
     categories: catResults,
-    newReleases: (newReleasesRes?.albums?.items || []).filter(Boolean).map(mapAlbum),
-    recommendedArtists: (artistsRes?.artists?.items || [])
-      .filter((a: any) => a && a.images?.length).map(mapArtist),
+    newReleases,
+    recommendedArtists,
     updated_at: new Date().toISOString(),
   };
 }
