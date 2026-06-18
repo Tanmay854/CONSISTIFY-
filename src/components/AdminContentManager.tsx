@@ -18,6 +18,22 @@ interface Quote extends BaseItem { image_url: string; category: string; bunny_st
 
 const isYoutube = (url: string) => /youtube\.com|youtu\.be/.test(url);
 
+const getYoutubeId = (url: string): string | null => {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? m[1] : null;
+};
+
+const getVideoThumbnail = (url: string): string | null => {
+  if (!url) return null;
+  const yt = getYoutubeId(url);
+  if (yt) return `https://img.youtube.com/vi/${yt}/mqdefault.jpg`;
+  const bunny = url.match(/^(https?:\/\/[^/]+\.b-cdn\.net)\/([0-9a-fA-F-]{36})/);
+  if (bunny) return `${bunny[1]}/${bunny[2]}/thumbnail.jpg`;
+  const md = url.match(/mediadelivery\.net\/(?:embed|play)\/(\d+)\/([0-9a-fA-F-]{36})/i);
+  if (md) return `https://vz-${md[1]}.b-cdn.net/${md[2]}/thumbnail.jpg`;
+  return null;
+};
+
 const AdminContentManager = () => {
   const [tab, setTab] = useState<Tab>("videos");
   const [reels, setReels] = useState<Reel[]>([]);
