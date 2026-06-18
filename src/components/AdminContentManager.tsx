@@ -18,6 +18,22 @@ interface Quote extends BaseItem { image_url: string; category: string; bunny_st
 
 const isYoutube = (url: string) => /youtube\.com|youtu\.be/.test(url);
 
+const getYoutubeId = (url: string): string | null => {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? m[1] : null;
+};
+
+const getVideoThumbnail = (url: string): string | null => {
+  if (!url) return null;
+  const yt = getYoutubeId(url);
+  if (yt) return `https://img.youtube.com/vi/${yt}/mqdefault.jpg`;
+  const bunny = url.match(/^(https?:\/\/[^/]+\.b-cdn\.net)\/([0-9a-fA-F-]{36})/);
+  if (bunny) return `${bunny[1]}/${bunny[2]}/thumbnail.jpg`;
+  const md = url.match(/mediadelivery\.net\/(?:embed|play)\/(\d+)\/([0-9a-fA-F-]{36})/i);
+  if (md) return `https://vz-${md[1]}.b-cdn.net/${md[2]}/thumbnail.jpg`;
+  return null;
+};
+
 const AdminContentManager = () => {
   const [tab, setTab] = useState<Tab>("videos");
   const [reels, setReels] = useState<Reel[]>([]);
@@ -110,9 +126,17 @@ const AdminContentManager = () => {
           <div className="animate-pulse space-y-2">{[1,2,3].map((i) => <div key={i} className="h-16 bg-secondary rounded-lg" />)}</div>
         ) : (
           <>
-            {tab === "videos" && fReels.map((r) => (
+            {tab === "videos" && fReels.map((r) => {
+              const thumb = getVideoThumbnail(r.video_url);
+              return (
               <div key={r.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
-                <Film size={18} className="text-primary flex-shrink-0" />
+                <div className="w-16 h-16 rounded bg-background flex-shrink-0 overflow-hidden flex items-center justify-center">
+                  {thumb ? (
+                    <img src={thumb} alt={r.title || "video"} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  ) : (
+                    <Film size={20} className="text-primary" />
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
                     {r.public_id && (
@@ -126,7 +150,8 @@ const AdminContentManager = () => {
                 </div>
                 <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos", { videoGuid: r.bunny_video_guid, libraryId: r.bunny_library_id })} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
-            ))}
+              );
+            })}
             {tab === "videos" && fReels.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos."}</p>}
 
             {tab === "photos" && fQuotes.map((qq) => (
