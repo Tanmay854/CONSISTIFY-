@@ -100,10 +100,10 @@ const MusicTab = () => {
         // Shuffle each mount so recommendations rotate on every visit.
         const shuffled: HomeData = {
           categories: (d.categories || []).map((c: CategoryBucket) => ({
-            ...c, tracks: shuffle(c.tracks || []).slice(0, 12),
+            ...c, tracks: shuffle(c.tracks || []).slice(0, 30),
           })),
-          newReleases: shuffle((d.newReleases || []) as AlbumItem[]).slice(0, 12),
-          recommendedArtists: shuffle((d.recommendedArtists || []) as ArtistItem[]).slice(0, 12),
+          newReleases: shuffle((d.newReleases || []) as AlbumItem[]).slice(0, 30),
+          recommendedArtists: shuffle((d.recommendedArtists || []) as ArtistItem[]).slice(0, 30),
         };
         setHome(shuffled);
       } catch (e) {
