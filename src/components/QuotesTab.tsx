@@ -42,8 +42,15 @@ const PhotoCard = ({ quote, onReport }: { quote: QuoteCard; onReport: (q: QuoteC
     >
       <img
         src={quote.image_url}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60"
+        loading="lazy"
+      />
+      <img
+        src={quote.image_url}
         alt={quote.title || "quote"}
-        className="absolute inset-0 w-full h-full object-cover"
+        className="relative z-10 max-w-full max-h-full w-auto h-auto object-contain"
         loading="lazy"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-background/40 pointer-events-none" />

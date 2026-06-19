@@ -149,22 +149,42 @@ Deno.serve(async (req) => {
       );
     }
 
-    // action: home — DB-backed 1h cache + in-memory cache
+    // action: home — stale-while-revalidate so users never wait on Spotify.
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    const refresh = async () => {
+      try {
+        const token = await getToken();
+        const payload = await buildHome(token);
+        memCache = { payload, at: Date.now() };
+        await admin.from("music_cache").upsert({ key: HOME_CACHE_KEY, payload, updated_at: new Date().toISOString() });
+      } catch (e) {
+        console.error("background refresh failed", e);
+      }
+    };
+
+    // Fast path: in-memory cache (fresh)
     if (memCache && Date.now() - memCache.at < CACHE_TTL_MS) {
       return new Response(JSON.stringify(memCache.payload), {
         headers: { ...corsHeaders, "Content-Type": "application/json", "x-cache": "mem" },
       });
     }
 
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { data: row } = await admin.from("music_cache").select("payload, updated_at").eq("key", HOME_CACHE_KEY).maybeSingle();
-    if (row && Date.now() - new Date(row.updated_at).getTime() < CACHE_TTL_MS) {
+    if (row) {
+      const ageMs = Date.now() - new Date(row.updated_at).getTime();
       memCache = { payload: row.payload, at: new Date(row.updated_at).getTime() };
+      // Serve cached payload immediately; refresh in background if stale.
+      if (ageMs >= CACHE_TTL_MS) {
+        // @ts-ignore EdgeRuntime is available on Supabase edge runtime
+        try { EdgeRuntime.waitUntil(refresh()); } catch { refresh(); }
+      }
       return new Response(JSON.stringify(row.payload), {
-        headers: { ...corsHeaders, "Content-Type": "application/json", "x-cache": "db" },
+        headers: { ...corsHeaders, "Content-Type": "application/json", "x-cache": ageMs >= CACHE_TTL_MS ? "stale" : "db" },
       });
     }
 
+    // Cold cache: must build now
     const token = await getToken();
     const payload = await buildHome(token);
     memCache = { payload, at: Date.now() };

@@ -95,20 +95,39 @@ const MusicTab = () => {
   }, []);
 
   useEffect(() => {
+    // Instant render from localStorage cache so users never wait on Spotify.
+    const LS_KEY = "musictab_home_v1";
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) {
+        const cached = JSON.parse(raw) as HomeData;
+        const reshuffled: HomeData = {
+          categories: (cached.categories || []).map((c) => ({ ...c, tracks: shuffle(c.tracks || []) })),
+          newReleases: shuffle(cached.newReleases || []),
+          recommendedArtists: shuffle(cached.recommendedArtists || []),
+        };
+        setHome(reshuffled);
+        setLoading(false);
+      }
+    } catch { /* ignore */ }
+
     (async () => {
       try {
         const d = await callFn({ action: "home" });
-        // Shuffle each mount so recommendations rotate on every visit.
-        const shuffled: HomeData = {
+        const fresh: HomeData = {
           categories: (d.categories || []).map((c: CategoryBucket) => ({
             ...c, tracks: shuffle(c.tracks || []).slice(0, 30),
           })),
           newReleases: shuffle((d.newReleases || []) as AlbumItem[]).slice(0, 30),
           recommendedArtists: shuffle((d.recommendedArtists || []) as ArtistItem[]).slice(0, 30),
         };
-        setHome(shuffled);
+        setHome(fresh);
+        try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch { /* quota */ }
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load");
+        // Only surface an error if we had no cached data to show.
+        if (!localStorage.getItem(LS_KEY)) {
+          setError(e instanceof Error ? e.message : "Failed to load");
+        }
       } finally {
         setLoading(false);
       }
