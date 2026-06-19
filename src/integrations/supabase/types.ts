@@ -496,6 +496,13 @@ export type Database = {
     }
     Functions: {
       gen_public_id6: { Args: never; Returns: string }
+      get_uploader_emails: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
