@@ -277,8 +277,9 @@ const MyUploads = () => {
                               <p className="text-foreground text-sm font-medium truncate">{q.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
                             </div>
 
-                            <p className="text-muted-foreground text-xs truncate flex items-center gap-2">
+                            <p className="text-muted-foreground text-xs truncate flex items-center gap-2 flex-wrap">
                               <span>{q.category}</span>
+                              <span className="flex items-center gap-1"><Clock size={11} /> {formatDateTime(q.created_at)}</span>
                               <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
                             </p>
                           </div>
