@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Film, Image as ImageIcon, User, Search, X } from "lucide-react";
+import { Trash2, Film, Image as ImageIcon, User, Search, X, Mail, Clock } from "lucide-react";
+
+const formatDateTime = (iso: string) => {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      year: "numeric", month: "short", day: "2-digit",
+      hour: "2-digit", minute: "2-digit",
+    });
+  } catch { return iso; }
+};
 import { deleteContent } from "@/lib/deleteContent";
 
 type Tab = "videos" | "photos";
