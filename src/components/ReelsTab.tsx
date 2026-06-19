@@ -383,10 +383,8 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
       .range(from, to);
     if (data) {
       if (p === 0) {
-        if (data.length > 0) {
-          setReels(data);
-          setUsingDefaults(false);
-        }
+        setReels(data);
+        setUsingDefaults(false);
       } else {
         setReels((prev) => [...prev, ...data]);
       }
