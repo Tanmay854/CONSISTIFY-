@@ -239,8 +239,8 @@ const MyUploads = () => {
                           </div>
                         </div>
                       )}
-                      <p className="text-muted-foreground text-xs mt-0.5 flex items-center gap-2">
-                        <span>{new Date(reel.created_at).toLocaleDateString()}</span>
+                      <p className="text-muted-foreground text-xs mt-0.5 flex items-center gap-2 flex-wrap">
+                        <span className="flex items-center gap-1"><Clock size={11} /> {formatDateTime(reel.created_at)}</span>
                         <span className="flex items-center gap-1"><Eye size={11} /> {views[`reel:${reel.id}`] || 0}</span>
                       </p>
                     </div>
