@@ -186,8 +186,8 @@ const AdminContentManager = () => {
             {tab === "videos" && fReels.length === 0 && <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos."}</p>}
 
             {tab === "photos" && fQuotes.map((qq) => (
-              <div key={qq.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
-                <img src={qq.image_url} alt={qq.title || "photo"} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+              <div key={qq.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-start">
+                <img src={qq.image_url} alt={qq.title || "photo"} className="w-16 h-16 rounded object-cover flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
                     {qq.public_id && (
@@ -198,6 +198,10 @@ const AdminContentManager = () => {
                     <p className="text-foreground text-sm font-medium truncate">{qq.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
                   </div>
                   <p className="text-muted-foreground text-xs truncate flex items-center gap-1 mt-0.5"><User size={10} /> {nameFor(qq.uploaded_by)}</p>
+                  {emailFor(qq.uploaded_by) && (
+                    <p className="text-muted-foreground text-xs truncate flex items-center gap-1 mt-0.5"><Mail size={10} /> {emailFor(qq.uploaded_by)}</p>
+                  )}
+                  <p className="text-muted-foreground text-xs truncate flex items-center gap-1 mt-0.5"><Clock size={10} /> {formatDateTime(qq.created_at)}</p>
                 </div>
                 <button onClick={() => handleDelete("quotes", qq.id, qq.image_url, "quote-images", { storagePath: qq.bunny_storage_path })} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
