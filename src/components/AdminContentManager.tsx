@@ -48,6 +48,7 @@ const AdminContentManager = () => {
   const [reels, setReels] = useState<Reel[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [emails, setEmails] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
@@ -59,19 +60,36 @@ const AdminContentManager = () => {
       supabase.from("quotes").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("user_id, display_name"),
     ]);
-    setReels((r.data as Reel[]) || []);
-    setQuotes((q.data as Quote[]) || []);
+    const reelsData = (r.data as Reel[]) || [];
+    const quotesData = (q.data as Quote[]) || [];
+    setReels(reelsData);
+    setQuotes(quotesData);
     const map: Record<string, string> = {};
     (p.data || []).forEach((row: { user_id: string; display_name: string | null }) => {
       map[row.user_id] = row.display_name || "Unknown";
     });
     setProfiles(map);
+
+    const uploaderIds = Array.from(new Set(
+      [...reelsData, ...quotesData].map((x) => x.uploaded_by).filter((v): v is string => !!v)
+    ));
+    if (uploaderIds.length) {
+      const { data: emailRows } = await supabase.rpc("get_uploader_emails", { _user_ids: uploaderIds });
+      const eMap: Record<string, string> = {};
+      (emailRows || []).forEach((row: { user_id: string; email: string | null }) => {
+        if (row.email) eMap[row.user_id] = row.email;
+      });
+      setEmails(eMap);
+    } else {
+      setEmails({});
+    }
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const nameFor = (uid: string | null) => uid ? (profiles[uid] || "Unknown") : "Legacy/Anonymous";
+  const emailFor = (uid: string | null) => uid ? (emails[uid] || null) : null;
 
   const handleDelete = async (table: "reels" | "quotes", id: string, fileUrl: string | null, bucket: string | null, bunnyRef = {}) => {
     if (!confirm("Permanently delete this item?")) return;
