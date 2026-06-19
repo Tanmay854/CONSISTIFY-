@@ -156,7 +156,7 @@ const AdminContentManager = () => {
             {tab === "videos" && fReels.map((r) => {
               const thumb = getVideoThumbnail(r.video_url);
               return (
-              <div key={r.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-center">
+              <div key={r.id} className="bg-secondary rounded-lg p-3 flex gap-3 items-start">
                 <div className="w-16 h-16 rounded bg-background flex-shrink-0 overflow-hidden flex items-center justify-center">
                   {thumb ? (
                     <img src={thumb} alt={r.title || "video"} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
@@ -174,6 +174,10 @@ const AdminContentManager = () => {
                     <p className="text-foreground text-sm font-medium truncate">{r.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
                   </div>
                   <p className="text-muted-foreground text-xs truncate flex items-center gap-1 mt-0.5"><User size={10} /> {nameFor(r.uploaded_by)}</p>
+                  {emailFor(r.uploaded_by) && (
+                    <p className="text-muted-foreground text-xs truncate flex items-center gap-1 mt-0.5"><Mail size={10} /> {emailFor(r.uploaded_by)}</p>
+                  )}
+                  <p className="text-muted-foreground text-xs truncate flex items-center gap-1 mt-0.5"><Clock size={10} /> {formatDateTime(r.created_at)}</p>
                 </div>
                 <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos", { videoGuid: r.bunny_video_guid, libraryId: r.bunny_library_id })} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
               </div>
