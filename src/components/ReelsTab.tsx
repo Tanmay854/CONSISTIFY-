@@ -99,17 +99,8 @@ interface Ad {
 
 type FeedItem = { kind: "reel"; data: Reel } | { kind: "ad"; data: Ad };
 
-const defaultReels: Reel[] = [
-  { id: "d1", title: "Rise Above", video_url: "", author_name: "Marcus Aurelius", description: null, created_at: "", trim_start: null, trim_end: null },
-  { id: "d2", title: "Unstoppable", video_url: "", author_name: "David Goggins", description: null, created_at: "", trim_start: null, trim_end: null },
-  { id: "d3", title: "Dream Big", video_url: "", author_name: "Steve Jobs", description: null, created_at: "", trim_start: null, trim_end: null },
-];
-
-const defaultQuotes: Record<string, string> = {
-  d1: "The happiness of your life depends upon the quality of your thoughts.",
-  d2: "You are in danger of living a life so comfortable and soft that you will die without ever realizing your potential.",
-  d3: "Your time is limited, so don't waste it living someone else's life.",
-};
+const defaultReels: Reel[] = [];
+const defaultQuotes: Record<string, string> = {};
 
 const gradients = [
   "from-amber-900/80 via-background to-background",
