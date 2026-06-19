@@ -1,7 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Check, X, Scissors, Trash2, Film, Image as ImageIcon, Search, Eye, BarChart3 } from "lucide-react";
+import { Pencil, Check, X, Scissors, Trash2, Film, Image as ImageIcon, Search, Eye, BarChart3, Clock } from "lucide-react";
+
+const formatDateTime = (iso: string) => {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      year: "numeric", month: "short", day: "2-digit",
+      hour: "2-digit", minute: "2-digit",
+    });
+  } catch { return iso; }
+};
 import { Slider } from "@/components/ui/slider";
 import StatsChart from "@/components/StatsChart";
 import { deleteContent } from "@/lib/deleteContent";
