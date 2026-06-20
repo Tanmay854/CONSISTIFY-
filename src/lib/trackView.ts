@@ -30,12 +30,13 @@ export async function trackView(
   try {
     const { data: { user } } = await supabase.auth.getUser();
     const viewer_id = user?.id ?? getAnonViewerId();
-    await supabase
-      .from("content_views")
-      .upsert(
-        { content_type: contentType, content_id: contentId, viewer_id },
-        { onConflict: "content_type,content_id,viewer_id", ignoreDuplicates: true }
-      );
+    // Pure INSERT — the unique constraint + in-memory cache prevents duplicates.
+    // We avoid upsert because it requires an UPDATE RLS policy.
+    await supabase.from("content_views").insert({
+      content_type: contentType,
+      content_id: contentId,
+      viewer_id,
+    });
   } catch {
     // best-effort
   }
