@@ -134,9 +134,6 @@ const QuotesTab = () => {
   return (
     <>
       <div className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background">
-        <div className="fixed top-0 left-0 right-0 z-20 px-4 pt-4 pb-2 bg-gradient-to-b from-background via-background/80 to-transparent">
-          <h2 className="text-foreground font-semibold text-lg">Photos</h2>
-        </div>
         {quotes.map((quote) => (
           <PhotoCard key={quote.id} quote={quote} onReport={setReportTarget} />
         ))}
