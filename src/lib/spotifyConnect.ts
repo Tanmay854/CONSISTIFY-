@@ -55,39 +55,35 @@ export async function beginSpotifyLogin() {
 
 export async function completeSpotifyLogin(search: string) {
   const params = new URLSearchParams(search);
+  const errParam = params.get("error");
+  if (errParam) throw new Error(`Spotify denied access: ${errParam}`);
   const code = params.get("code");
   const state = params.get("state");
   const expectedState = sessionStorage.getItem(STATE_KEY);
   const verifier = sessionStorage.getItem(VERIFIER_KEY);
   if (!code || !state || state !== expectedState || !verifier) {
-    throw new Error("Invalid Spotify callback");
+    throw new Error("Invalid Spotify callback (state mismatch). Please try connecting again.");
   }
   sessionStorage.removeItem(STATE_KEY);
   sessionStorage.removeItem(VERIFIER_KEY);
   const redirect_uri = window.location.origin + SPOTIFY_REDIRECT_PATH;
-  const { data, error } = await supabase.functions.invoke("spotify-user", {
-    body: { code, code_verifier: verifier, redirect_uri },
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("You must be signed in to connect Spotify.");
+  const url = new URL(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/spotify-user`);
+  url.searchParams.set("action", "exchange");
+  const r = await fetch(url.toString(), {
     method: "POST",
-    // action is a query param — invoke can't set it, so we hit raw URL below
-  } as any);
-  // Fallback: call raw URL because we need ?action=exchange
-  if (error || !data) {
-    const { data: { session } } = await supabase.auth.getSession();
-    const url = new URL(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/spotify-user`);
-    url.searchParams.set("action", "exchange");
-    const r = await fetch(url.toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
-      },
-      body: JSON.stringify({ code, code_verifier: verifier, redirect_uri }),
-    });
-    if (!r.ok) throw new Error(`Exchange failed (${r.status})`);
-    return await r.json();
-  }
-  return data;
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ code, code_verifier: verifier, redirect_uri }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j?.error || `Exchange failed (${r.status})`);
+  return j;
 }
+
 
 export async function callSpotifyUser(action: string, init?: RequestInit) {
   const { data: { session } } = await supabase.auth.getSession();

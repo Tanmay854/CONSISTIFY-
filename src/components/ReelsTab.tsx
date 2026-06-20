@@ -181,26 +181,34 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
     return cleanup;
   }, [shouldMount, playableUrl]);
 
+  // Reset to trimStart only when the active card changes — NOT on every pause/play toggle.
   useEffect(() => {
     if (!shouldMount || !videoRef.current) return;
     const v = videoRef.current;
-    v.muted = muted;
     if (isActive) {
       try { v.currentTime = trimStart; } catch { /* empty */ }
-      if (isPlaying) {
-        v.play().catch(() => {
-          // Autoplay likely blocked because the video is unmuted. Force mute and retry.
-          v.muted = true;
-          v.play().catch(() => { setIsLoading(false); });
-        });
-      } else {
-        v.pause();
-      }
     } else {
       v.pause();
       try { v.currentTime = trimStart; } catch { /* empty */ }
     }
-  }, [isPlaying, isActive, shouldMount, muted, trimStart]);
+  }, [isActive, shouldMount, trimStart]);
+
+  // Play/pause + mute respond to user toggles WITHOUT seeking, so resume continues from where it stopped.
+  useEffect(() => {
+    if (!shouldMount || !videoRef.current) return;
+    const v = videoRef.current;
+    v.muted = muted;
+    if (!isActive) return;
+    if (isPlaying) {
+      v.play().catch(() => {
+        v.muted = true;
+        v.play().catch(() => { setIsLoading(false); });
+      });
+    } else {
+      v.pause();
+    }
+  }, [isPlaying, isActive, shouldMount, muted]);
+
 
   const togglePlay = () => {
     if (!hasVideo) return;
