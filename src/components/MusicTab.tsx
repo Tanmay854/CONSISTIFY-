@@ -4,7 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { openSpotify } from "@/lib/spotifyLink";
 import { useAuth } from "@/hooks/useAuth";
-import { beginSpotifyLogin, callSpotifyUser } from "@/lib/spotifyConnect";
+import {
+  beginSpotifyLogin,
+  spotifyApi,
+  getStoredTokens,
+  disconnectSpotify as clearSpotify,
+} from "@/lib/spotifyConnect";
 import MyAlbumsSheet from "./MyAlbumsSheet";
 import AuthSheet from "./AuthSheet";
 import { toast } from "@/hooks/use-toast";
