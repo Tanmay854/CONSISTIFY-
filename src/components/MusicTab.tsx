@@ -232,9 +232,9 @@ const MusicTab = () => {
         <SpotifyBadge />
       </div>
 
-      {/* Connect Spotify — available to every user; guests are routed to sign in */}
+      {/* Connect Spotify — open to every visitor, no sign-in required */}
       <div className="px-5 pt-3">
-        {user && connected ? (
+        {connected ? (
           <div className="flex items-center justify-between bg-white/5 rounded-full px-4 py-2">
             <span className="text-xs text-white/80">
               Connected{spotifyName ? ` as ${spotifyName}` : ""}
@@ -245,14 +245,7 @@ const MusicTab = () => {
           </div>
         ) : (
           <button
-            onClick={() => {
-              if (!user) {
-                toast({ title: "Sign in to connect Spotify" });
-                setAuthOpen(true);
-                return;
-              }
-              beginSpotifyLogin();
-            }}
+            onClick={() => { beginSpotifyLogin(); }}
             className="w-full rounded-full py-2.5 text-sm font-semibold text-black"
             style={{ backgroundColor: SPOTIFY_GREEN }}
           >
