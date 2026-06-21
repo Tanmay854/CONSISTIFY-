@@ -6,6 +6,7 @@ import { openSpotify } from "@/lib/spotifyLink";
 import { useAuth } from "@/hooks/useAuth";
 import { beginSpotifyLogin, callSpotifyUser } from "@/lib/spotifyConnect";
 import MyAlbumsSheet from "./MyAlbumsSheet";
+import AuthSheet from "./AuthSheet";
 import { toast } from "@/hooks/use-toast";
 
 const shuffle = <T,>(arr: T[]): T[] => {
