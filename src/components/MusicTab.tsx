@@ -6,6 +6,7 @@ import { openSpotify } from "@/lib/spotifyLink";
 import { useAuth } from "@/hooks/useAuth";
 import { beginSpotifyLogin, callSpotifyUser } from "@/lib/spotifyConnect";
 import MyAlbumsSheet from "./MyAlbumsSheet";
+import AuthSheet from "./AuthSheet";
 import { toast } from "@/hooks/use-toast";
 
 const shuffle = <T,>(arr: T[]): T[] => {
@@ -76,6 +77,7 @@ const MusicTab = () => {
 
   // Spotify connection
   const [connected, setConnected] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [spotifyName, setSpotifyName] = useState<string | null>(null);
   const [userPlaylists, setUserPlaylists] = useState<PlaylistItem[]>([]);
   const [likedSongs, setLikedSongs] = useState<TrackItem[]>([]);
@@ -219,7 +221,7 @@ const MusicTab = () => {
             onClick={() => {
               if (!user) {
                 toast({ title: "Sign in to connect Spotify" });
-                navigate("/auth");
+                setAuthOpen(true);
                 return;
               }
               beginSpotifyLogin();
@@ -421,6 +423,7 @@ const MusicTab = () => {
         onClose={() => setSheetOpen(false)}
         onAlbumChanged={loadAlbums}
       />
+      <AuthSheet open={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   );
 };
