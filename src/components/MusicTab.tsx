@@ -308,7 +308,7 @@ const MusicTab = () => {
                 onClick={() => {
                   if (!user) {
                     toast({ title: "Sign in to create albums" });
-                    navigate("/auth");
+                    setAuthOpen(true);
                     return;
                   }
                   setEditingAlbum(null);
