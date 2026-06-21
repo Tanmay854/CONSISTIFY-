@@ -1,14 +1,47 @@
-// Spotify Authorization Code with PKCE — browser side.
+// Spotify Authorization Code with PKCE — fully client-side, no Supabase auth required.
+// Tokens are stored in localStorage so ANY visitor (signed in or not) can connect
+// their personal Spotify account.
 import { supabase } from "@/integrations/supabase/client";
 
 const CLIENT_ID_STORAGE = "spotify_client_id";
 const VERIFIER_KEY = "spotify_pkce_verifier";
 const STATE_KEY = "spotify_oauth_state";
+const TOKENS_KEY = "spotify_tokens_v1";
 
 export const SPOTIFY_REDIRECT_PATH = "/spotify-callback";
 export const SPOTIFY_SCOPES = "playlist-read-private playlist-read-collaborative user-library-read";
 
-// Spotify CLIENT_ID is *public* — safe in browser. We surface it from an edge function once and cache it.
+export interface SpotifyTokens {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number; // epoch ms
+  scope?: string;
+  display_name?: string | null;
+}
+
+export function getStoredTokens(): SpotifyTokens | null {
+  try {
+    const raw = localStorage.getItem(TOKENS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as SpotifyTokens;
+  } catch {
+    return null;
+  }
+}
+
+function setStoredTokens(t: SpotifyTokens) {
+  localStorage.setItem(TOKENS_KEY, JSON.stringify(t));
+}
+
+export function clearStoredTokens() {
+  localStorage.removeItem(TOKENS_KEY);
+}
+
+export function isSpotifyConnected(): boolean {
+  return !!getStoredTokens();
+}
+
+// Spotify CLIENT_ID is *public* — safe in browser. Surface it once from an edge function and cache it.
 async function getClientId(): Promise<string> {
   const cached = sessionStorage.getItem(CLIENT_ID_STORAGE);
   if (cached) return cached;
@@ -32,6 +65,9 @@ function randomString(len: number) {
   crypto.getRandomValues(arr);
   return base64url(arr.buffer);
 }
+
+const AUTH_FN_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/spotify-auth`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 export async function beginSpotifyLogin() {
   const clientId = await getClientId();
@@ -67,35 +103,92 @@ export async function completeSpotifyLogin(search: string) {
   sessionStorage.removeItem(STATE_KEY);
   sessionStorage.removeItem(VERIFIER_KEY);
   const redirect_uri = window.location.origin + SPOTIFY_REDIRECT_PATH;
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error("You must be signed in to connect Spotify.");
-  const url = new URL(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/spotify-user`);
+
+  const url = new URL(AUTH_FN_URL);
   url.searchParams.set("action", "exchange");
   const r = await fetch(url.toString(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
+      apikey: ANON_KEY,
+      Authorization: `Bearer ${ANON_KEY}`,
     },
     body: JSON.stringify({ code, code_verifier: verifier, redirect_uri }),
   });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j?.error || `Exchange failed (${r.status})`);
-  return j;
+  if (!r.ok || !j.access_token) throw new Error(j?.error || `Exchange failed (${r.status})`);
+
+  const tokens: SpotifyTokens = {
+    access_token: j.access_token,
+    refresh_token: j.refresh_token,
+    expires_at: Date.now() + (j.expires_in - 30) * 1000,
+    scope: j.scope,
+    display_name: j.display_name || null,
+  };
+  setStoredTokens(tokens);
+  return tokens;
 }
 
-
-export async function callSpotifyUser(action: string, init?: RequestInit) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const url = new URL(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/spotify-user`);
-  url.searchParams.set("action", action);
+async function refreshAccessToken(): Promise<SpotifyTokens | null> {
+  const cur = getStoredTokens();
+  if (!cur?.refresh_token) return null;
+  const url = new URL(AUTH_FN_URL);
+  url.searchParams.set("action", "refresh");
   const r = await fetch(url.toString(), {
-    ...init,
+    method: "POST",
     headers: {
-      ...(init?.headers || {}),
-      ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      "Content-Type": "application/json",
+      apikey: ANON_KEY,
+      Authorization: `Bearer ${ANON_KEY}`,
     },
+    body: JSON.stringify({ refresh_token: cur.refresh_token }),
   });
-  if (!r.ok) throw new Error(`Spotify request failed (${r.status})`);
-  return await r.json();
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.access_token) {
+    // Refresh failed → force re-auth.
+    clearStoredTokens();
+    return null;
+  }
+  const next: SpotifyTokens = {
+    access_token: j.access_token,
+    refresh_token: j.refresh_token || cur.refresh_token,
+    expires_at: Date.now() + (j.expires_in - 30) * 1000,
+    scope: j.scope || cur.scope,
+    display_name: cur.display_name,
+  };
+  setStoredTokens(next);
+  return next;
+}
+
+export async function getValidAccessToken(): Promise<string | null> {
+  const cur = getStoredTokens();
+  if (!cur) return null;
+  if (cur.expires_at > Date.now()) return cur.access_token;
+  const next = await refreshAccessToken();
+  return next?.access_token || null;
+}
+
+// Direct Spotify Web API call from the browser, transparently refreshing tokens.
+export async function spotifyApi<T = unknown>(path: string, init?: RequestInit): Promise<T> {
+  let token = await getValidAccessToken();
+  if (!token) throw new Error("not connected");
+  let r = await fetch(`https://api.spotify.com/v1${path}`, {
+    ...init,
+    headers: { ...(init?.headers || {}), Authorization: `Bearer ${token}` },
+  });
+  if (r.status === 401) {
+    const next = await refreshAccessToken();
+    if (!next) throw new Error("not connected");
+    token = next.access_token;
+    r = await fetch(`https://api.spotify.com/v1${path}`, {
+      ...init,
+      headers: { ...(init?.headers || {}), Authorization: `Bearer ${token}` },
+    });
+  }
+  if (!r.ok) throw new Error(`Spotify ${path} failed (${r.status})`);
+  return await r.json() as T;
+}
+
+export async function disconnectSpotify() {
+  clearStoredTokens();
 }
