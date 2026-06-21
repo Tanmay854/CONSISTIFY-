@@ -77,6 +77,7 @@ const MusicTab = () => {
 
   // Spotify connection
   const [connected, setConnected] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [spotifyName, setSpotifyName] = useState<string | null>(null);
   const [userPlaylists, setUserPlaylists] = useState<PlaylistItem[]>([]);
   const [likedSongs, setLikedSongs] = useState<TrackItem[]>([]);
