@@ -152,36 +152,58 @@ const MusicTab = () => {
   }, [user]);
   useEffect(() => { loadAlbums(); }, [loadAlbums]);
 
-  // Load Spotify connection status + content
+  // Load Spotify connection status + content — works for ANY visitor (no Supabase auth needed).
   const loadSpotify = useCallback(async () => {
-    if (!user) { setConnected(false); return; }
-    const { data } = await supabase.from("spotify_connections")
-      .select("display_name").eq("user_id", user.id).maybeSingle();
-    if (!data) { setConnected(false); return; }
+    const tokens = getStoredTokens();
+    if (!tokens) {
+      setConnected(false);
+      setSpotifyName(null);
+      setUserPlaylists([]);
+      setLikedSongs([]);
+      return;
+    }
     setConnected(true);
-    setSpotifyName(data.display_name);
+    setSpotifyName(tokens.display_name || null);
     try {
       const [pl, lk] = await Promise.all([
-        callSpotifyUser("me-playlists"),
-        callSpotifyUser("me-liked"),
+        spotifyApi<{ items: any[] }>("/me/playlists?limit=50"),
+        spotifyApi<{ items: any[] }>("/me/tracks?limit=50"),
       ]);
-      setUserPlaylists(pl.items || []);
-      setLikedSongs(lk.items || []);
+      setUserPlaylists(
+        (pl.items || []).filter(Boolean).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          image: p.images?.[0]?.url || null,
+          uri: p.uri,
+          tracks: p.tracks?.total ?? 0,
+        })),
+      );
+      setLikedSongs(
+        (lk.items || []).filter((x: any) => x?.track).map((x: any) => {
+          const t = x.track;
+          return {
+            id: t.id,
+            name: t.name,
+            artist: t.artists?.map((a: any) => a.name).join(", ") || "",
+            image: t.album?.images?.[0]?.url || null,
+            duration_ms: t.duration_ms,
+            uri: t.uri,
+          };
+        }),
+      );
     } catch (e) {
       console.warn("Spotify user content failed", e);
     }
-  }, [user]);
+  }, []);
   useEffect(() => { loadSpotify(); }, [loadSpotify]);
 
   const disconnectSpotify = async () => {
-    try {
-      await callSpotifyUser("disconnect", { method: "POST" });
-      setConnected(false); setSpotifyName(null);
-      setUserPlaylists([]); setLikedSongs([]);
-      toast({ title: "Spotify disconnected" });
-    } catch (e) {
-      toast({ title: "Failed to disconnect", variant: "destructive" });
-    }
+    await clearSpotify();
+    setConnected(false);
+    setSpotifyName(null);
+    setUserPlaylists([]);
+    setLikedSongs([]);
+    toast({ title: "Spotify disconnected" });
   };
 
   // Debounced search
