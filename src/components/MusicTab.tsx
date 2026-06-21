@@ -423,6 +423,7 @@ const MusicTab = () => {
         onClose={() => setSheetOpen(false)}
         onAlbumChanged={loadAlbums}
       />
+      <AuthSheet open={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   );
 };
