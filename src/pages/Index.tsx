@@ -13,7 +13,10 @@ type Tab = "reels" | "music" | "quotes" | "upload";
 
 const AppContent = () => {
   const { canUpload } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>("reels");
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    return tab === "music" || tab === "quotes" || tab === "upload" ? tab : "reels";
+  });
   const [showSettings, setShowSettings] = useState(false);
   const [muted, setMuted] = useState<boolean>(() => {
     // Default to muted so browsers allow autoplay. User can unmute via the button.
