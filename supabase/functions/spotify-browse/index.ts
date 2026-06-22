@@ -11,7 +11,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-const HOME_CACHE_KEY = "home_v6";
+const HOME_CACHE_KEY = "home_v7";
 
 const CATEGORIES: { id: string; title: string; query: string }[] = [
   { id: "motivational", title: "Motivational Workout", query: "motivational workout" },
@@ -56,6 +56,18 @@ async function sp(path: string, token: string): Promise<any | null> {
   return await r.json();
 }
 
+async function spotifySearch(params: Record<string, string>, token: string): Promise<any | null> {
+  const query = new URLSearchParams(params);
+  const first = await sp(`/search?${query.toString()}`, token);
+  if (first) return first;
+
+  // Spotify can intermittently reject limit/offset values in app-restricted contexts.
+  // Retry with the safest request shape so public album recommendations never go blank.
+  query.delete("limit");
+  query.delete("offset");
+  return await sp(`/search?${query.toString()}`, token);
+}
+
 const mapTrack = (t: any) => ({
   id: t.id,
   name: t.name,
@@ -76,21 +88,21 @@ async function buildHome(token: string) {
   const year = new Date().getFullYear();
   // Rotate result page hourly so recommendations change every hour.
   const hour = new Date().getUTCHours();
-  const offset = (hour * 7) % 200; // 0..199, stays under Spotify's 1000 cap
+  const offset = (hour * 3) % 30;
   const catResults = await Promise.all(
     CATEGORIES.map((c) =>
-      sp(`/search?q=${encodeURIComponent(c.query)}&type=track&limit=20&offset=${offset}&market=US`, token).then((d) => ({
+      spotifySearch({ q: c.query, type: "track", limit: "10", offset: String(offset), market: "US" }, token).then((d) => ({
         id: c.id, title: c.title,
         tracks: (d?.tracks?.items || []).filter(Boolean).map(mapTrack),
       })),
     ),
   );
   const [newReleasesA, newReleasesB, artistsPop, artistsHipHop, artistsRock] = await Promise.all([
-    sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=20&offset=${offset}&market=US`, token),
-    sp(`/search?q=${encodeURIComponent(`year:${year - 1}`)}&type=album&limit=20&offset=${offset}&market=US`, token),
-    sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=20&offset=${offset}&market=US`, token),
-    sp(`/search?q=${encodeURIComponent("genre:hip-hop")}&type=artist&limit=20&offset=${offset}&market=US`, token),
-    sp(`/search?q=${encodeURIComponent("genre:rock")}&type=artist&limit=20&offset=${offset}&market=US`, token),
+    spotifySearch({ q: `year:${year}`, type: "album", limit: "10", offset: String(offset), market: "US" }, token),
+    spotifySearch({ q: `year:${year - 1}`, type: "album", limit: "10", offset: String(offset), market: "US" }, token),
+    spotifySearch({ q: "genre:pop", type: "artist", limit: "10", offset: String(offset), market: "US" }, token),
+    spotifySearch({ q: "genre:hip-hop", type: "artist", limit: "10", offset: String(offset), market: "US" }, token),
+    spotifySearch({ q: "genre:rock", type: "artist", limit: "10", offset: String(offset), market: "US" }, token),
   ]);
   const allAlbums = [
     ...(newReleasesA?.albums?.items || []),
