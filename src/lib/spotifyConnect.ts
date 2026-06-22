@@ -1,7 +1,6 @@
 // Spotify Authorization Code with PKCE — fully client-side, no Supabase auth required.
 // Tokens are stored in localStorage so ANY visitor (signed in or not) can connect
 // their personal Spotify account.
-import { supabase } from "@/integrations/supabase/client";
 
 const CLIENT_ID_STORAGE = "spotify_client_id";
 const VERIFIER_KEY = "spotify_pkce_verifier";
