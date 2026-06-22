@@ -245,7 +245,11 @@ const MusicTab = () => {
           </div>
         ) : (
           <button
-            onClick={() => { beginSpotifyLogin(); }}
+            onClick={() => {
+              beginSpotifyLogin().catch((e) => {
+                toast({ title: e instanceof Error ? e.message : "Could not open Spotify" });
+              });
+            }}
             className="w-full rounded-full py-2.5 text-sm font-semibold text-black"
             style={{ backgroundColor: SPOTIFY_GREEN }}
           >

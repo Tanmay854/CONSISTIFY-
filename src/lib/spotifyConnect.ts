@@ -1,12 +1,19 @@
 // Spotify Authorization Code with PKCE — fully client-side, no Supabase auth required.
 // Tokens are stored in localStorage so ANY visitor (signed in or not) can connect
 // their personal Spotify account.
-import { supabase } from "@/integrations/supabase/client";
 
 const CLIENT_ID_STORAGE = "spotify_client_id";
 const VERIFIER_KEY = "spotify_pkce_verifier";
 const STATE_KEY = "spotify_oauth_state";
 const TOKENS_KEY = "spotify_tokens_v1";
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+const FUNCTIONS_BASE_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1`;
+const PUBLIC_CONFIG_FN_URL = `${FUNCTIONS_BASE_URL}/spotify-public-config`;
+const AUTH_FN_URL = `${FUNCTIONS_BASE_URL}/spotify-auth`;
+
+// Spotify client IDs are public by design. This fallback keeps anonymous OAuth
+// working even if the public-config function is temporarily unreachable.
+const PUBLIC_SPOTIFY_CLIENT_ID_FALLBACK = "0f776876d140467a82a1c3e03ea46200";
 
 export const SPOTIFY_REDIRECT_PATH = "/spotify-callback";
 export const SPOTIFY_SCOPES = "playlist-read-private playlist-read-collaborative user-library-read";
@@ -45,10 +52,20 @@ export function isSpotifyConnected(): boolean {
 async function getClientId(): Promise<string> {
   const cached = sessionStorage.getItem(CLIENT_ID_STORAGE);
   if (cached) return cached;
-  const { data, error } = await supabase.functions.invoke("spotify-public-config");
-  if (error || !data?.client_id) throw new Error("Spotify not configured");
-  sessionStorage.setItem(CLIENT_ID_STORAGE, data.client_id);
-  return data.client_id;
+  try {
+    const res = await fetch(PUBLIC_CONFIG_FN_URL, {
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data?.client_id) {
+      sessionStorage.setItem(CLIENT_ID_STORAGE, data.client_id);
+      return data.client_id;
+    }
+  } catch (e) {
+    console.warn("Spotify public config unavailable", e);
+  }
+  sessionStorage.setItem(CLIENT_ID_STORAGE, PUBLIC_SPOTIFY_CLIENT_ID_FALLBACK);
+  return PUBLIC_SPOTIFY_CLIENT_ID_FALLBACK;
 }
 
 function base64url(buf: ArrayBuffer) {
@@ -65,9 +82,6 @@ function randomString(len: number) {
   crypto.getRandomValues(arr);
   return base64url(arr.buffer);
 }
-
-const AUTH_FN_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/spotify-auth`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 export async function beginSpotifyLogin() {
   const clientId = await getClientId();
