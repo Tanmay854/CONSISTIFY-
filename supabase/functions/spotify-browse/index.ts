@@ -74,20 +74,23 @@ const mapAlbum = (a: any) => ({
 
 async function buildHome(token: string) {
   const year = new Date().getFullYear();
+  // Rotate result page hourly so recommendations change every hour.
+  const hour = new Date().getUTCHours();
+  const offset = (hour * 7) % 200; // 0..199, stays under Spotify's 1000 cap
   const catResults = await Promise.all(
     CATEGORIES.map((c) =>
-      sp(`/search?q=${encodeURIComponent(c.query)}&type=track&limit=50&market=US`, token).then((d) => ({
+      sp(`/search?q=${encodeURIComponent(c.query)}&type=track&limit=20&offset=${offset}&market=US`, token).then((d) => ({
         id: c.id, title: c.title,
         tracks: (d?.tracks?.items || []).filter(Boolean).map(mapTrack),
       })),
     ),
   );
   const [newReleasesA, newReleasesB, artistsPop, artistsHipHop, artistsRock] = await Promise.all([
-    sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=50&market=US`, token),
-    sp(`/search?q=${encodeURIComponent(`year:${year - 1}`)}&type=album&limit=50&market=US`, token),
-    sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=50&market=US`, token),
-    sp(`/search?q=${encodeURIComponent("genre:hip-hop")}&type=artist&limit=50&market=US`, token),
-    sp(`/search?q=${encodeURIComponent("genre:rock")}&type=artist&limit=50&market=US`, token),
+    sp(`/search?q=${encodeURIComponent(`year:${year}`)}&type=album&limit=20&offset=${offset}&market=US`, token),
+    sp(`/search?q=${encodeURIComponent(`year:${year - 1}`)}&type=album&limit=20&offset=${offset}&market=US`, token),
+    sp(`/search?q=${encodeURIComponent("genre:pop")}&type=artist&limit=20&offset=${offset}&market=US`, token),
+    sp(`/search?q=${encodeURIComponent("genre:hip-hop")}&type=artist&limit=20&offset=${offset}&market=US`, token),
+    sp(`/search?q=${encodeURIComponent("genre:rock")}&type=artist&limit=20&offset=${offset}&market=US`, token),
   ]);
   const allAlbums = [
     ...(newReleasesA?.albums?.items || []),
