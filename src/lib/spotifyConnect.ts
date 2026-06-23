@@ -40,6 +40,20 @@ function setStoredTokens(t: SpotifyTokens) {
   localStorage.setItem(TOKENS_KEY, JSON.stringify(t));
 }
 
+function setOAuthValue(key: string, value: string) {
+  localStorage.setItem(key, value);
+  try { sessionStorage.setItem(key, value); } catch { /* mobile browsers can block sessionStorage during redirects */ }
+}
+
+function getOAuthValue(key: string): string | null {
+  return localStorage.getItem(key) || sessionStorage.getItem(key);
+}
+
+function removeOAuthValue(key: string) {
+  localStorage.removeItem(key);
+  try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+}
+
 export function clearStoredTokens() {
   localStorage.removeItem(TOKENS_KEY);
 }
@@ -88,8 +102,8 @@ export async function beginSpotifyLogin() {
   const verifier = randomString(64);
   const challenge = await sha256(verifier);
   const state = randomString(16);
-  sessionStorage.setItem(VERIFIER_KEY, verifier);
-  sessionStorage.setItem(STATE_KEY, state);
+  setOAuthValue(VERIFIER_KEY, verifier);
+  setOAuthValue(STATE_KEY, state);
   const redirect_uri = window.location.origin + SPOTIFY_REDIRECT_PATH;
   const params = new URLSearchParams({
     response_type: "code",
@@ -100,7 +114,7 @@ export async function beginSpotifyLogin() {
     code_challenge_method: "S256",
     code_challenge: challenge,
   });
-  window.location.href = `https://accounts.spotify.com/authorize?${params}`;
+  window.location.assign(`https://accounts.spotify.com/authorize?${params}`);
 }
 
 export async function completeSpotifyLogin(search: string) {
@@ -109,13 +123,13 @@ export async function completeSpotifyLogin(search: string) {
   if (errParam) throw new Error(`Spotify denied access: ${errParam}`);
   const code = params.get("code");
   const state = params.get("state");
-  const expectedState = sessionStorage.getItem(STATE_KEY);
-  const verifier = sessionStorage.getItem(VERIFIER_KEY);
+  const expectedState = getOAuthValue(STATE_KEY);
+  const verifier = getOAuthValue(VERIFIER_KEY);
   if (!code || !state || state !== expectedState || !verifier) {
     throw new Error("Invalid Spotify callback (state mismatch). Please try connecting again.");
   }
-  sessionStorage.removeItem(STATE_KEY);
-  sessionStorage.removeItem(VERIFIER_KEY);
+  removeOAuthValue(STATE_KEY);
+  removeOAuthValue(VERIFIER_KEY);
   const redirect_uri = window.location.origin + SPOTIFY_REDIRECT_PATH;
 
   const url = new URL(AUTH_FN_URL);
