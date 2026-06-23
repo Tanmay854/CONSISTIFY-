@@ -403,7 +403,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
 
   const fetchPage = useCallback(async (p: number) => {
     setLoading(true);
-    const from = p * FETCH_WINDOW;
+    const from = p * PAGE_SIZE;
     const to = from + FETCH_WINDOW - 1;
     const { data } = await supabase
       .from("reels")
