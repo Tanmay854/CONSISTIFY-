@@ -41,16 +41,19 @@ function setStoredTokens(t: SpotifyTokens) {
 }
 
 function setOAuthValue(key: string, value: string) {
-  localStorage.setItem(key, value);
+  try { localStorage.setItem(key, value); } catch { /* ignore */ }
   try { sessionStorage.setItem(key, value); } catch { /* mobile browsers can block sessionStorage during redirects */ }
 }
 
 function getOAuthValue(key: string): string | null {
-  return localStorage.getItem(key) || sessionStorage.getItem(key);
+  let value: string | null = null;
+  try { value = localStorage.getItem(key); } catch { /* ignore */ }
+  if (value) return value;
+  try { return sessionStorage.getItem(key); } catch { return null; }
 }
 
 function removeOAuthValue(key: string) {
-  localStorage.removeItem(key);
+  try { localStorage.removeItem(key); } catch { /* ignore */ }
   try { sessionStorage.removeItem(key); } catch { /* ignore */ }
 }
 
