@@ -387,6 +387,7 @@ const AdCard = ({ ad, isActive }: { ad: Ad; isActive: boolean }) => {
 };
 
 const PAGE_SIZE = 5;
+const FETCH_WINDOW = 30;
 
 const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -402,8 +403,8 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
 
   const fetchPage = useCallback(async (p: number) => {
     setLoading(true);
-    const from = p * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
+    const from = p * FETCH_WINDOW;
+    const to = from + FETCH_WINDOW - 1;
     const { data } = await supabase
       .from("reels")
       .select("id,title,description,category,video_url,bunny_video_guid,bunny_library_id,video_fit,trim_start,trim_end,author_name,uploaded_by,created_at")
@@ -411,17 +412,18 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
       .range(from, to);
     if (data) {
       const seen = new Set(readAnonReelHistory());
-      const freshFirst = [...data].sort((a, b) => Number(seen.has(a.id)) - Number(seen.has(b.id)));
+      const unseen = data.filter((r) => !seen.has(r.id));
+      const pageData = (unseen.length > 0 ? unseen : data).slice(0, PAGE_SIZE);
       if (p === 0) {
-        setReels(freshFirst);
+        setReels(pageData);
         setUsingDefaults(false);
       } else {
         setReels((prev) => {
           const existing = new Set(prev.map((r) => r.id));
-          return [...prev, ...freshFirst.filter((r) => !existing.has(r.id))];
+          return [...prev, ...pageData.filter((r) => !existing.has(r.id))];
         });
       }
-      if (data.length < PAGE_SIZE) setHasMore(false);
+      if (data.length < FETCH_WINDOW) setHasMore(false);
     }
     setLoading(false);
   }, []);
