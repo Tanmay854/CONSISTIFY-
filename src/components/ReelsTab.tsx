@@ -101,6 +101,8 @@ type FeedItem = { kind: "reel"; data: Reel } | { kind: "ad"; data: Ad };
 
 const defaultReels: Reel[] = [];
 const defaultQuotes: Record<string, string> = {};
+const ANON_REEL_HISTORY_KEY = "anon_reel_history_v1";
+const REEL_HISTORY_LIMIT = 500;
 
 const gradients = [
   "from-amber-900/80 via-background to-background",
@@ -119,6 +121,23 @@ const isValidUrl = (url: string): boolean => {
   }
 };
 
+const readAnonReelHistory = (): string[] => {
+  try {
+    const raw = localStorage.getItem(ANON_REEL_HISTORY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+};
+
+const rememberAnonReel = (id: string) => {
+  try {
+    const next = [id, ...readAnonReelHistory().filter((seenId) => seenId !== id)].slice(0, REEL_HISTORY_LIMIT);
+    localStorage.setItem(ANON_REEL_HISTORY_KEY, JSON.stringify(next));
+  } catch { /* best-effort */ }
+};
+
 const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: Reel; isActive: boolean; distance: number; index: number; muted: boolean; onReport: (r: Reel) => void }) => {
   const hasVideo = reel.video_url && reel.video_url.length > 0 && isValidUrl(reel.video_url);
   const playableUrl = hasVideo ? getPlayableVideoUrl(reel.video_url) : "";
@@ -134,8 +153,8 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const trimEnd = reel.trim_end ?? null;
 
   // Preload a wider window so swipes feel instant like Instagram.
-  const shouldMount = hasVideo && distance <= 3;
-  const preload = "auto";
+  const shouldMount = hasVideo && distance <= 1;
+  const preload = distance === 0 ? "auto" : "metadata";
 
   const toggleDescription = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -153,6 +172,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
     setIsPlaying(isActive);
     if (isActive && !reel.id.startsWith("d")) {
       trackView("reel", reel.id);
+      rememberAnonReel(reel.id);
     }
   }, [isActive, reel.id]);
 
@@ -390,11 +410,16 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) {
+      const seen = new Set(readAnonReelHistory());
+      const freshFirst = [...data].sort((a, b) => Number(seen.has(a.id)) - Number(seen.has(b.id)));
       if (p === 0) {
-        setReels(data);
+        setReels(freshFirst);
         setUsingDefaults(false);
       } else {
-        setReels((prev) => [...prev, ...data]);
+        setReels((prev) => {
+          const existing = new Set(prev.map((r) => r.id));
+          return [...prev, ...freshFirst.filter((r) => !existing.has(r.id))];
+        });
       }
       if (data.length < PAGE_SIZE) setHasMore(false);
     }
