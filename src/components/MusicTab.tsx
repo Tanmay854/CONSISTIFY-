@@ -13,6 +13,7 @@ import {
 import MyAlbumsSheet from "./MyAlbumsSheet";
 import AuthSheet from "./AuthSheet";
 import { toast } from "@/hooks/use-toast";
+import { listAlbums, LocalAlbum } from "@/lib/localAlbums";
 
 const shuffle = <T,>(arr: T[]): T[] => {
   const a = [...arr];
