@@ -40,7 +40,7 @@ interface HomeData {
 
 interface SearchData { tracks: TrackItem[]; artists: ArtistItem[]; }
 
-interface MyAlbum { id: string; name: string; cover_url: string | null; }
+type MyAlbum = LocalAlbum;
 
 const fmtDur = (ms?: number) => {
   if (!ms) return "";
