@@ -84,6 +84,31 @@ Deno.serve(async (req) => {
 
     const folder = kind === "audio" ? "audio" : kind === "image" ? "images" : "files";
     const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    // Server-side allowlist — prevent uploaders from pushing HTML/JS/SVG to the CDN.
+    const ALLOWED: Record<string, { exts: string[]; mimes: string[] }> = {
+      audio: {
+        exts: ["mp3", "m4a", "wav", "ogg", "flac", "aac", "mpeg", "mp4"],
+        mimes: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg", "audio/flac", "audio/aac", "audio/mp4", "audio/x-m4a", "audio/m4a"],
+      },
+      image: {
+        exts: ["jpg", "jpeg", "png", "webp", "gif"],
+        mimes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+      },
+    };
+    const allow = ALLOWED[kind];
+    if (!allow) {
+      return new Response(JSON.stringify({ error: "Unsupported kind (must be audio or image)" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const mime = (file.type || "").toLowerCase();
+    if (!allow.exts.includes(ext) || (mime && !allow.mimes.includes(mime))) {
+      return new Response(JSON.stringify({
+        error: `Invalid file type for ${kind}. Allowed: ${allow.exts.join(", ")}`,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const path = `${folder}/${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
 
     const attempts: Array<{ host: string; status: number; detail: string }> = [];
