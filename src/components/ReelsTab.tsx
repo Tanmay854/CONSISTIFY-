@@ -217,17 +217,29 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   useEffect(() => {
     if (!shouldMount || !videoRef.current) return;
     const v = videoRef.current;
+    // Always reflect the desired mute state — never let a stale forced-mute from
+    // an earlier autoplay fallback survive into a user-initiated resume.
     v.muted = muted;
     if (!isActive) return;
     if (isPlaying) {
-      v.play().catch(() => {
-        v.muted = true;
-        v.play().catch(() => { setIsLoading(false); });
-      });
+      const p = v.play();
+      if (p && typeof p.then === "function") {
+        p.then(() => {
+          // Re-assert mute state after play resolves; some browsers reset it.
+          if (v.muted !== muted) v.muted = muted;
+        }).catch(() => {
+          // Only fall back to muted autoplay if the user actually wants sound off,
+          // or if this is the very first playback (no user gesture yet).
+          // A pause→resume click IS a user gesture, so unmuted play should succeed;
+          // if it doesn't, surface the paused state instead of silently muting.
+          setIsLoading(false);
+        });
+      }
     } else {
       v.pause();
     }
   }, [isPlaying, isActive, shouldMount, muted]);
+
 
 
   const togglePlay = () => {
