@@ -13,6 +13,7 @@ import {
 import MyAlbumsSheet from "./MyAlbumsSheet";
 import AuthSheet from "./AuthSheet";
 import { toast } from "@/hooks/use-toast";
+import { listAlbums, LocalAlbum } from "@/lib/localAlbums";
 
 const shuffle = <T,>(arr: T[]): T[] => {
   const a = [...arr];
@@ -39,7 +40,7 @@ interface HomeData {
 
 interface SearchData { tracks: TrackItem[]; artists: ArtistItem[]; }
 
-interface MyAlbum { id: string; name: string; cover_url: string | null; }
+type MyAlbum = LocalAlbum;
 
 const fmtDur = (ms?: number) => {
   if (!ms) return "";
@@ -141,15 +142,10 @@ const MusicTab = () => {
     })();
   }, [callFn]);
 
-  // Load my albums
-  const loadAlbums = useCallback(async () => {
-    if (!user) { setMyAlbums([]); return; }
-    const { data } = await supabase.from("user_albums")
-      .select("id,name,cover_url")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    setMyAlbums((data || []) as MyAlbum[]);
-  }, [user]);
+  // Load my albums — local-device, available to every visitor (no sign-in needed).
+  const loadAlbums = useCallback(() => {
+    setMyAlbums(listAlbums());
+  }, []);
   useEffect(() => { loadAlbums(); }, [loadAlbums]);
 
   // Load Spotify connection status + content — works for ANY visitor (no Supabase auth needed).
@@ -305,16 +301,11 @@ const MusicTab = () => {
 
       {!query.trim() && (
         <div className="mt-5 space-y-7">
-          {/* My Albums — available to every user; guests are routed to sign in */}
+          {/* My Albums — fully local, available to every visitor */}
           <Section title="My Albums">
             <HScroll>
               <button
                 onClick={() => {
-                  if (!user) {
-                    toast({ title: "Sign in to create albums" });
-                    setAuthOpen(true);
-                    return;
-                  }
                   setEditingAlbum(null);
                   setSheetOpen(true);
                 }}
