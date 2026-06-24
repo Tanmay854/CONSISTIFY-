@@ -145,23 +145,35 @@ Deno.serve(async (req) => {
     const action = url.searchParams.get("action") || "home";
 
     if (action === "search") {
-      const q = url.searchParams.get("q")?.trim();
+      const q = url.searchParams.get("q")?.trim().slice(0, 100);
       if (!q) {
         return new Response(JSON.stringify({ tracks: [], artists: [] }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Cache search results 5 min to protect Spotify API quota from anonymous abuse.
+      const SEARCH_TTL_MS = 5 * 60 * 1000;
+      const cacheKey = `search:${q.toLowerCase()}`;
+      const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+      const { data: cached } = await admin
+        .from("music_cache").select("payload, updated_at").eq("key", cacheKey).maybeSingle();
+      if (cached && Date.now() - new Date(cached.updated_at).getTime() < SEARCH_TTL_MS) {
+        return new Response(JSON.stringify(cached.payload), {
+          headers: { ...corsHeaders, "Content-Type": "application/json", "x-cache": "db" },
         });
       }
       const token = await getToken();
       const data = await sp(
         `/search?q=${encodeURIComponent(q)}&type=track,artist&limit=10&market=US`, token,
       );
-      return new Response(
-        JSON.stringify({
-          tracks: (data?.tracks?.items || []).filter(Boolean).map(mapTrack),
-          artists: (data?.artists?.items || []).filter(Boolean).map(mapArtist),
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      const payload = {
+        tracks: (data?.tracks?.items || []).filter(Boolean).map(mapTrack),
+        artists: (data?.artists?.items || []).filter(Boolean).map(mapArtist),
+      };
+      await admin.from("music_cache").upsert({ key: cacheKey, payload, updated_at: new Date().toISOString() });
+      return new Response(JSON.stringify(payload), {
+        headers: { ...corsHeaders, "Content-Type": "application/json", "x-cache": "miss" },
+      });
     }
 
     // action: home — stale-while-revalidate so users never wait on Spotify.
