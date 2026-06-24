@@ -301,16 +301,11 @@ const MusicTab = () => {
 
       {!query.trim() && (
         <div className="mt-5 space-y-7">
-          {/* My Albums — available to every user; guests are routed to sign in */}
+          {/* My Albums — fully local, available to every visitor */}
           <Section title="My Albums">
             <HScroll>
               <button
                 onClick={() => {
-                  if (!user) {
-                    toast({ title: "Sign in to create albums" });
-                    setAuthOpen(true);
-                    return;
-                  }
                   setEditingAlbum(null);
                   setSheetOpen(true);
                 }}
