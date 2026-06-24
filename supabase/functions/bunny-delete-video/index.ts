@@ -42,8 +42,9 @@ Deno.serve(async (req) => {
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
-    const allowed = (roles || []).some((r: any) => r.role === "admin" || r.role === "uploader");
-    if (!allowed) return new Response(JSON.stringify({ error: "Forbidden" }),
+    const isAdmin = (roles || []).some((r: any) => r.role === "admin" || r.role === "super_admin");
+    const isUploader = (roles || []).some((r: any) => r.role === "uploader");
+    if (!isAdmin && !isUploader) return new Response(JSON.stringify({ error: "Forbidden" }),
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { videoUrl, videoGuid, libraryId } = await req.json().catch(() => ({}));
@@ -59,6 +60,28 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ skipped: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    // Ownership check: non-admin uploaders may only delete videos they own.
+    if (!isAdmin) {
+      const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: ownerRows } = await admin
+        .from("reels")
+        .select("uploaded_by, video_url")
+        .or(`video_url.ilike.%${guid}%${typeof videoUrl === "string" && videoUrl ? `,video_url.eq.${videoUrl}` : ""}`)
+        .limit(5);
+      const matches = (ownerRows || []).filter((r: any) =>
+        (typeof r.video_url === "string" && r.video_url.includes(guid))
+      );
+      if (matches.length === 0) {
+        return new Response(JSON.stringify({ error: "Not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (!matches.every((r: any) => r.uploaded_by === user.id)) {
+        return new Response(JSON.stringify({ error: "Forbidden — not the owner" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     const resolvedLibraryId = cleanId(libraryId) || defaultLibraryId;
 
     const delRes = await fetch(
