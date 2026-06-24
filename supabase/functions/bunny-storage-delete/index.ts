@@ -53,8 +53,9 @@ Deno.serve(async (req) => {
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
-    const allowed = (roles || []).some((r: any) => r.role === "admin" || r.role === "uploader");
-    if (!allowed) return new Response(JSON.stringify({ error: "Forbidden" }),
+    const isAdmin = (roles || []).some((r: any) => r.role === "admin" || r.role === "super_admin");
+    const isUploader = (roles || []).some((r: any) => r.role === "uploader");
+    if (!isAdmin && !isUploader) return new Response(JSON.stringify({ error: "Forbidden" }),
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { fileUrl, filePath } = await req.json().catch(() => ({}));
@@ -71,6 +72,30 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const path = cleanPath(typeof filePath === "string" && filePath ? filePath : fileUrl.slice(idx + marker.length));
+
+    // Ownership check: non-admin uploaders may only delete files they own.
+    // Bunny upload pathing is `<folder>/<user.id>/...`, so verify the user id segment
+    // AND cross-check against the music/quotes rows referencing this file.
+    if (!isAdmin) {
+      const pathOwner = path.split("/")[1] || "";
+      if (pathOwner !== user.id) {
+        return new Response(JSON.stringify({ error: "Forbidden — not the owner" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (typeof fileUrl === "string" && fileUrl) {
+        const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+        const [{ data: musicRows }, { data: quoteRows }] = await Promise.all([
+          admin.from("music").select("uploaded_by").or(`audio_url.eq.${fileUrl},image_url.eq.${fileUrl}`).limit(5),
+          admin.from("quotes").select("uploaded_by").eq("image_url", fileUrl).limit(5),
+        ]);
+        const owners = [...(musicRows || []), ...(quoteRows || [])];
+        if (owners.length > 0 && !owners.every((r: any) => r.uploaded_by === user.id)) {
+          return new Response(JSON.stringify({ error: "Forbidden — not the owner" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+    }
+
 
     const attempts: Array<{ host: string; status: number; detail: string }> = [];
     let sawNotFound = false;
