@@ -142,15 +142,10 @@ const MusicTab = () => {
     })();
   }, [callFn]);
 
-  // Load my albums
-  const loadAlbums = useCallback(async () => {
-    if (!user) { setMyAlbums([]); return; }
-    const { data } = await supabase.from("user_albums")
-      .select("id,name,cover_url")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    setMyAlbums((data || []) as MyAlbum[]);
-  }, [user]);
+  // Load my albums — local-device, available to every visitor (no sign-in needed).
+  const loadAlbums = useCallback(() => {
+    setMyAlbums(listAlbums());
+  }, []);
   useEffect(() => { loadAlbums(); }, [loadAlbums]);
 
   // Load Spotify connection status + content — works for ANY visitor (no Supabase auth needed).
