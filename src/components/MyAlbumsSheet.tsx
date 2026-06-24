@@ -1,17 +1,22 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { X, Plus, Trash2, Search, Music2, Image as ImageIcon, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { openSpotify } from "@/lib/spotifyLink";
-import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import {
+  LocalAlbum,
+  LocalAlbumTrack,
+  listTracks,
+  addTrack as addLocalTrack,
+  removeTrack as removeLocalTrack,
+  createAlbum,
+  updateAlbum,
+  deleteAlbum as deleteLocalAlbum,
+  fileToDataUrl,
+} from "@/lib/localAlbums";
 
 const SPOTIFY_GREEN = "#1DB954";
 
-interface Album { id: string; name: string; cover_url: string | null; }
-interface AlbumTrack {
-  id: string; spotify_track_id: string; name: string; artist: string;
-  image: string | null; uri: string; position: number;
-}
 interface SearchTrack {
   id: string; name: string; artist: string; image: string | null; uri: string;
 }
@@ -22,28 +27,28 @@ const callBrowse = async (params: Record<string, string>) => {
   );
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   const { data: { session } } = await supabase.auth.getSession();
-  const res = await fetch(url.toString(), {
-    headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
-  });
+  const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+  const headers: Record<string, string> = { apikey: anonKey };
+  headers.Authorization = `Bearer ${session?.access_token ?? anonKey}`;
+  const res = await fetch(url.toString(), { headers });
   if (!res.ok) throw new Error(`Search failed (${res.status})`);
   return await res.json();
 };
 
 interface Props {
   open: boolean;
-  album: Album | null; // null = create-mode
+  album: LocalAlbum | null; // null = create-mode
   onClose: () => void;
   onAlbumChanged: () => void;
 }
 
 export default function MyAlbumsSheet({ open, album, onClose, onAlbumChanged }: Props) {
-  const { user } = useAuth();
   const [name, setName] = useState(album?.name || "");
   const [coverUrl, setCoverUrl] = useState<string | null>(album?.cover_url || null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [tracks, setTracks] = useState<AlbumTrack[]>([]);
+  const [tracks, setTracks] = useState<LocalAlbumTrack[]>([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchTrack[]>([]);
   const [searching, setSearching] = useState(false);
@@ -53,16 +58,9 @@ export default function MyAlbumsSheet({ open, album, onClose, onAlbumChanged }: 
     setCoverUrl(album?.cover_url || null);
     setQuery("");
     setResults([]);
-    if (album) loadTracks(album.id);
+    if (album) setTracks(listTracks(album.id));
     else setTracks([]);
   }, [album?.id, open]);
-
-  const loadTracks = async (id: string) => {
-    const { data } = await supabase
-      .from("user_album_tracks").select("*")
-      .eq("album_id", id).order("position", { ascending: true });
-    setTracks((data || []) as AlbumTrack[]);
-  };
 
   // Debounced search
   useEffect(() => {
@@ -80,54 +78,47 @@ export default function MyAlbumsSheet({ open, album, onClose, onAlbumChanged }: 
   }, [query, album?.id]);
 
   const handleCoverUpload = async (file: File) => {
-    if (!user) return;
     setUploading(true);
     try {
-      const path = `albums/${user.id}/${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage.from("quote-images").upload(path, file);
-      if (error) throw error;
-      const { data } = supabase.storage.from("quote-images").getPublicUrl(path);
-      setCoverUrl(data.publicUrl);
+      // Store cover as a data URL locally — works without sign-in.
+      const dataUrl = await fileToDataUrl(file);
+      setCoverUrl(dataUrl);
     } catch (e) {
-      toast({ title: "Upload failed", description: e instanceof Error ? e.message : "", variant: "destructive" });
+      toast({ title: "Could not load image", description: e instanceof Error ? e.message : "", variant: "destructive" });
     } finally { setUploading(false); }
   };
 
   const saveAlbum = async () => {
-    if (!user || !name.trim()) return;
+    if (!name.trim()) return;
     setSaving(true);
     try {
       if (album) {
-        await supabase.from("user_albums").update({ name: name.trim(), cover_url: coverUrl }).eq("id", album.id);
+        updateAlbum(album.id, { name: name.trim(), cover_url: coverUrl });
       } else {
-        await supabase.from("user_albums").insert({ user_id: user.id, name: name.trim(), cover_url: coverUrl });
+        createAlbum(name.trim(), coverUrl);
       }
       onAlbumChanged();
       if (!album) onClose();
     } finally { setSaving(false); }
   };
 
-  const addTrack = async (t: SearchTrack) => {
+  const addTrack = (t: SearchTrack) => {
     if (!album) return;
-    if (tracks.some((x) => x.spotify_track_id === t.id)) return;
-    const position = tracks.length;
-    const { data } = await supabase.from("user_album_tracks").insert({
-      album_id: album.id,
-      spotify_track_id: t.id,
-      name: t.name, artist: t.artist, image: t.image, uri: t.uri, position,
-    }).select().single();
-    if (data) setTracks((prev) => [...prev, data as AlbumTrack]);
+    const added = addLocalTrack(album.id, {
+      spotify_track_id: t.id, name: t.name, artist: t.artist, image: t.image, uri: t.uri,
+    });
+    if (added) setTracks((prev) => [...prev, added]);
   };
 
-  const removeTrack = async (id: string) => {
-    await supabase.from("user_album_tracks").delete().eq("id", id);
+  const removeTrack = (id: string) => {
+    removeLocalTrack(id);
     setTracks((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const deleteAlbum = async () => {
+  const deleteAlbum = () => {
     if (!album) return;
     if (!confirm(`Delete "${album.name}"?`)) return;
-    await supabase.from("user_albums").delete().eq("id", album.id);
+    deleteLocalAlbum(album.id);
     onAlbumChanged();
     onClose();
   };
