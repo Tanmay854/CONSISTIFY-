@@ -319,7 +319,11 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
 
       {hasVideo && isActive && isLoading && !showIcon && isPlaying && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-          <div className="w-10 h-10 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+          <div className="relative w-14 h-14">
+            <div className="absolute inset-0 rounded-full border-2 border-white/10" />
+            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary border-r-primary/70 animate-spin" />
+            <div className="absolute inset-2 rounded-full bg-primary/20 animate-pulse" />
+          </div>
         </div>
       )}
 
