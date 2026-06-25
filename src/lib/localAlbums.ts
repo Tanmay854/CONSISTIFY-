@@ -85,12 +85,30 @@ export function removeTrack(id: string): void {
   writeJSON(TRACKS_KEY, readJSON<LocalAlbumTrack[]>(TRACKS_KEY, []).filter((t) => t.id !== id));
 }
 
-// Read a File as a data URL so cover images persist locally without uploads.
-export function fileToDataUrl(file: File): Promise<string> {
+// Read a File as a compressed data URL so cover images persist locally without
+// blowing the ~5 MB localStorage quota (raw phone photos are often 4-12 MB).
+export function fileToDataUrl(file: File, maxDim = 512, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("canvas unsupported");
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        reject(e);
+      }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("image load failed")); };
+    img.src = url;
   });
 }
