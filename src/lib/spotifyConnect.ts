@@ -33,6 +33,8 @@ export interface SpotifyTokens {
   display_name?: string | null;
 }
 
+let spotifyListenerInstalled = false;
+
 export function getStoredTokens(): SpotifyTokens | null {
   try {
     const raw = localStorage.getItem(TOKENS_KEY);
@@ -247,6 +249,8 @@ export async function disconnectSpotify() {
 
 export function setupSpotifyAppUrlListener(onComplete?: () => void, onError?: (message: string) => void) {
   if (!Capacitor.isNativePlatform()) return;
+  if (spotifyListenerInstalled) return;
+  spotifyListenerInstalled = true;
 
   const handleUrl = async (url?: string) => {
     if (!url?.startsWith(APP_REDIRECT_URI)) return;
