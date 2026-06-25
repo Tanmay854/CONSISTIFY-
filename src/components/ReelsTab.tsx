@@ -27,8 +27,35 @@ const attachHls = (
   if (Hls.isSupported()) {
     let retries = 0;
     let retryTimer: number | null = null;
-    const hls = new Hls({ enableWorker: true, lowLatencyMode: false });
-    hls.on(Hls.Events.MANIFEST_PARSED, () => { onReady?.(); });
+    const hls = new Hls({
+      enableWorker: true,
+      lowLatencyMode: false,
+      // Start on a high-quality rendition immediately instead of the lowest one,
+      // so videos don't appear blurry for the first few seconds.
+      startLevel: -1,
+      capLevelToPlayerSize: true,
+      abrEwmaDefaultEstimate: 5_000_000, // assume 5 Mbps until we measure
+      maxBufferLength: 20,
+      backBufferLength: 10,
+    });
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      // Jump to the highest rendition that fits the screen — gives a sharp first frame.
+      try {
+        const levels = hls.levels || [];
+        if (levels.length > 0) {
+          const screenH = Math.max(window.innerHeight, 720) * (window.devicePixelRatio || 1);
+          let best = 0;
+          for (let i = 0; i < levels.length; i++) {
+            if ((levels[i].height || 0) <= screenH && (levels[i].height || 0) >= (levels[best].height || 0)) {
+              best = i;
+            }
+          }
+          hls.startLevel = best;
+          hls.nextLevel = best;
+        }
+      } catch { /* empty */ }
+      onReady?.();
+    });
     hls.on(Hls.Events.ERROR, (_e, data) => {
       if (!data.fatal) return;
       if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
