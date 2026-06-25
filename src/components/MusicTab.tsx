@@ -9,6 +9,7 @@ import {
   spotifyApi,
   getStoredTokens,
   disconnectSpotify as clearSpotify,
+  setupSpotifyAppUrlListener,
 } from "@/lib/spotifyConnect";
 import MyAlbumsSheet from "./MyAlbumsSheet";
 import AuthSheet from "./AuthSheet";
@@ -192,6 +193,16 @@ const MusicTab = () => {
     }
   }, []);
   useEffect(() => { loadSpotify(); }, [loadSpotify]);
+
+  useEffect(() => {
+    setupSpotifyAppUrlListener(
+      () => {
+        toast({ title: "Spotify connected" });
+        void loadSpotify();
+      },
+      (message) => toast({ title: message }),
+    );
+  }, [loadSpotify]);
 
   const disconnectSpotify = async () => {
     await clearSpotify();
