@@ -281,7 +281,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
 
   return (
     <div
-      className="relative h-screen w-full snap-start flex items-center justify-center overflow-hidden cursor-pointer"
+      className="relative h-[100dvh] w-full snap-start snap-always flex items-center justify-center overflow-hidden cursor-pointer"
       onClick={togglePlay}
     >
       {shouldMount ? (
