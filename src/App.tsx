@@ -8,8 +8,17 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import SpotifyCallback from "./pages/SpotifyCallback.tsx";
+import { setupSpotifyAppUrlListener } from "@/lib/spotifyConnect";
+import { toast } from "@/hooks/use-toast";
 
 const queryClient = new QueryClient();
+
+// Install the Spotify deep-link listener once at app boot so the OAuth callback
+// works even if the user hasn't opened the Music tab yet (cold-launch from link).
+setupSpotifyAppUrlListener(
+  () => toast({ title: "Spotify connected" }),
+  (message) => toast({ title: message }),
+);
 
 const PasswordRecoveryRedirect = () => {
   const navigate = useNavigate();

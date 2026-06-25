@@ -27,11 +27,12 @@ const UploadTab = () => {
   const [videoCategory, setVideoCategory] = useState("Motivation");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoFit, setVideoFit] = useState<"cover" | "contain" | "fill">("cover");
-  // Only build a preview URL for smaller files — decoding a large local video in the
-  // Android WebView is the main cause of upload-time crashes.
-  const PREVIEW_MAX_BYTES = 40 * 1024 * 1024; // 40 MB
+  // Only build a preview URL for files that can be decoded in the WebView without
+  // crashing. Modern phones handle ~200 MB H.264 fine; very large files still skip preview.
+  const PREVIEW_MAX_BYTES = 200 * 1024 * 1024; // 200 MB
   const canPreviewVideo = !!videoFile && videoFile.size <= PREVIEW_MAX_BYTES;
-  const videoPreviewUrl = canPreviewVideo ? URL.createObjectURL(videoFile!) : null;
+  const videoPreviewUrl = useMemo(() => (canPreviewVideo ? URL.createObjectURL(videoFile!) : null), [videoFile, canPreviewVideo]);
+  useEffect(() => () => { if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl); }, [videoPreviewUrl]);
 
 
   // (Music uploads removed — Music tab is now powered by Spotify.)
