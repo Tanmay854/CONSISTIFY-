@@ -520,7 +520,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
+        className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-y-contain [scroll-snap-stop:always] [-webkit-overflow-scrolling:touch]"
       >
 
         {feed.map((item, index) =>
