@@ -1,6 +1,10 @@
-// Spotify Authorization Code with PKCE — fully client-side, no Supabase auth required.
-// Tokens are stored in localStorage so ANY visitor (signed in or not) can connect
-// their personal Spotify account.
+// Spotify Authorization Code with PKCE — no Supabase auth required.
+// Tokens are stored locally so ANY visitor (signed in or not) can connect
+// their personal Spotify account in the browser or in the Android APK.
+
+import { Capacitor } from "@capacitor/core";
+import { App } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 
 const CLIENT_ID_STORAGE = "spotify_client_id";
 const VERIFIER_KEY = "spotify_pkce_verifier";
@@ -17,6 +21,8 @@ const PUBLIC_SPOTIFY_CLIENT_ID_FALLBACK = "0f776876d140467a82a1c3e03ea46200";
 
 export const SPOTIFY_REDIRECT_PATH = "/spotify-callback";
 export const SPOTIFY_SCOPES = "playlist-read-private playlist-read-collaborative user-library-read";
+
+const APP_REDIRECT_URI = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/spotify-auth/callback`;
 
 export interface SpotifyTokens {
   access_token: string;
@@ -55,6 +61,10 @@ function getOAuthValue(key: string): string | null {
 function removeOAuthValue(key: string) {
   try { localStorage.removeItem(key); } catch { /* ignore */ }
   try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+}
+
+function getRedirectUri() {
+  return Capacitor.isNativePlatform() ? APP_REDIRECT_URI : window.location.origin + SPOTIFY_REDIRECT_PATH;
 }
 
 export function clearStoredTokens() {
@@ -107,7 +117,7 @@ export async function beginSpotifyLogin() {
   const state = randomString(16);
   setOAuthValue(VERIFIER_KEY, verifier);
   setOAuthValue(STATE_KEY, state);
-  const redirect_uri = window.location.origin + SPOTIFY_REDIRECT_PATH;
+  const redirect_uri = getRedirectUri();
   const params = new URLSearchParams({
     response_type: "code",
     client_id: clientId,
@@ -117,7 +127,17 @@ export async function beginSpotifyLogin() {
     code_challenge_method: "S256",
     code_challenge: challenge,
   });
-  window.location.assign(`https://accounts.spotify.com/authorize?${params}`);
+  const authUrl = `https://accounts.spotify.com/authorize?${params}`;
+  if (Capacitor.isNativePlatform()) {
+    await Browser.open({ url: authUrl, windowName: "_self" });
+  } else {
+    window.location.assign(authUrl);
+  }
+}
+
+async function completeSpotifyLoginFromUrl(callbackUrl: string) {
+  const url = new URL(callbackUrl);
+  return completeSpotifyLogin(url.search);
 }
 
 export async function completeSpotifyLogin(search: string) {
@@ -133,7 +153,7 @@ export async function completeSpotifyLogin(search: string) {
   }
   removeOAuthValue(STATE_KEY);
   removeOAuthValue(VERIFIER_KEY);
-  const redirect_uri = window.location.origin + SPOTIFY_REDIRECT_PATH;
+  const redirect_uri = getRedirectUri();
 
   const url = new URL(AUTH_FN_URL);
   url.searchParams.set("action", "exchange");
@@ -222,4 +242,19 @@ export async function spotifyApi<T = unknown>(path: string, init?: RequestInit):
 
 export async function disconnectSpotify() {
   clearStoredTokens();
+}
+
+export function setupSpotifyAppUrlListener(onComplete?: () => void, onError?: (message: string) => void) {
+  if (!Capacitor.isNativePlatform()) return;
+
+  App.addListener("appUrlOpen", async (event) => {
+    if (!event.url?.startsWith(APP_REDIRECT_URI)) return;
+    try {
+      await Browser.close().catch(() => undefined);
+      await completeSpotifyLoginFromUrl(event.url);
+      onComplete?.();
+    } catch (e) {
+      onError?.(e instanceof Error ? e.message : "Failed to connect Spotify");
+    }
+  });
 }
