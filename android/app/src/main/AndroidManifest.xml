@@ -22,6 +22,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="app.lovable.eec72d85d0444261b29a8882a5f34c1e" android:host="spotify-callback" />
+            </intent-filter>
+
         </activity>
 
         <provider
