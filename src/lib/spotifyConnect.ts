@@ -14,6 +14,7 @@ const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 const FUNCTIONS_BASE_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1`;
 const PUBLIC_CONFIG_FN_URL = `${FUNCTIONS_BASE_URL}/spotify-public-config`;
 const AUTH_FN_URL = `${FUNCTIONS_BASE_URL}/spotify-auth`;
+const CAPACITOR_APP_ID = "app.lovable.eec72d85d0444261b29a8882a5f34c1e";
 
 // Spotify client IDs are public by design. This fallback keeps anonymous OAuth
 // working even if the public-config function is temporarily unreachable.
@@ -22,7 +23,7 @@ const PUBLIC_SPOTIFY_CLIENT_ID_FALLBACK = "0f776876d140467a82a1c3e03ea46200";
 export const SPOTIFY_REDIRECT_PATH = "/spotify-callback";
 export const SPOTIFY_SCOPES = "playlist-read-private playlist-read-collaborative user-library-read";
 
-const APP_REDIRECT_URI = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/spotify-auth/callback`;
+const APP_REDIRECT_URI = `${CAPACITOR_APP_ID}://spotify-callback`;
 
 export interface SpotifyTokens {
   access_token: string;
@@ -247,14 +248,22 @@ export async function disconnectSpotify() {
 export function setupSpotifyAppUrlListener(onComplete?: () => void, onError?: (message: string) => void) {
   if (!Capacitor.isNativePlatform()) return;
 
-  App.addListener("appUrlOpen", async (event) => {
-    if (!event.url?.startsWith(APP_REDIRECT_URI)) return;
+  const handleUrl = async (url?: string) => {
+    if (!url?.startsWith(APP_REDIRECT_URI)) return;
     try {
       await Browser.close().catch(() => undefined);
-      await completeSpotifyLoginFromUrl(event.url);
+      await completeSpotifyLoginFromUrl(url);
       onComplete?.();
     } catch (e) {
       onError?.(e instanceof Error ? e.message : "Failed to connect Spotify");
     }
+  };
+
+  App.addListener("appUrlOpen", (event) => {
+    void handleUrl(event.url);
   });
+
+  App.getLaunchUrl().then((launch) => {
+    void handleUrl(launch?.url);
+  }).catch(() => undefined);
 }
