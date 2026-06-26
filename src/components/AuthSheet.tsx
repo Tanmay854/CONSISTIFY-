@@ -112,6 +112,10 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
           </button>
         </div>
 
+        <p className="text-muted-foreground text-[11px] mb-3 bg-secondary/60 rounded-lg px-3 py-2 leading-relaxed">
+          Sign in is only for approved <span className="text-foreground font-medium">uploaders, creators and admins</span>. Regular users can enjoy the app without signing in.
+        </p>
+
         {pendingApplicationMessage && mode === "login" && (
           <p className="text-destructive text-xs mb-3 bg-destructive/10 rounded-lg px-3 py-2">{pendingApplicationMessage}</p>
         )}
