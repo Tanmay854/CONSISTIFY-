@@ -30,28 +30,31 @@ const attachHls = (
     const hls = new Hls({
       enableWorker: true,
       lowLatencyMode: false,
-      // Start on a high-quality rendition immediately instead of the lowest one,
-      // so videos don't appear blurry for the first few seconds.
+      // Start on the highest available rendition so the first frame is sharp.
+      // capLevelToPlayerSize is disabled because on small mobile players it caps
+      // to ~360p and viewers see a blurry video for several seconds.
       startLevel: -1,
-      capLevelToPlayerSize: true,
-      abrEwmaDefaultEstimate: 5_000_000, // assume 5 Mbps until we measure
+      capLevelToPlayerSize: false,
+      autoStartLoad: true,
+      abrEwmaDefaultEstimate: 8_000_000,
+      abrBandWidthFactor: 0.95,
+      abrBandWidthUpFactor: 0.9,
       maxBufferLength: 20,
       backBufferLength: 10,
     });
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      // Jump to the highest rendition that fits the screen — gives a sharp first frame.
+      // Force the highest-quality rendition immediately, then hand control back to ABR.
       try {
         const levels = hls.levels || [];
         if (levels.length > 0) {
-          const screenH = Math.max(window.innerHeight, 720) * (window.devicePixelRatio || 1);
           let best = 0;
-          for (let i = 0; i < levels.length; i++) {
-            if ((levels[i].height || 0) <= screenH && (levels[i].height || 0) >= (levels[best].height || 0)) {
-              best = i;
-            }
+          for (let i = 1; i < levels.length; i++) {
+            if ((levels[i].height || 0) > (levels[best].height || 0)) best = i;
           }
           hls.startLevel = best;
           hls.nextLevel = best;
+          hls.currentLevel = best;
+          window.setTimeout(() => { try { hls.nextLevel = -1; } catch { /* empty */ } }, 4000);
         }
       } catch { /* empty */ }
       onReady?.();
