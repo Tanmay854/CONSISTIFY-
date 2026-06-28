@@ -210,15 +210,21 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       v,
       playableUrl,
       () => {
-        // Manifest parsed → try to start playback if this card is active
-        if (isActive && isPlaying) {
+        // Wait until enough data is buffered at the chosen (top) level before
+        // starting playback so the first visible frame is already at max res.
+        const tryPlay = () => {
+          if (!isActive || !isPlaying) return;
           v.muted = muted;
           v.play().catch(() => {
-            // Initial autoplay blocked — try muted, but the user's next tap
-            // (pause/resume) will restore sound via the play/pause effect.
             v.muted = true;
             v.play().catch(() => setIsLoading(false));
           });
+        };
+        if (v.readyState >= 4) {
+          tryPlay();
+        } else {
+          const onReady = () => { v.removeEventListener("canplaythrough", onReady); tryPlay(); };
+          v.addEventListener("canplaythrough", onReady, { once: true });
         }
       },
       (msg) => {
