@@ -30,35 +30,19 @@ const attachHls = (
     const hls = new Hls({
       enableWorker: true,
       lowLatencyMode: false,
-      // Start on the highest available rendition so the first frame is sharp.
-      // capLevelToPlayerSize is disabled because on small mobile players it caps
-      // to ~360p and viewers see a blurry video for several seconds.
+      // Let ABR pick the starting rendition based on real bandwidth. Forcing the
+      // highest level made first-frame take 5-6 s on mobile networks.
       startLevel: -1,
-      capLevelToPlayerSize: false,
+      capLevelToPlayerSize: true,
       autoStartLoad: true,
-      abrEwmaDefaultEstimate: 8_000_000,
-      abrBandWidthFactor: 0.95,
-      abrBandWidthUpFactor: 0.9,
-      maxBufferLength: 20,
-      backBufferLength: 10,
+      abrEwmaDefaultEstimate: 2_000_000,
+      maxBufferLength: 15,
+      backBufferLength: 5,
     });
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      // Force the highest-quality rendition immediately, then hand control back to ABR.
-      try {
-        const levels = hls.levels || [];
-        if (levels.length > 0) {
-          let best = 0;
-          for (let i = 1; i < levels.length; i++) {
-            if ((levels[i].height || 0) > (levels[best].height || 0)) best = i;
-          }
-          hls.startLevel = best;
-          hls.nextLevel = best;
-          hls.currentLevel = best;
-          window.setTimeout(() => { try { hls.nextLevel = -1; } catch { /* empty */ } }, 4000);
-        }
-      } catch { /* empty */ }
       onReady?.();
     });
+
     hls.on(Hls.Events.ERROR, (_e, data) => {
       if (!data.fatal) return;
       if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
