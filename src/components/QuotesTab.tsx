@@ -38,7 +38,7 @@ const PhotoCard = ({ quote, onReport }: { quote: QuoteCard; onReport: (q: QuoteC
   return (
     <div
       ref={ref}
-      className="relative h-screen w-full snap-start flex items-center justify-center overflow-hidden"
+      className="relative h-[100dvh] w-full snap-start snap-always flex items-center justify-center overflow-hidden"
     >
       <img
         src={quote.image_url}
