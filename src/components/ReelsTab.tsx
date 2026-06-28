@@ -30,16 +30,26 @@ const attachHls = (
     const hls = new Hls({
       enableWorker: true,
       lowLatencyMode: false,
-      // Let ABR pick the starting rendition based on real bandwidth. Forcing the
-      // highest level made first-frame take 5-6 s on mobile networks.
+      // Start at highest rendition so first frame is sharp.
       startLevel: -1,
-      capLevelToPlayerSize: true,
+      capLevelToPlayerSize: false,
       autoStartLoad: true,
-      abrEwmaDefaultEstimate: 2_000_000,
+      abrEwmaDefaultEstimate: 8_000_000,
       maxBufferLength: 15,
       backBufferLength: 5,
     });
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
+      try {
+        const levels = (data as any)?.levels || hls.levels || [];
+        if (levels.length > 0) {
+          let topIdx = 0;
+          for (let i = 1; i < levels.length; i++) {
+            if (levels[i].bitrate > levels[topIdx].bitrate) topIdx = i;
+          }
+          hls.currentLevel = topIdx;
+          window.setTimeout(() => { try { hls.currentLevel = -1; } catch { /* empty */ } }, 4000);
+        }
+      } catch { /* empty */ }
       onReady?.();
     });
 
@@ -310,9 +320,9 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       {hasVideo && isActive && isLoading && !showIcon && isPlaying && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
           <div className="relative w-14 h-14">
-            <div className="absolute inset-0 rounded-full border-2 border-white/10" />
-            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary border-r-primary/70 animate-spin" />
-            <div className="absolute inset-2 rounded-full bg-primary/20 animate-pulse" />
+            <div className="absolute inset-0 rounded-full border-2 border-white/20" />
+            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white border-r-white/80 animate-spin" />
+            <div className="absolute inset-2 rounded-full bg-white/15 animate-pulse" />
           </div>
         </div>
       )}
