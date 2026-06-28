@@ -146,3 +146,19 @@
   animation: float-up 0.5s ease-out forwards;
   opacity: 0;
 }
+
+/* Kill Android WebView / Chrome default video overlay play button.
+   Without this, paused videos show a huge blurry centered play triangle in the APK. */
+video::-webkit-media-controls,
+video::-webkit-media-controls-overlay-play-button,
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-panel,
+video::-internal-media-controls-overlay-cast-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  opacity: 0 !important;
+}
+video {
+  -webkit-tap-highlight-color: transparent;
+}
