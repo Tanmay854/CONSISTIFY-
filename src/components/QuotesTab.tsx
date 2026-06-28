@@ -133,7 +133,7 @@ const QuotesTab = () => {
 
   return (
     <>
-      <div className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background">
+      <div className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background overscroll-contain" style={{ scrollSnapStop: "always" as any }}>
         {quotes.map((quote) => (
           <PhotoCard key={quote.id} quote={quote} onReport={setReportTarget} />
         ))}
