@@ -30,35 +30,19 @@ const attachHls = (
     const hls = new Hls({
       enableWorker: true,
       lowLatencyMode: false,
-      // Start on the highest available rendition so the first frame is sharp.
-      // capLevelToPlayerSize is disabled because on small mobile players it caps
-      // to ~360p and viewers see a blurry video for several seconds.
+      // Let ABR pick the starting rendition based on real bandwidth. Forcing the
+      // highest level made first-frame take 5-6 s on mobile networks.
       startLevel: -1,
-      capLevelToPlayerSize: false,
+      capLevelToPlayerSize: true,
       autoStartLoad: true,
-      abrEwmaDefaultEstimate: 8_000_000,
-      abrBandWidthFactor: 0.95,
-      abrBandWidthUpFactor: 0.9,
-      maxBufferLength: 20,
-      backBufferLength: 10,
+      abrEwmaDefaultEstimate: 2_000_000,
+      maxBufferLength: 15,
+      backBufferLength: 5,
     });
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      // Force the highest-quality rendition immediately, then hand control back to ABR.
-      try {
-        const levels = hls.levels || [];
-        if (levels.length > 0) {
-          let best = 0;
-          for (let i = 1; i < levels.length; i++) {
-            if ((levels[i].height || 0) > (levels[best].height || 0)) best = i;
-          }
-          hls.startLevel = best;
-          hls.nextLevel = best;
-          hls.currentLevel = best;
-          window.setTimeout(() => { try { hls.nextLevel = -1; } catch { /* empty */ } }, 4000);
-        }
-      } catch { /* empty */ }
       onReady?.();
     });
+
     hls.on(Hls.Events.ERROR, (_e, data) => {
       if (!data.fatal) return;
       if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
@@ -509,7 +493,30 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
     }
   });
 
+  const lastSnapIndexRef = useRef(0);
+  const snapTimerRef = useRef<number | null>(null);
+
+  const enforceSingleSnap = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const h = el.clientHeight;
+    const raw = el.scrollTop / h;
+    const current = lastSnapIndexRef.current;
+    // Clamp the jump to at most ±1 card per gesture — kills the "scrolled 2-3 at once" bug on WebView.
+    let target = Math.round(raw);
+    if (target > current + 1) target = current + 1;
+    if (target < current - 1) target = current - 1;
+    target = Math.max(0, Math.min(feed.length - 1, target));
+    if (Math.abs(raw - target) > 0.02) {
+      el.scrollTo({ top: target * h, behavior: "smooth" });
+    }
+    lastSnapIndexRef.current = target;
+    if (target !== activeIndex) setActiveIndex(target);
+  }, [activeIndex, feed.length]);
+
   const handleScroll = () => {
+    if (snapTimerRef.current) window.clearTimeout(snapTimerRef.current);
+    snapTimerRef.current = window.setTimeout(enforceSingleSnap, 90);
     if (containerRef.current) {
       const scrollTop = containerRef.current.scrollTop;
       const height = containerRef.current.clientHeight;
@@ -523,8 +530,11 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
       <div
         ref={containerRef}
         onScroll={handleScroll}
+        onTouchEnd={() => { window.setTimeout(enforceSingleSnap, 60); }}
         className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-y-contain [scroll-snap-stop:always] [-webkit-overflow-scrolling:touch]"
       >
+
+
 
         {feed.map((item, index) =>
           item.kind === "reel" ? (
