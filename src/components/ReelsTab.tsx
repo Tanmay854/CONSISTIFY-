@@ -176,9 +176,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
 
-  // Preload adjacent cards so swipes feel instant like Instagram.
-  const shouldMount = hasVideo && distance <= 2;
-  const preload = distance <= 1 ? "auto" : "metadata";
+  // Preload a wider window so the next reels are fully buffered at max quality
+  // before the user swipes to them.
+  const shouldMount = hasVideo && distance <= 3;
+  const preload = "auto";
 
   const toggleDescription = (e: React.MouseEvent) => {
     e.stopPropagation();
