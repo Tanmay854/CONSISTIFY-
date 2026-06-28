@@ -35,8 +35,9 @@ const attachHls = (
       capLevelToPlayerSize: false,
       autoStartLoad: true,
       abrEwmaDefaultEstimate: 8_000_000,
-      maxBufferLength: 15,
-      backBufferLength: 5,
+      maxBufferLength: 30,
+      maxMaxBufferLength: 60,
+      backBufferLength: 10,
     });
     hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
       try {
@@ -176,9 +177,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
 
-  // Preload adjacent cards so swipes feel instant like Instagram.
-  const shouldMount = hasVideo && distance <= 2;
-  const preload = distance <= 1 ? "auto" : "metadata";
+  // Preload a wider window so the next reels are fully buffered at max quality
+  // before the user swipes to them.
+  const shouldMount = hasVideo && distance <= 3;
+  const preload = "auto";
 
   const toggleDescription = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -208,15 +210,21 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       v,
       playableUrl,
       () => {
-        // Manifest parsed → try to start playback if this card is active
-        if (isActive && isPlaying) {
+        // Wait until enough data is buffered at the chosen (top) level before
+        // starting playback so the first visible frame is already at max res.
+        const tryPlay = () => {
+          if (!isActive || !isPlaying) return;
           v.muted = muted;
           v.play().catch(() => {
-            // Initial autoplay blocked — try muted, but the user's next tap
-            // (pause/resume) will restore sound via the play/pause effect.
             v.muted = true;
             v.play().catch(() => setIsLoading(false));
           });
+        };
+        if (v.readyState >= 4) {
+          tryPlay();
+        } else {
+          const onReady = () => { v.removeEventListener("canplaythrough", onReady); tryPlay(); };
+          v.addEventListener("canplaythrough", onReady, { once: true });
         }
       },
       (msg) => {
