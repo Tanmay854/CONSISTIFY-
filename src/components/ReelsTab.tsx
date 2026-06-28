@@ -493,7 +493,30 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
     }
   });
 
+  const lastSnapIndexRef = useRef(0);
+  const snapTimerRef = useRef<number | null>(null);
+
+  const enforceSingleSnap = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const h = el.clientHeight;
+    const raw = el.scrollTop / h;
+    const current = lastSnapIndexRef.current;
+    // Clamp the jump to at most ±1 card per gesture — kills the "scrolled 2-3 at once" bug on WebView.
+    let target = Math.round(raw);
+    if (target > current + 1) target = current + 1;
+    if (target < current - 1) target = current - 1;
+    target = Math.max(0, Math.min(feed.length - 1, target));
+    if (Math.abs(raw - target) > 0.02) {
+      el.scrollTo({ top: target * h, behavior: "smooth" });
+    }
+    lastSnapIndexRef.current = target;
+    if (target !== activeIndex) setActiveIndex(target);
+  }, [activeIndex, feed.length]);
+
   const handleScroll = () => {
+    if (snapTimerRef.current) window.clearTimeout(snapTimerRef.current);
+    snapTimerRef.current = window.setTimeout(enforceSingleSnap, 90);
     if (containerRef.current) {
       const scrollTop = containerRef.current.scrollTop;
       const height = containerRef.current.clientHeight;
@@ -507,8 +530,11 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
       <div
         ref={containerRef}
         onScroll={handleScroll}
+        onTouchEnd={() => { window.setTimeout(enforceSingleSnap, 60); }}
         className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-y-contain [scroll-snap-stop:always] [-webkit-overflow-scrolling:touch]"
       >
+
+
 
         {feed.map((item, index) =>
           item.kind === "reel" ? (
