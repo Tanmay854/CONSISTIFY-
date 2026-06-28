@@ -35,8 +35,9 @@ const attachHls = (
       capLevelToPlayerSize: false,
       autoStartLoad: true,
       abrEwmaDefaultEstimate: 8_000_000,
-      maxBufferLength: 15,
-      backBufferLength: 5,
+      maxBufferLength: 30,
+      maxMaxBufferLength: 60,
+      backBufferLength: 10,
     });
     hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
       try {
