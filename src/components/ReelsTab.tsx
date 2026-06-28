@@ -281,6 +281,9 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
           playsInline
           muted={muted}
           preload={preload}
+          poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+          disablePictureInPicture
+          controls={false}
           onLoadedMetadata={(e) => {
             if (trimStart > 0) e.currentTarget.currentTime = trimStart;
           }}
