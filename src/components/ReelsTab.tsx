@@ -206,6 +206,25 @@ const rememberAnonReel = (id: string) => {
   } catch { /* best-effort */ }
 };
 
+// Detect slow / low-end devices so we can shrink the prebuffer window.
+// Signals: low CPU cores, low device memory, or a Save-Data / 2g/3g network.
+// Result: on slow devices we only mount current + next reel and only fully
+// prebuffer the current one — keeping top quality but cutting jank.
+const isSlowDevice = (() => {
+  if (typeof navigator === "undefined") return false;
+  try {
+    const nav = navigator as any;
+    const cores = typeof nav.hardwareConcurrency === "number" ? nav.hardwareConcurrency : 8;
+    const mem = typeof nav.deviceMemory === "number" ? nav.deviceMemory : 8;
+    const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
+    const saveData = !!conn?.saveData;
+    const slowNet = conn?.effectiveType ? /^(slow-2g|2g|3g)$/.test(conn.effectiveType) : false;
+    return cores <= 4 || mem <= 3 || saveData || slowNet;
+  } catch {
+    return false;
+  }
+})();
+
 const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: Reel; isActive: boolean; distance: number; index: number; muted: boolean; onReport: (r: Reel) => void }) => {
   const hasVideo = reel.video_url && reel.video_url.length > 0 && isValidUrl(reel.video_url);
   const playableUrl = hasVideo ? getPlayableVideoUrl(reel.video_url) : "";
@@ -223,10 +242,12 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
 
-  // Android WebView gets laggy if too many HLS players fully buffer at once.
-  // Fully prebuffer only the active/next reel, keep the second neighbor light.
-  const shouldMount = hasVideo && distance <= 2;
-  const preload = distance <= 1 ? "auto" : "metadata";
+  // Adaptive prebuffer: slow devices keep a tight window (current + next, only
+  // current fully buffered). Capable devices keep the wider 2-neighbor window.
+  const mountRadius = isSlowDevice ? 1 : 2;
+  const autoPreloadRadius = isSlowDevice ? 0 : 1;
+  const shouldMount = hasVideo && distance <= mountRadius;
+  const preload = distance <= autoPreloadRadius ? "auto" : "metadata";
 
   const toggleDescription = (e: React.MouseEvent) => {
     e.stopPropagation();
