@@ -26,7 +26,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
         }`}
         style={{ fontFamily: "'Arial Black', 'Helvetica Neue', sans-serif" }}
       >
-        Discipline
+        DISCIPLINE X
       </h1>
 
       {/* Disclaimer */}

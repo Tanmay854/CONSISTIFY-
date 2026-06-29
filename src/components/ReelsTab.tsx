@@ -18,37 +18,66 @@ const attachHls = (
   const isHls = url.toLowerCase().includes(".m3u8");
   if (!isHls) {
     video.src = url;
-    return () => {};
+    let fired = false;
+    const fire = () => {
+      if (fired) return;
+      fired = true;
+      onReady?.();
+    };
+    video.addEventListener("loadeddata", fire, { once: true });
+    video.addEventListener("canplay", fire, { once: true });
+    return () => {
+      video.removeEventListener("loadeddata", fire);
+      video.removeEventListener("canplay", fire);
+    };
   }
-  // Safari / iOS — native HLS
-  if (video.canPlayType("application/vnd.apple.mpegurl")) {
+  // Use native HLS only on Apple devices. Android WebView may claim native HLS
+  // support but its ABR often starts blurry; hls.js lets us lock the first
+  // buffered fragment to Bunny's highest rendition.
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  const isAppleDevice = /iPad|iPhone|iPod|Macintosh/i.test(ua);
+  if (isAppleDevice && video.canPlayType("application/vnd.apple.mpegurl")) {
+    let fired = false;
+    const fire = () => {
+      if (fired) return;
+      fired = true;
+      onReady?.();
+    };
     video.src = url;
-    return () => {};
+    video.addEventListener("loadeddata", fire, { once: true });
+    video.addEventListener("canplay", fire, { once: true });
+    return () => {
+      video.removeEventListener("loadeddata", fire);
+      video.removeEventListener("canplay", fire);
+    };
   }
   if (Hls.isSupported()) {
     let retries = 0;
     let retryTimer: number | null = null;
     let qualityReleaseTimer: number | null = null;
-    let readyFallbackTimer: number | null = null;
     let topLevel = -1;
     let readyFired = false;
     const hls = new Hls({
       enableWorker: true,
       lowLatencyMode: false,
-      // Do not let ABR pick a low first fragment. We choose the top level
-      // after the manifest is known, then start loading manually.
-      startLevel: 0,
+      // Do not let ABR do the default low-bitrate startup test. We choose the
+      // highest level after the manifest is known, then start loading manually.
+      startLevel: -1,
       capLevelToPlayerSize: false,
       autoStartLoad: false,
-      abrEwmaDefaultEstimate: 8_000_000,
-      maxBufferLength: 18,
-      maxMaxBufferLength: 30,
+      testBandwidth: false,
+      startFragPrefetch: true,
+      abrEwmaDefaultEstimate: 50_000_000,
+      abrEwmaDefaultEstimateMax: 100_000_000,
+      maxStarvationDelay: 12,
+      maxLoadingDelay: 12,
+      maxBufferLength: 24,
+      maxMaxBufferLength: 60,
       backBufferLength: 10,
     });
     const fireReady = () => {
       if (readyFired) return;
       readyFired = true;
-      if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
       onReady?.();
       // Keep the first seconds locked to the sharp rendition, then let ABR
       // react normally so weaker networks do not stall forever.
@@ -82,7 +111,10 @@ const attachHls = (
         }
       } catch { /* empty */ }
       try { hls.startLoad(startPosition); } catch { /* empty */ }
-      readyFallbackTimer = window.setTimeout(fireReady, 3500);
+    });
+
+    hls.on(Hls.Events.FRAG_LOADING, () => {
+      if (!readyFired) lockTopQuality();
     });
 
     hls.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
@@ -121,7 +153,6 @@ const attachHls = (
     return () => {
       if (retryTimer) window.clearTimeout(retryTimer);
       if (qualityReleaseTimer) window.clearTimeout(qualityReleaseTimer);
-      if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
       try { hls.destroy(); } catch { /* empty */ }
     };
   }
@@ -233,11 +264,13 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const [isPlaying, setIsPlaying] = useState(true);
   const [showIcon, setShowIcon] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isQualityReady, setIsQualityReady] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const infoTimerRef = useRef<number | null>(null);
   const isActiveRef = useRef(isActive);
   const isPlayingRef = useRef(isPlaying);
   const mutedRef = useRef(muted);
+  const qualityReadyRef = useRef(false);
 
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
@@ -279,6 +312,9 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   useEffect(() => {
     if (!shouldMount || !videoRef.current) return;
     const v = videoRef.current;
+    qualityReadyRef.current = false;
+    setIsQualityReady(false);
+    setIsLoading(true);
     const cleanup = attachHls(
       v,
       playableUrl,
@@ -287,6 +323,9 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
         // HLS already fired this after a top-quality fragment was buffered,
         // so start immediately instead of waiting for WebView's unreliable
         // canplaythrough event.
+        qualityReadyRef.current = true;
+        setIsQualityReady(true);
+        setIsLoading(false);
         const tryPlay = () => {
           if (!isActiveRef.current || !isPlayingRef.current) return;
           v.muted = mutedRef.current;
@@ -327,6 +366,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
     v.muted = muted;
     if (!isActive) return;
     if (isPlaying) {
+      if (!qualityReadyRef.current) {
+        setIsLoading(true);
+        return;
+      }
       const p = v.play();
       if (p && typeof p.then === "function") {
         p.then(() => {
@@ -362,9 +405,9 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       {shouldMount ? (
         <video
           ref={videoRef}
-          className="absolute inset-0 w-full h-full"
+          className={`absolute inset-0 w-full h-full transition-opacity duration-150 ${isActive && !isQualityReady ? "opacity-0" : "opacity-100"}`}
           style={{ objectFit: (reel.video_fit as any) || "cover" }}
-          autoPlay={isActive}
+          autoPlay={false}
           loop
           playsInline
           muted={muted}
@@ -376,9 +419,9 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
             if (trimStart > 0) e.currentTarget.currentTime = trimStart;
           }}
           onWaiting={() => setIsLoading(true)}
-          onPlaying={() => setIsLoading(false)}
-          onCanPlay={() => setIsLoading(false)}
-          onLoadedData={() => setIsLoading(false)}
+          onPlaying={() => { if (qualityReadyRef.current) setIsLoading(false); }}
+          onCanPlay={() => { if (qualityReadyRef.current) setIsLoading(false); }}
+          onLoadedData={() => { if (qualityReadyRef.current) setIsLoading(false); }}
           onError={() => setIsLoading(false)}
           onTimeUpdate={(e) => {
             const v = e.currentTarget;
