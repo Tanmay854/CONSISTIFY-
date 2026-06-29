@@ -11,6 +11,7 @@ import ReportDialog from "@/components/ReportDialog";
 const attachHls = (
   video: HTMLVideoElement,
   url: string,
+  startPosition = 0,
   onReady?: () => void,
   onFail?: (msg: string) => void,
 ): (() => void) => {
@@ -27,31 +28,67 @@ const attachHls = (
   if (Hls.isSupported()) {
     let retries = 0;
     let retryTimer: number | null = null;
+    let qualityReleaseTimer: number | null = null;
+    let readyFallbackTimer: number | null = null;
+    let topLevel = -1;
+    let readyFired = false;
     const hls = new Hls({
       enableWorker: true,
       lowLatencyMode: false,
-      // Start at highest rendition so first frame is sharp.
-      startLevel: -1,
+      // Do not let ABR pick a low first fragment. We choose the top level
+      // after the manifest is known, then start loading manually.
+      startLevel: 0,
       capLevelToPlayerSize: false,
-      autoStartLoad: true,
+      autoStartLoad: false,
       abrEwmaDefaultEstimate: 8_000_000,
-      maxBufferLength: 30,
-      maxMaxBufferLength: 60,
+      maxBufferLength: 18,
+      maxMaxBufferLength: 30,
       backBufferLength: 10,
     });
+    const fireReady = () => {
+      if (readyFired) return;
+      readyFired = true;
+      if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
+      onReady?.();
+      // Keep the first seconds locked to the sharp rendition, then let ABR
+      // react normally so weaker networks do not stall forever.
+      qualityReleaseTimer = window.setTimeout(() => {
+        try { hls.currentLevel = -1; } catch { /* empty */ }
+      }, 8000);
+    };
+    const lockTopQuality = () => {
+      if (topLevel < 0) return;
+      try {
+        hls.startLevel = topLevel;
+        hls.currentLevel = topLevel;
+        hls.nextLevel = topLevel;
+        hls.loadLevel = topLevel;
+        hls.nextLoadLevel = topLevel;
+        hls.autoLevelCapping = topLevel;
+      } catch { /* empty */ }
+    };
     hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
       try {
         const levels = (data as any)?.levels || hls.levels || [];
         if (levels.length > 0) {
-          let topIdx = 0;
+          topLevel = 0;
           for (let i = 1; i < levels.length; i++) {
-            if (levels[i].bitrate > levels[topIdx].bitrate) topIdx = i;
+            if (levels[i].bitrate > levels[topLevel].bitrate) topLevel = i;
           }
-          hls.currentLevel = topIdx;
-          window.setTimeout(() => { try { hls.currentLevel = -1; } catch { /* empty */ } }, 4000);
+          lockTopQuality();
         }
       } catch { /* empty */ }
-      onReady?.();
+      try { hls.startLoad(startPosition); } catch { /* empty */ }
+      readyFallbackTimer = window.setTimeout(fireReady, 3500);
+    });
+
+    hls.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
+      const fragLevel = (data as any)?.frag?.level;
+      if (topLevel < 0 || fragLevel === topLevel || hls.levels.length <= 1) fireReady();
+    });
+
+    hls.on(Hls.Events.LEVEL_SWITCHING, () => {
+      if (!readyFired) lockTopQuality();
     });
 
     hls.on(Hls.Events.ERROR, (_e, data) => {
@@ -62,7 +99,8 @@ const attachHls = (
           retryTimer = window.setTimeout(() => {
             try {
               hls.loadSource(url);
-              hls.startLoad();
+              lockTopQuality();
+              hls.startLoad(startPosition);
             } catch { /* empty */ }
           }, Math.min(2500 * retries, 10000));
           return;
@@ -79,6 +117,8 @@ const attachHls = (
     hls.attachMedia(video);
     return () => {
       if (retryTimer) window.clearTimeout(retryTimer);
+      if (qualityReleaseTimer) window.clearTimeout(qualityReleaseTimer);
+      if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
       try { hls.destroy(); } catch { /* empty */ }
     };
   }
