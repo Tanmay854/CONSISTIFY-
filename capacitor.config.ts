@@ -14,7 +14,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // ...but remove it again before producing the release APK.
 const config: CapacitorConfig = {
   appId: 'app.lovable.eec72d85d0444261b29a8882a5f34c1e',
-  appName: 'discipline3',
+  appName: 'DISCIPLINE X',
   webDir: 'dist',
 };
 
