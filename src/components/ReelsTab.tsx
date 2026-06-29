@@ -51,7 +51,6 @@ const attachHls = (
     let retries = 0;
     let retryTimer: number | null = null;
     let qualityReleaseTimer: number | null = null;
-    let readyFallbackTimer: number | null = null;
     let topLevel = -1;
     let readyFired = false;
     const hls = new Hls({
@@ -75,7 +74,6 @@ const attachHls = (
     const fireReady = () => {
       if (readyFired) return;
       readyFired = true;
-      if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
       onReady?.();
       // Keep the first seconds locked to the sharp rendition, then let ABR
       // react normally so weaker networks do not stall forever.
@@ -109,9 +107,10 @@ const attachHls = (
         }
       } catch { /* empty */ }
       try { hls.startLoad(startPosition); } catch { /* empty */ }
-      // Only fall back after a longer wait. This avoids revealing the reel at a
-      // blurry low rendition while Bunny's top fragment is still buffering.
-      readyFallbackTimer = window.setTimeout(fireReady, 7000);
+    });
+
+    hls.on(Hls.Events.FRAG_LOADING, () => {
+      if (!readyFired) lockTopQuality();
     });
 
     hls.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
@@ -150,7 +149,6 @@ const attachHls = (
     return () => {
       if (retryTimer) window.clearTimeout(retryTimer);
       if (qualityReleaseTimer) window.clearTimeout(qualityReleaseTimer);
-      if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
       try { hls.destroy(); } catch { /* empty */ }
     };
   }
