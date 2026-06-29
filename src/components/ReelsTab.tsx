@@ -53,7 +53,10 @@ const attachHls = (
       // Keep the first seconds locked to the sharp rendition, then let ABR
       // react normally so weaker networks do not stall forever.
       qualityReleaseTimer = window.setTimeout(() => {
-        try { hls.currentLevel = -1; } catch { /* empty */ }
+        try {
+          hls.autoLevelCapping = -1;
+          hls.currentLevel = -1;
+        } catch { /* empty */ }
       }, 8000);
     };
     const lockTopQuality = () => {
@@ -213,14 +216,17 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const [isLoading, setIsLoading] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const infoTimerRef = useRef<number | null>(null);
+  const isActiveRef = useRef(isActive);
+  const isPlayingRef = useRef(isPlaying);
+  const mutedRef = useRef(muted);
 
   const trimStart = reel.trim_start ?? 0;
   const trimEnd = reel.trim_end ?? null;
 
-  // Preload a wider window so the next reels are fully buffered at max quality
-  // before the user swipes to them.
-  const shouldMount = hasVideo && distance <= 3;
-  const preload = "auto";
+  // Android WebView gets laggy if too many HLS players fully buffer at once.
+  // Fully prebuffer only the active/next reel, keep the second neighbor light.
+  const shouldMount = hasVideo && distance <= 2;
+  const preload = distance <= 1 ? "auto" : "metadata";
 
   const toggleDescription = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -242,6 +248,12 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
     }
   }, [isActive, reel.id]);
 
+  useEffect(() => {
+    isActiveRef.current = isActive;
+    isPlayingRef.current = isPlaying;
+    mutedRef.current = muted;
+  }, [isActive, isPlaying, muted]);
+
   // Attach HLS / progressive source
   useEffect(() => {
     if (!shouldMount || !videoRef.current) return;
@@ -249,12 +261,13 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
     const cleanup = attachHls(
       v,
       playableUrl,
+      trimStart,
       () => {
         // Wait until enough data is buffered at the chosen (top) level before
         // starting playback so the first visible frame is already at max res.
         const tryPlay = () => {
-          if (!isActive || !isPlaying) return;
-          v.muted = muted;
+          if (!isActiveRef.current || !isPlayingRef.current) return;
+          v.muted = mutedRef.current;
           v.play().catch(() => {
             v.muted = true;
             v.play().catch(() => setIsLoading(false));
@@ -274,7 +287,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       },
     );
     return cleanup;
-  }, [shouldMount, playableUrl]);
+  }, [shouldMount, playableUrl, trimStart]);
 
   // Reset to trimStart only when the active card changes — NOT on every pause/play toggle.
   useEffect(() => {
@@ -377,21 +390,11 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
 
       {hasVideo && (showIcon || !isPlaying) && (
         <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-          <div className="bg-black/50 rounded-full p-6 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
+          <div className="bg-black/50 rounded-full p-6 animate-in fade-in zoom-in duration-200">
             <Play className="w-12 h-12 text-white fill-white" />
           </div>
         </div>
       )}
-
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-primary/20 rounded-full animate-pulse-glow"
-            style={{ left: `${15 + i * 15}%`, top: `${20 + (i * 12) % 60}%`, animationDelay: `${i * 0.5}s` }}
-          />
-        ))}
-      </div>
 
       <div className="relative z-10 px-8 max-w-md mx-auto text-center">
         {isActive && defaultQuotes[reel.id] && (
@@ -406,7 +409,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       {!reel.id.startsWith("d") && (
         <button
           onClick={(e) => { e.stopPropagation(); onReport(reel); }}
-          className="absolute bottom-[72px] right-4 z-30 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white/80 hover:text-white"
+          className="absolute bottom-[72px] right-4 z-30 bg-black/50 rounded-full p-2 text-white/80 hover:text-white"
           aria-label="Report"
         >
           <Flag size={14} />
@@ -569,7 +572,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
     if (target < current - 1) target = current - 1;
     target = Math.max(0, Math.min(feed.length - 1, target));
     if (Math.abs(raw - target) > 0.02) {
-      el.scrollTo({ top: target * h, behavior: "smooth" });
+      el.scrollTo({ top: target * h, behavior: "auto" });
     }
     lastSnapIndexRef.current = target;
     if (target !== activeIndex) setActiveIndex(target);
@@ -578,12 +581,6 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
   const handleScroll = () => {
     if (snapTimerRef.current) window.clearTimeout(snapTimerRef.current);
     snapTimerRef.current = window.setTimeout(enforceSingleSnap, 90);
-    if (containerRef.current) {
-      const scrollTop = containerRef.current.scrollTop;
-      const height = containerRef.current.clientHeight;
-      const newIndex = Math.round(scrollTop / height);
-      if (newIndex !== activeIndex) setActiveIndex(newIndex);
-    }
   };
 
   return (
