@@ -31,8 +31,12 @@ const attachHls = (
       video.removeEventListener("canplay", fire);
     };
   }
-  // Safari / iOS — native HLS
-  if (video.canPlayType("application/vnd.apple.mpegurl")) {
+  // Use native HLS only on Apple devices. Android WebView may claim native HLS
+  // support but its ABR often starts blurry; hls.js lets us lock the first
+  // buffered fragment to Bunny's highest rendition.
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  const isAppleDevice = /iPad|iPhone|iPod|Macintosh/i.test(ua);
+  if (isAppleDevice && video.canPlayType("application/vnd.apple.mpegurl")) {
     let fired = false;
     const fire = () => {
       if (fired) return;
