@@ -263,8 +263,9 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       playableUrl,
       trimStart,
       () => {
-        // Wait until enough data is buffered at the chosen (top) level before
-        // starting playback so the first visible frame is already at max res.
+        // HLS already fired this after a top-quality fragment was buffered,
+        // so start immediately instead of waiting for WebView's unreliable
+        // canplaythrough event.
         const tryPlay = () => {
           if (!isActiveRef.current || !isPlayingRef.current) return;
           v.muted = mutedRef.current;
@@ -273,12 +274,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
             v.play().catch(() => setIsLoading(false));
           });
         };
-        if (v.readyState >= 4) {
-          tryPlay();
-        } else {
-          const onReady = () => { v.removeEventListener("canplaythrough", onReady); tryPlay(); };
-          v.addEventListener("canplaythrough", onReady, { once: true });
-        }
+        tryPlay();
       },
       (msg) => {
         // Fatal HLS error — drop the spinner so the UI doesn't hang
