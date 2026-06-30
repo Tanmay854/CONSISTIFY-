@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import type { CSSProperties } from "react";
 import Hls from "hls.js";
-import { Play, ExternalLink, Flag } from "lucide-react";
+import { Play, ExternalLink, CircleAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
@@ -8,6 +9,15 @@ import ReportDialog from "@/components/ReportDialog";
 // Attach an HLS (.m3u8) or progressive source to a <video>. Returns a cleanup fn.
 // onReady fires when the stream is parsed and a play() can be attempted.
 // onFail fires on a fatal error so the spinner can be cleared and UI can recover.
+type HlsLevelInfo = { bitrate?: number };
+type NetworkInformationLike = { saveData?: boolean; effectiveType?: string };
+type NavigatorWithConnection = Navigator & {
+  deviceMemory?: number;
+  connection?: NetworkInformationLike;
+  mozConnection?: NetworkInformationLike;
+  webkitConnection?: NetworkInformationLike;
+};
+
 const attachHls = (
   video: HTMLVideoElement,
   url: string,
@@ -53,11 +63,31 @@ const attachHls = (
   }
   if (Hls.isSupported()) {
     let retries = 0;
+    let manifestCodecRetry = false;
     let retryTimer: number | null = null;
     let qualityReleaseTimer: number | null = null;
+    let readyFallbackTimer: number | null = null;
+    let nativeFallbackCleanup: (() => void) | null = null;
     let topLevel = -1;
     let readyFired = false;
-    const hls = new Hls({
+    const fallbackToNative = () => {
+      if (nativeFallbackCleanup) return;
+      try { hls.destroy(); } catch { /* empty */ }
+      video.src = url;
+      video.preload = "auto";
+      const fire = () => fireReady();
+      const fail = () => onFail?.("native hls error");
+      video.addEventListener("loadeddata", fire, { once: true });
+      video.addEventListener("canplay", fire, { once: true });
+      video.addEventListener("error", fail, { once: true });
+      try { video.load(); } catch { /* empty */ }
+      nativeFallbackCleanup = () => {
+        video.removeEventListener("loadeddata", fire);
+        video.removeEventListener("canplay", fire);
+        video.removeEventListener("error", fail);
+      };
+    };
+    const createHls = (audio: boolean) => new Hls({
       enableWorker: true,
       lowLatencyMode: false,
       // Do not let ABR do the default low-bitrate startup test. We choose the
@@ -74,85 +104,119 @@ const attachHls = (
       maxBufferLength: 24,
       maxMaxBufferLength: 60,
       backBufferLength: 10,
+      defaultAudioCodec: audio ? undefined : "mp4a.40.2",
     });
+    let hls = createHls(false);
+    const bindHls = (instance: Hls) => {
+      instance.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
+        try {
+          const levels = ((data as { levels?: HlsLevelInfo[] })?.levels || instance.levels || []) as HlsLevelInfo[];
+          if (levels.length > 0) {
+            topLevel = 0;
+            for (let i = 1; i < levels.length; i++) {
+              if ((levels[i].bitrate || 0) > (levels[topLevel].bitrate || 0)) topLevel = i;
+            }
+            lockTopQuality(instance);
+          }
+        } catch { /* empty */ }
+        try { instance.startLoad(startPosition); } catch { /* empty */ }
+      });
+
+      instance.on(Hls.Events.FRAG_LOADING, () => {
+        if (!readyFired) lockTopQuality(instance);
+      });
+
+      instance.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
+        const fragLevel = (data as { frag?: { level?: number } })?.frag?.level;
+        const levels = instance.levels || [];
+        const topBitrate = topLevel >= 0 ? levels[topLevel]?.bitrate || 0 : 0;
+        const fragBitrate = typeof fragLevel === "number" && fragLevel >= 0 ? levels[fragLevel]?.bitrate || 0 : 0;
+        const closeToTop = topBitrate > 0 && fragBitrate >= topBitrate * 0.72;
+        if (topLevel < 0 || fragLevel === topLevel || closeToTop || instance.levels.length <= 1) fireReady();
+      });
+
+      instance.on(Hls.Events.LEVEL_LOADED, () => {
+        if (!readyFired && !readyFallbackTimer) {
+          readyFallbackTimer = window.setTimeout(fireReady, 1800);
+        }
+      });
+
+      instance.on(Hls.Events.LEVEL_SWITCHING, () => {
+        if (!readyFired) lockTopQuality(instance);
+      });
+
+      instance.on(Hls.Events.ERROR, (_e, data) => {
+        if (!data.fatal) return;
+        if (data.details === Hls.ErrorDetails.MANIFEST_INCOMPATIBLE_CODECS_ERROR && !manifestCodecRetry) {
+          manifestCodecRetry = true;
+          try { instance.destroy(); } catch { /* empty */ }
+          hls = createHls(true);
+          bindHls(hls);
+          hls.attachMedia(video);
+          return;
+        }
+        if (data.details === Hls.ErrorDetails.MANIFEST_INCOMPATIBLE_CODECS_ERROR) {
+          fallbackToNative();
+          return;
+        }
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          if (retries < 24) {
+            retries += 1;
+            retryTimer = window.setTimeout(() => {
+              try {
+                instance.loadSource(url);
+                lockTopQuality(instance);
+                instance.startLoad(startPosition);
+              } catch { /* empty */ }
+            }, Math.min(2500 * retries, 10000));
+            return;
+          }
+          onFail?.(data.details || "network error");
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          try { instance.recoverMediaError(); } catch { onFail?.(data.details || "media error"); }
+        } else {
+          onFail?.(data.details || "fatal hls error");
+          try { instance.destroy(); } catch { /* empty */ }
+        }
+      });
+
+      instance.on(Hls.Events.MEDIA_ATTACHED, () => {
+        instance.loadSource(url);
+        if (!readyFallbackTimer) readyFallbackTimer = window.setTimeout(fireReady, 3500);
+      });
+    };
     const fireReady = () => {
       if (readyFired) return;
       readyFired = true;
       onReady?.();
-      // Keep the first seconds locked to the sharp rendition, then let ABR
-      // react normally so weaker networks do not stall forever.
+      // Keep the first seconds biased sharp, then let ABR react normally so
+      // weaker Android WebViews do not stall forever on the first reel.
       qualityReleaseTimer = window.setTimeout(() => {
         try {
           hls.autoLevelCapping = -1;
-          hls.currentLevel = -1;
+          hls.nextLevel = -1;
+          hls.loadLevel = -1;
+          hls.nextLoadLevel = -1;
         } catch { /* empty */ }
       }, 8000);
     };
-    const lockTopQuality = () => {
+    const lockTopQuality = (instance: Hls) => {
       if (topLevel < 0) return;
       try {
-        hls.startLevel = topLevel;
-        hls.currentLevel = topLevel;
-        hls.nextLevel = topLevel;
-        hls.loadLevel = topLevel;
-        hls.nextLoadLevel = topLevel;
-        hls.autoLevelCapping = topLevel;
+        instance.startLevel = topLevel;
+        instance.nextLevel = topLevel;
+        instance.loadLevel = topLevel;
+        instance.nextLoadLevel = topLevel;
+        instance.autoLevelCapping = topLevel;
       } catch { /* empty */ }
     };
-    hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
-      try {
-        const levels = (data as any)?.levels || hls.levels || [];
-        if (levels.length > 0) {
-          topLevel = 0;
-          for (let i = 1; i < levels.length; i++) {
-            if (levels[i].bitrate > levels[topLevel].bitrate) topLevel = i;
-          }
-          lockTopQuality();
-        }
-      } catch { /* empty */ }
-      try { hls.startLoad(startPosition); } catch { /* empty */ }
-    });
-
-    hls.on(Hls.Events.FRAG_LOADING, () => {
-      if (!readyFired) lockTopQuality();
-    });
-
-    hls.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
-      const fragLevel = (data as any)?.frag?.level;
-      if (topLevel < 0 || fragLevel === topLevel || hls.levels.length <= 1) fireReady();
-    });
-
-    hls.on(Hls.Events.LEVEL_SWITCHING, () => {
-      if (!readyFired) lockTopQuality();
-    });
-
-    hls.on(Hls.Events.ERROR, (_e, data) => {
-      if (!data.fatal) return;
-      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-        if (retries < 24) {
-          retries += 1;
-          retryTimer = window.setTimeout(() => {
-            try {
-              hls.loadSource(url);
-              lockTopQuality();
-              hls.startLoad(startPosition);
-            } catch { /* empty */ }
-          }, Math.min(2500 * retries, 10000));
-          return;
-        }
-        onFail?.(data.details || "network error");
-      } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-        try { hls.recoverMediaError(); } catch { onFail?.(data.details || "media error"); }
-      } else {
-        onFail?.(data.details || "fatal hls error");
-        try { hls.destroy(); } catch { /* empty */ }
-      }
-    });
-    hls.loadSource(url);
+    bindHls(hls);
     hls.attachMedia(video);
     return () => {
       if (retryTimer) window.clearTimeout(retryTimer);
       if (qualityReleaseTimer) window.clearTimeout(qualityReleaseTimer);
+      if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
+      nativeFallbackCleanup?.();
       try { hls.destroy(); } catch { /* empty */ }
     };
   }
@@ -244,7 +308,7 @@ const rememberAnonReel = (id: string) => {
 const isSlowDevice = (() => {
   if (typeof navigator === "undefined") return false;
   try {
-    const nav = navigator as any;
+    const nav = navigator as NavigatorWithConnection;
     const cores = typeof nav.hardwareConcurrency === "number" ? nav.hardwareConcurrency : 8;
     const mem = typeof nav.deviceMemory === "number" ? nav.deviceMemory : 8;
     const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
@@ -281,6 +345,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const autoPreloadRadius = isSlowDevice ? 0 : 1;
   const shouldMount = hasVideo && distance <= mountRadius;
   const preload = distance <= autoPreloadRadius ? "auto" : "metadata";
+  const videoFit: CSSProperties["objectFit"] =
+    reel.video_fit === "contain" || reel.video_fit === "fill" || reel.video_fit === "none" || reel.video_fit === "scale-down"
+      ? reel.video_fit
+      : "cover";
 
   const toggleDescription = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -406,7 +474,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
         <video
           ref={videoRef}
           className={`absolute inset-0 w-full h-full transition-opacity duration-150 ${isActive && !isQualityReady ? "opacity-0" : "opacity-100"}`}
-          style={{ objectFit: (reel.video_fit as any) || "cover" }}
+          style={{ objectFit: videoFit }}
           autoPlay={false}
           loop
           playsInline
@@ -440,11 +508,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
 
       {hasVideo && isActive && isLoading && !showIcon && isPlaying && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-          <div className="relative w-14 h-14">
-            <div className="absolute inset-0 rounded-full border-2 border-white/20" />
-            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white border-r-white/80 animate-spin" />
-            <div className="absolute inset-2 rounded-full bg-white/15 animate-pulse" />
-          </div>
+          <div className="h-12 w-12 rounded-full border-2 border-foreground/25 border-t-foreground animate-spin" />
         </div>
       )}
 
@@ -469,10 +533,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       {!reel.id.startsWith("d") && (
         <button
           onClick={(e) => { e.stopPropagation(); onReport(reel); }}
-          className="absolute bottom-[72px] right-4 z-30 bg-black/50 rounded-full p-2 text-white/80 hover:text-white"
+          className="absolute bottom-[72px] right-4 z-30 bg-secondary/80 rounded-full p-2 text-foreground/80 hover:text-foreground"
           aria-label="Report"
         >
-          <Flag size={14} />
+          <CircleAlert size={14} />
         </button>
       )}
 
