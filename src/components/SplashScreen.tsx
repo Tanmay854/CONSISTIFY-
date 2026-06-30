@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import splashAsset from "@/assets/discipline-x-splash.png.asset.json";
+import splashAsset from "@/assets/discipline-x-splash.png";
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
   const [showText, setShowText] = useState(false);
@@ -19,7 +19,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
       }`}
     >
       <img
-        src={splashAsset.url}
+        src={splashAsset}
         alt="DISCIPLINE X"
         className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ${
           showText ? "opacity-100 scale-100" : "opacity-0 scale-105"
