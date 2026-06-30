@@ -63,12 +63,13 @@ const attachHls = (
   }
   if (Hls.isSupported()) {
     let retries = 0;
+    let manifestCodecRetry = false;
     let retryTimer: number | null = null;
     let qualityReleaseTimer: number | null = null;
     let readyFallbackTimer: number | null = null;
     let topLevel = -1;
     let readyFired = false;
-    const hls = new Hls({
+    const createHls = (audio: boolean) => new Hls({
       enableWorker: true,
       lowLatencyMode: false,
       // Do not let ABR do the default low-bitrate startup test. We choose the
@@ -85,7 +86,82 @@ const attachHls = (
       maxBufferLength: 24,
       maxMaxBufferLength: 60,
       backBufferLength: 10,
+      audioCodec: audio ? undefined : "mp4a.40.2",
     });
+    let hls = createHls(false);
+    const bindHls = (instance: Hls) => {
+      instance.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
+        try {
+          const levels = ((data as { levels?: HlsLevelInfo[] })?.levels || instance.levels || []) as HlsLevelInfo[];
+          if (levels.length > 0) {
+            topLevel = 0;
+            for (let i = 1; i < levels.length; i++) {
+              if ((levels[i].bitrate || 0) > (levels[topLevel].bitrate || 0)) topLevel = i;
+            }
+            lockTopQuality(instance);
+          }
+        } catch { /* empty */ }
+        try { instance.startLoad(startPosition); } catch { /* empty */ }
+      });
+
+      instance.on(Hls.Events.FRAG_LOADING, () => {
+        if (!readyFired) lockTopQuality(instance);
+      });
+
+      instance.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
+        const fragLevel = (data as { frag?: { level?: number } })?.frag?.level;
+        const levels = instance.levels || [];
+        const topBitrate = topLevel >= 0 ? levels[topLevel]?.bitrate || 0 : 0;
+        const fragBitrate = typeof fragLevel === "number" && fragLevel >= 0 ? levels[fragLevel]?.bitrate || 0 : 0;
+        const closeToTop = topBitrate > 0 && fragBitrate >= topBitrate * 0.72;
+        if (topLevel < 0 || fragLevel === topLevel || closeToTop || instance.levels.length <= 1) fireReady();
+      });
+
+      instance.on(Hls.Events.LEVEL_LOADED, () => {
+        if (!readyFired && !readyFallbackTimer) {
+          readyFallbackTimer = window.setTimeout(fireReady, 1800);
+        }
+      });
+
+      instance.on(Hls.Events.LEVEL_SWITCHING, () => {
+        if (!readyFired) lockTopQuality(instance);
+      });
+
+      instance.on(Hls.Events.ERROR, (_e, data) => {
+        if (!data.fatal) return;
+        if (data.details === Hls.ErrorDetails.MANIFEST_INCOMPATIBLE_CODECS_ERROR && !manifestCodecRetry) {
+          manifestCodecRetry = true;
+          try { instance.destroy(); } catch { /* empty */ }
+          hls = createHls(true);
+          bindHls(hls);
+          hls.attachMedia(video);
+          return;
+        }
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          if (retries < 24) {
+            retries += 1;
+            retryTimer = window.setTimeout(() => {
+              try {
+                instance.loadSource(url);
+                lockTopQuality(instance);
+                instance.startLoad(startPosition);
+              } catch { /* empty */ }
+            }, Math.min(2500 * retries, 10000));
+            return;
+          }
+          onFail?.(data.details || "network error");
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          try { instance.recoverMediaError(); } catch { onFail?.(data.details || "media error"); }
+        } else {
+          onFail?.(data.details || "fatal hls error");
+          try { instance.destroy(); } catch { /* empty */ }
+        }
+      });
+
+      instance.on(Hls.Events.MEDIA_ATTACHED, () => {
+        instance.loadSource(url);
+      });
+    };
     const fireReady = () => {
       if (readyFired) return;
       readyFired = true;
@@ -101,78 +177,17 @@ const attachHls = (
         } catch { /* empty */ }
       }, 8000);
     };
-    const lockTopQuality = () => {
+    const lockTopQuality = (instance: Hls) => {
       if (topLevel < 0) return;
       try {
-        hls.startLevel = topLevel;
-        hls.nextLevel = topLevel;
-        hls.loadLevel = topLevel;
-        hls.nextLoadLevel = topLevel;
-        hls.autoLevelCapping = topLevel;
+        instance.startLevel = topLevel;
+        instance.nextLevel = topLevel;
+        instance.loadLevel = topLevel;
+        instance.nextLoadLevel = topLevel;
+        instance.autoLevelCapping = topLevel;
       } catch { /* empty */ }
     };
-    hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
-      try {
-        const levels = ((data as { levels?: HlsLevelInfo[] })?.levels || hls.levels || []) as HlsLevelInfo[];
-        if (levels.length > 0) {
-          topLevel = 0;
-          for (let i = 1; i < levels.length; i++) {
-            if ((levels[i].bitrate || 0) > (levels[topLevel].bitrate || 0)) topLevel = i;
-          }
-          lockTopQuality();
-        }
-      } catch { /* empty */ }
-      try { hls.startLoad(startPosition); } catch { /* empty */ }
-    });
-
-    hls.on(Hls.Events.FRAG_LOADING, () => {
-      if (!readyFired) lockTopQuality();
-    });
-
-    hls.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
-      const fragLevel = (data as { frag?: { level?: number } })?.frag?.level;
-      const levels = hls.levels || [];
-      const topBitrate = topLevel >= 0 ? levels[topLevel]?.bitrate || 0 : 0;
-      const fragBitrate = typeof fragLevel === "number" && fragLevel >= 0 ? levels[fragLevel]?.bitrate || 0 : 0;
-      const closeToTop = topBitrate > 0 && fragBitrate >= topBitrate * 0.72;
-      if (topLevel < 0 || fragLevel === topLevel || closeToTop || hls.levels.length <= 1) fireReady();
-    });
-
-    hls.on(Hls.Events.LEVEL_LOADED, () => {
-      if (!readyFired && !readyFallbackTimer) {
-        readyFallbackTimer = window.setTimeout(fireReady, 1800);
-      }
-    });
-
-    hls.on(Hls.Events.LEVEL_SWITCHING, () => {
-      if (!readyFired) lockTopQuality();
-    });
-
-    hls.on(Hls.Events.ERROR, (_e, data) => {
-      if (!data.fatal) return;
-      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-        if (retries < 24) {
-          retries += 1;
-          retryTimer = window.setTimeout(() => {
-            try {
-              hls.loadSource(url);
-              lockTopQuality();
-              hls.startLoad(startPosition);
-            } catch { /* empty */ }
-          }, Math.min(2500 * retries, 10000));
-          return;
-        }
-        onFail?.(data.details || "network error");
-      } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-        try { hls.recoverMediaError(); } catch { onFail?.(data.details || "media error"); }
-      } else {
-        onFail?.(data.details || "fatal hls error");
-        try { hls.destroy(); } catch { /* empty */ }
-      }
-    });
-    hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-      hls.loadSource(url);
-    });
+    bindHls(hls);
     hls.attachMedia(video);
     return () => {
       if (retryTimer) window.clearTimeout(retryTimer);
