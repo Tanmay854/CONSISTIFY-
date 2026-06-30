@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Flag } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
@@ -57,10 +57,10 @@ const PhotoCard = ({ quote, onReport }: { quote: QuoteCard; onReport: (q: QuoteC
 
       <button
         onClick={() => onReport(quote)}
-        className="absolute top-16 right-4 z-30 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white/80 hover:text-white"
+        className="absolute bottom-[72px] right-4 z-30 bg-secondary/80 rounded-full p-2 text-foreground/80 hover:text-foreground"
         aria-label="Report"
       >
-        <Flag size={14} />
+        <CircleAlert size={14} />
       </button>
 
       <div className="absolute bottom-24 left-4 right-16 z-20 pointer-events-none">

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Hls from "hls.js";
-import { Play, ExternalLink, Flag } from "lucide-react";
+import { Play, ExternalLink, CircleAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
@@ -79,12 +79,13 @@ const attachHls = (
       if (readyFired) return;
       readyFired = true;
       onReady?.();
-      // Keep the first seconds locked to the sharp rendition, then let ABR
-      // react normally so weaker networks do not stall forever.
+      // Keep the first seconds biased sharp, then let ABR react normally so
+      // weaker Android WebViews do not stall forever on the first reel.
       qualityReleaseTimer = window.setTimeout(() => {
         try {
           hls.autoLevelCapping = -1;
-          hls.currentLevel = -1;
+          hls.nextLevel = -1;
+          hls.loadLevel = -1;
         } catch { /* empty */ }
       }, 8000);
     };
@@ -119,7 +120,15 @@ const attachHls = (
 
     hls.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
       const fragLevel = (data as any)?.frag?.level;
-      if (topLevel < 0 || fragLevel === topLevel || hls.levels.length <= 1) fireReady();
+      const levels = hls.levels || [];
+      const topBitrate = topLevel >= 0 ? levels[topLevel]?.bitrate || 0 : 0;
+      const fragBitrate = fragLevel >= 0 ? levels[fragLevel]?.bitrate || 0 : 0;
+      const closeToTop = topBitrate > 0 && fragBitrate >= topBitrate * 0.72;
+      if (topLevel < 0 || fragLevel === topLevel || closeToTop || hls.levels.length <= 1) fireReady();
+    });
+
+    hls.on(Hls.Events.LEVEL_LOADED, () => {
+      window.setTimeout(fireReady, 1800);
     });
 
     hls.on(Hls.Events.LEVEL_SWITCHING, () => {
@@ -440,11 +449,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
 
       {hasVideo && isActive && isLoading && !showIcon && isPlaying && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-          <div className="relative w-14 h-14">
-            <div className="absolute inset-0 rounded-full border-2 border-white/20" />
-            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white border-r-white/80 animate-spin" />
-            <div className="absolute inset-2 rounded-full bg-white/15 animate-pulse" />
-          </div>
+          <div className="h-12 w-12 rounded-full border-2 border-foreground/25 border-t-foreground animate-spin" />
         </div>
       )}
 
@@ -469,10 +474,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       {!reel.id.startsWith("d") && (
         <button
           onClick={(e) => { e.stopPropagation(); onReport(reel); }}
-          className="absolute bottom-[72px] right-4 z-30 bg-black/50 rounded-full p-2 text-white/80 hover:text-white"
+          className="absolute bottom-[72px] right-4 z-30 bg-secondary/80 rounded-full p-2 text-foreground/80 hover:text-foreground"
           aria-label="Report"
         >
-          <Flag size={14} />
+          <CircleAlert size={14} />
         </button>
       )}
 
