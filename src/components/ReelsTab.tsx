@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import type { CSSProperties } from "react";
 import Hls from "hls.js";
 import { Play, ExternalLink, CircleAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,15 @@ import ReportDialog from "@/components/ReportDialog";
 // Attach an HLS (.m3u8) or progressive source to a <video>. Returns a cleanup fn.
 // onReady fires when the stream is parsed and a play() can be attempted.
 // onFail fires on a fatal error so the spinner can be cleared and UI can recover.
+type HlsLevelInfo = { bitrate?: number };
+type NetworkInformationLike = { saveData?: boolean; effectiveType?: string };
+type NavigatorWithConnection = Navigator & {
+  deviceMemory?: number;
+  connection?: NetworkInformationLike;
+  mozConnection?: NetworkInformationLike;
+  webkitConnection?: NetworkInformationLike;
+};
+
 const attachHls = (
   video: HTMLVideoElement,
   url: string,
@@ -103,11 +113,11 @@ const attachHls = (
     };
     hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
       try {
-        const levels = (data as any)?.levels || hls.levels || [];
+        const levels = ((data as { levels?: HlsLevelInfo[] })?.levels || hls.levels || []) as HlsLevelInfo[];
         if (levels.length > 0) {
           topLevel = 0;
           for (let i = 1; i < levels.length; i++) {
-            if (levels[i].bitrate > levels[topLevel].bitrate) topLevel = i;
+            if ((levels[i].bitrate || 0) > (levels[topLevel].bitrate || 0)) topLevel = i;
           }
           lockTopQuality();
         }
@@ -120,10 +130,10 @@ const attachHls = (
     });
 
     hls.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
-      const fragLevel = (data as any)?.frag?.level;
+      const fragLevel = (data as { frag?: { level?: number } })?.frag?.level;
       const levels = hls.levels || [];
       const topBitrate = topLevel >= 0 ? levels[topLevel]?.bitrate || 0 : 0;
-      const fragBitrate = fragLevel >= 0 ? levels[fragLevel]?.bitrate || 0 : 0;
+      const fragBitrate = typeof fragLevel === "number" && fragLevel >= 0 ? levels[fragLevel]?.bitrate || 0 : 0;
       const closeToTop = topBitrate > 0 && fragBitrate >= topBitrate * 0.72;
       if (topLevel < 0 || fragLevel === topLevel || closeToTop || hls.levels.length <= 1) fireReady();
     });
@@ -257,7 +267,7 @@ const rememberAnonReel = (id: string) => {
 const isSlowDevice = (() => {
   if (typeof navigator === "undefined") return false;
   try {
-    const nav = navigator as any;
+    const nav = navigator as NavigatorWithConnection;
     const cores = typeof nav.hardwareConcurrency === "number" ? nav.hardwareConcurrency : 8;
     const mem = typeof nav.deviceMemory === "number" ? nav.deviceMemory : 8;
     const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
@@ -294,6 +304,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
   const autoPreloadRadius = isSlowDevice ? 0 : 1;
   const shouldMount = hasVideo && distance <= mountRadius;
   const preload = distance <= autoPreloadRadius ? "auto" : "metadata";
+  const videoFit: CSSProperties["objectFit"] =
+    reel.video_fit === "contain" || reel.video_fit === "fill" || reel.video_fit === "none" || reel.video_fit === "scale-down"
+      ? reel.video_fit
+      : "cover";
 
   const toggleDescription = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -419,7 +433,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
         <video
           ref={videoRef}
           className={`absolute inset-0 w-full h-full transition-opacity duration-150 ${isActive && !isQualityReady ? "opacity-0" : "opacity-100"}`}
-          style={{ objectFit: (reel.video_fit as any) || "cover" }}
+          style={{ objectFit: videoFit }}
           autoPlay={false}
           loop
           playsInline

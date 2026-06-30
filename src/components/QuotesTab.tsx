@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import type { CSSProperties } from "react";
 import { CircleAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackView } from "@/lib/trackView";
@@ -81,6 +82,7 @@ const PhotoCard = ({ quote, onReport }: { quote: QuoteCard; onReport: (q: QuoteC
 };
 
 const PAGE_SIZE = 8;
+const snapStyle: CSSProperties = { scrollSnapStop: "always" };
 
 const QuotesTab = () => {
   const [quotes, setQuotes] = useState<QuoteCard[]>([]);
@@ -133,7 +135,7 @@ const QuotesTab = () => {
 
   return (
     <>
-      <div className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background overscroll-contain" style={{ scrollSnapStop: "always" as any }}>
+      <div className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background overscroll-contain" style={snapStyle}>
         {quotes.map((quote) => (
           <PhotoCard key={quote.id} quote={quote} onReport={setReportTarget} />
         ))}
