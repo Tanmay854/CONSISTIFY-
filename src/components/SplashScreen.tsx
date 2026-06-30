@@ -3,15 +3,13 @@ import splashAsset from "@/assets/discipline-x-splash.png.asset.json";
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
   const [showText, setShowText] = useState(false);
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
     const t1 = setTimeout(() => setShowText(true), 150);
-    const t2 = setTimeout(() => setShowDisclaimer(true), 500);
     const t3 = setTimeout(() => setFadeOut(true), 3500);
     const t4 = setTimeout(() => onFinish(), 4200);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    return () => { clearTimeout(t1); clearTimeout(t3); clearTimeout(t4); };
   }, [onFinish]);
 
   return (

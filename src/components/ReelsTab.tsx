@@ -55,6 +55,7 @@ const attachHls = (
     let retries = 0;
     let retryTimer: number | null = null;
     let qualityReleaseTimer: number | null = null;
+    let readyFallbackTimer: number | null = null;
     let topLevel = -1;
     let readyFired = false;
     const hls = new Hls({
@@ -128,7 +129,9 @@ const attachHls = (
     });
 
     hls.on(Hls.Events.LEVEL_LOADED, () => {
-      window.setTimeout(fireReady, 1800);
+      if (!readyFired && !readyFallbackTimer) {
+        readyFallbackTimer = window.setTimeout(fireReady, 1800);
+      }
     });
 
     hls.on(Hls.Events.LEVEL_SWITCHING, () => {
@@ -162,6 +165,7 @@ const attachHls = (
     return () => {
       if (retryTimer) window.clearTimeout(retryTimer);
       if (qualityReleaseTimer) window.clearTimeout(qualityReleaseTimer);
+      if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
       try { hls.destroy(); } catch { /* empty */ }
     };
   }
