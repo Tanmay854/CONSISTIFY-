@@ -170,7 +170,9 @@ const attachHls = (
         try { hls.destroy(); } catch { /* empty */ }
       }
     });
-    hls.loadSource(url);
+    hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+      hls.loadSource(url);
+    });
     hls.attachMedia(video);
     return () => {
       if (retryTimer) window.clearTimeout(retryTimer);
