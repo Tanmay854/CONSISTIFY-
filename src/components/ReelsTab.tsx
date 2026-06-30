@@ -67,8 +67,26 @@ const attachHls = (
     let retryTimer: number | null = null;
     let qualityReleaseTimer: number | null = null;
     let readyFallbackTimer: number | null = null;
+    let nativeFallbackCleanup: (() => void) | null = null;
     let topLevel = -1;
     let readyFired = false;
+    const fallbackToNative = () => {
+      if (nativeFallbackCleanup) return;
+      try { hls.destroy(); } catch { /* empty */ }
+      video.src = url;
+      video.preload = "auto";
+      const fire = () => fireReady();
+      const fail = () => onFail?.("native hls error");
+      video.addEventListener("loadeddata", fire, { once: true });
+      video.addEventListener("canplay", fire, { once: true });
+      video.addEventListener("error", fail, { once: true });
+      try { video.load(); } catch { /* empty */ }
+      nativeFallbackCleanup = () => {
+        video.removeEventListener("loadeddata", fire);
+        video.removeEventListener("canplay", fire);
+        video.removeEventListener("error", fail);
+      };
+    };
     const createHls = (audio: boolean) => new Hls({
       enableWorker: true,
       lowLatencyMode: false,
@@ -137,6 +155,10 @@ const attachHls = (
           hls.attachMedia(video);
           return;
         }
+        if (data.details === Hls.ErrorDetails.MANIFEST_INCOMPATIBLE_CODECS_ERROR) {
+          fallbackToNative();
+          return;
+        }
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
           if (retries < 24) {
             retries += 1;
@@ -160,6 +182,7 @@ const attachHls = (
 
       instance.on(Hls.Events.MEDIA_ATTACHED, () => {
         instance.loadSource(url);
+        if (!readyFallbackTimer) readyFallbackTimer = window.setTimeout(fireReady, 3500);
       });
     };
     const fireReady = () => {
@@ -193,6 +216,7 @@ const attachHls = (
       if (retryTimer) window.clearTimeout(retryTimer);
       if (qualityReleaseTimer) window.clearTimeout(qualityReleaseTimer);
       if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
+      nativeFallbackCleanup?.();
       try { hls.destroy(); } catch { /* empty */ }
     };
   }
