@@ -97,6 +97,7 @@ const attachHls = (
           hls.autoLevelCapping = -1;
           hls.nextLevel = -1;
           hls.loadLevel = -1;
+          hls.nextLoadLevel = -1;
         } catch { /* empty */ }
       }, 8000);
     };
@@ -104,7 +105,6 @@ const attachHls = (
       if (topLevel < 0) return;
       try {
         hls.startLevel = topLevel;
-        hls.currentLevel = topLevel;
         hls.nextLevel = topLevel;
         hls.loadLevel = topLevel;
         hls.nextLoadLevel = topLevel;
