@@ -86,7 +86,7 @@ const attachHls = (
       maxBufferLength: 24,
       maxMaxBufferLength: 60,
       backBufferLength: 10,
-      audioCodec: audio ? undefined : "mp4a.40.2",
+      defaultAudioCodec: audio ? undefined : "mp4a.40.2",
     });
     let hls = createHls(false);
     const bindHls = (instance: Hls) => {
