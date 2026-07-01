@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, Plus, Pencil, Trash2, Upload } from "lucide-react";
+import * as tus from "tus-js-client";
 import { supabase } from "@/integrations/supabase/client";
 import { COURSE_CATEGORIES, COURSE_LEVELS, type Course } from "@/lib/courseCategories";
 
