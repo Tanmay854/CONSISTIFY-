@@ -143,6 +143,87 @@ export type Database = {
         }
         Relationships: []
       }
+      courses: {
+        Row: {
+          affiliate_link: string
+          category: string
+          cover_image: string
+          created_at: string
+          created_by: string | null
+          curriculum: string | null
+          description: string | null
+          duration: string | null
+          featured: boolean
+          hero_image: string | null
+          id: string
+          instructor: string
+          is_best_seller: boolean
+          is_new_release: boolean
+          lessons_count: number | null
+          level: string | null
+          published: boolean
+          rating: number | null
+          requirements: string | null
+          subtitle: string | null
+          title: string
+          trending: boolean
+          updated_at: string
+          what_youll_learn: string | null
+        }
+        Insert: {
+          affiliate_link?: string
+          category?: string
+          cover_image?: string
+          created_at?: string
+          created_by?: string | null
+          curriculum?: string | null
+          description?: string | null
+          duration?: string | null
+          featured?: boolean
+          hero_image?: string | null
+          id?: string
+          instructor?: string
+          is_best_seller?: boolean
+          is_new_release?: boolean
+          lessons_count?: number | null
+          level?: string | null
+          published?: boolean
+          rating?: number | null
+          requirements?: string | null
+          subtitle?: string | null
+          title: string
+          trending?: boolean
+          updated_at?: string
+          what_youll_learn?: string | null
+        }
+        Update: {
+          affiliate_link?: string
+          category?: string
+          cover_image?: string
+          created_at?: string
+          created_by?: string | null
+          curriculum?: string | null
+          description?: string | null
+          duration?: string | null
+          featured?: boolean
+          hero_image?: string | null
+          id?: string
+          instructor?: string
+          is_best_seller?: boolean
+          is_new_release?: boolean
+          lessons_count?: number | null
+          level?: string | null
+          published?: boolean
+          rating?: number | null
+          requirements?: string | null
+          subtitle?: string | null
+          title?: string
+          trending?: boolean
+          updated_at?: string
+          what_youll_learn?: string | null
+        }
+        Relationships: []
+      }
       music: {
         Row: {
           artist: string
