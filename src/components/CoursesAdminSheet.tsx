@@ -189,21 +189,27 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
               <input placeholder="https://…" value={editing.cover_image} onChange={(e) => setEditing({ ...editing, cover_image: e.target.value })} className={inputCls} />
               <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
                 <Upload size={14} />{uploading === "cover" ? "…" : "Upload"}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], "cover")} />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0])} />
               </label>
             </div>
           </Row>
 
-          <Row label="Hero banner (optional, wide)">
-            {editing.hero_image && <img src={editing.hero_image} alt="" className="w-full aspect-[16/9] object-cover rounded-lg mb-2" />}
+          <Row label="Promo video (max 6 min, shown to viewers instead of hero image)">
+            {editing.hero_video_url && (
+              <video src={editing.hero_video_url} controls className="w-full aspect-video rounded-lg mb-2 bg-black" />
+            )}
             <div className="flex gap-2">
-              <input placeholder="https://…" value={editing.hero_image} onChange={(e) => setEditing({ ...editing, hero_image: e.target.value })} className={inputCls} />
+              <input placeholder="https://… (or upload)" value={editing.hero_video_url} onChange={(e) => setEditing({ ...editing, hero_video_url: e.target.value })} className={inputCls} />
               <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
-                <Upload size={14} />{uploading === "hero" ? "…" : "Upload"}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], "hero")} />
+                <Upload size={14} />{uploading === "video" ? "Uploading…" : "Upload"}
+                <input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadVideo(e.target.files[0])} />
               </label>
             </div>
+            {editing.hero_video_url && (
+              <button type="button" onClick={() => setEditing({ ...editing, hero_video_url: "" })} className="mt-2 text-xs text-destructive">Remove video</button>
+            )}
           </Row>
+
 
           <Row label="Affiliate link"><input value={editing.affiliate_link} onChange={(e) => setEditing({ ...editing, affiliate_link: e.target.value })} className={inputCls} placeholder="https://…" /></Row>
 
