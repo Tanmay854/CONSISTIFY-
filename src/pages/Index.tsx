@@ -9,13 +9,15 @@ import SettingsDrawer from "@/components/SettingsDrawer";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { MoreVertical, Volume2, VolumeX } from "lucide-react";
 
-type Tab = "reels" | "music" | "quotes" | "upload";
+type Tab = "reels" | "books" | "music" | "quotes" | "courses" | "upload";
 
 const AppContent = () => {
   const { canUpload } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tab = new URLSearchParams(window.location.search).get("tab");
-    return tab === "music" || tab === "quotes" || tab === "upload" ? tab : "reels";
+    return tab === "music" || tab === "quotes" || tab === "upload" || tab === "books" || tab === "courses"
+      ? (tab as Tab)
+      : "reels";
   });
   const [showSettings, setShowSettings] = useState(false);
   const [muted, setMuted] = useState<boolean>(() => {
