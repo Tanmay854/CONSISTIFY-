@@ -97,6 +97,7 @@ export default function MyAlbumsSheet({ open, album, onClose, onAlbumChanged }: 
       } else {
         createAlbum(name.trim(), coverUrl);
       }
+      toast({ title: "Saved successfully" });
       onAlbumChanged();
       if (!album) onClose();
     } finally { setSaving(false); }
