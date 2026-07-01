@@ -61,7 +61,7 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
       id: c.id,
       title: c.title, subtitle: c.subtitle ?? "", description: c.description ?? "",
       instructor: c.instructor, category: c.category,
-      cover_image: c.cover_image, hero_image: c.hero_image ?? "",
+      cover_image: c.cover_image, hero_image: c.hero_image ?? "", hero_video_url: c.hero_video_url ?? "",
       duration: c.duration ?? "", lessons_count: c.lessons_count?.toString() ?? "",
       level: c.level ?? COURSE_LEVELS[0], rating: c.rating?.toString() ?? "",
       affiliate_link: c.affiliate_link,
