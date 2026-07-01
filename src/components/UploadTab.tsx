@@ -192,7 +192,7 @@ const UploadTab = () => {
         if (photoFiles.length === 0) { setError("Select at least one image"); setLoading(false); return; }
         if (photoFiles.length > 20) { setError("Maximum 20 photos per set"); setLoading(false); return; }
         const setId = photoFiles.length > 1 ? crypto.randomUUID() : null;
-        const rows: Array<Record<string, unknown>> = [];
+        const rows: Array<{ title: string | null; description: string | null; category: string; image_url: string; bunny_storage_path: string | null; is_pro: boolean; uploaded_by: string | undefined; set_id: string | null; set_position: number }> = [];
         for (let i = 0; i < photoFiles.length; i++) {
           let fileToUpload = photoFiles[i];
           try {
