@@ -1,0 +1,2 @@
+ALTER TABLE public.quotes ADD COLUMN IF NOT EXISTS set_id UUID, ADD COLUMN IF NOT EXISTS set_position INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS quotes_set_id_idx ON public.quotes(set_id, set_position);
