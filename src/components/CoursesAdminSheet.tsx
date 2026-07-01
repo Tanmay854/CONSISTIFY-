@@ -145,12 +145,43 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
     if (file.size > 500 * 1024 * 1024) { setError("Video must be under 500MB."); return; }
     setUploading("video");
     setVideoProgress(0);
-    const ext = file.name.split(".").pop() || "mp4";
-    const path = `courses/promo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const { error } = await supabase.storage.from("videos").upload(path, file, { upsert: false, contentType: file.type || "video/mp4" });
-    if (error) { setUploading(null); setError(error.message); return; }
-    const { data } = supabase.storage.from("videos").getPublicUrl(path);
-    setEditing((f) => f ? { ...f, hero_video_url: data.publicUrl } : f);
+
+    // Ask edge function for a Bunny Stream TUS upload ticket
+    const title = (editing?.title?.trim() || file.name.replace(/\.[^.]+$/, "") || "Course promo");
+    const { data: ticket, error: fnErr } = await supabase.functions.invoke("bunny-create-video", {
+      body: { title },
+    });
+    if (fnErr || !ticket?.guid) {
+      setUploading(null); setVideoProgress(0);
+      setError(fnErr?.message || ticket?.error || "Failed to start upload");
+      return;
+    }
+
+    // Direct TUS upload to Bunny.net — fast, resumable, no Edge Function time limit
+    const uploadErr = await new Promise<string | null>((resolve) => {
+      const upload = new tus.Upload(file, {
+        endpoint: ticket.tusEndpoint,
+        retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
+        chunkSize: 2 * 1024 * 1024,
+        parallelUploads: 1,
+        storeFingerprintForResuming: false,
+        removeFingerprintOnSuccess: true,
+        headers: {
+          AuthorizationSignature: ticket.signature,
+          AuthorizationExpire: String(ticket.expire),
+          VideoId: ticket.guid,
+          LibraryId: String(ticket.libraryId),
+        },
+        metadata: { filetype: file.type, title },
+        onError: (err) => resolve(err?.message || String(err)),
+        onProgress: (sent, total) => setVideoProgress(Math.round((sent / total) * 100)),
+        onSuccess: () => resolve(null),
+      });
+      upload.start();
+    });
+    if (uploadErr) { setUploading(null); setVideoProgress(0); setError("Upload failed: " + uploadErr); return; }
+
+    setEditing((f) => f ? { ...f, hero_video_url: ticket.playbackUrl } : f);
     setUploading(null);
     setVideoProgress(0);
   };
