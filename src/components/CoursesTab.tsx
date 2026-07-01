@@ -131,12 +131,25 @@ const CoursesTab = () => {
       {/* Hero */}
       {hero && (
         <div className="relative h-[68vh] w-full overflow-hidden">
-          <img
-            key={hero.id}
-            src={hero.hero_image || hero.cover_image}
-            alt={hero.title}
-            className="absolute inset-0 w-full h-full object-cover animate-fade-in"
-          />
+          {hero.hero_video_url ? (
+            <video
+              key={hero.id}
+              src={hero.hero_video_url}
+              poster={hero.hero_image || hero.cover_image}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover animate-fade-in"
+            />
+          ) : (
+            <img
+              key={hero.id}
+              src={hero.hero_image || hero.cover_image}
+              alt={hero.title}
+              className="absolute inset-0 w-full h-full object-cover animate-fade-in"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
           <div className="absolute inset-x-0 top-4 flex justify-end px-4">
             <button

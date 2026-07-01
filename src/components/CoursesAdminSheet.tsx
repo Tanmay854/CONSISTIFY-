@@ -12,6 +12,7 @@ type Form = {
   category: string;
   cover_image: string;
   hero_image: string;
+  hero_video_url: string;
   duration: string;
   lessons_count: string;
   level: string;
@@ -30,7 +31,7 @@ type Form = {
 const empty = (): Form => ({
   title: "", subtitle: "", description: "", instructor: "",
   category: COURSE_CATEGORIES[0],
-  cover_image: "", hero_image: "",
+  cover_image: "", hero_image: "", hero_video_url: "",
   duration: "", lessons_count: "", level: COURSE_LEVELS[0],
   rating: "", affiliate_link: "",
   what_youll_learn: "", curriculum: "", requirements: "",
@@ -41,8 +42,9 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
   const [courses, setCourses] = useState<Course[]>([]);
   const [editing, setEditing] = useState<Form | null>(null);
   const [busy, setBusy] = useState(false);
-  const [uploading, setUploading] = useState<null | "cover" | "hero">(null);
+  const [uploading, setUploading] = useState<null | "cover" | "video">(null);
   const [error, setError] = useState<string | null>(null);
+  const [videoProgress, setVideoProgress] = useState<number>(0);
 
   const load = async () => {
     const { data } = await supabase.from("courses" as never).select("*").order("created_at", { ascending: false });
@@ -60,7 +62,7 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
       id: c.id,
       title: c.title, subtitle: c.subtitle ?? "", description: c.description ?? "",
       instructor: c.instructor, category: c.category,
-      cover_image: c.cover_image, hero_image: c.hero_image ?? "",
+      cover_image: c.cover_image, hero_image: c.hero_image ?? "", hero_video_url: c.hero_video_url ?? "",
       duration: c.duration ?? "", lessons_count: c.lessons_count?.toString() ?? "",
       level: c.level ?? COURSE_LEVELS[0], rating: c.rating?.toString() ?? "",
       affiliate_link: c.affiliate_link,
@@ -85,6 +87,7 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
       category: editing.category,
       cover_image: editing.cover_image.trim(),
       hero_image: editing.hero_image.trim() || null,
+      hero_video_url: editing.hero_video_url.trim() || null,
       duration: editing.duration.trim() || null,
       lessons_count: editing.lessons_count ? Number(editing.lessons_count) : 0,
       level: editing.level,
@@ -114,17 +117,43 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
     load();
   };
 
-  const uploadImage = async (file: File, slot: "cover" | "hero") => {
-    setUploading(slot);
+  const uploadImage = async (file: File) => {
+    setUploading("cover");
     setError(null);
     const ext = file.name.split(".").pop() || "jpg";
     const path = `courses/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { error } = await supabase.storage.from("quote-images").upload(path, file, { upsert: false });
     if (error) { setUploading(null); setError(error.message); return; }
     const { data } = supabase.storage.from("quote-images").getPublicUrl(path);
-    setEditing((f) => f ? { ...f, [slot === "cover" ? "cover_image" : "hero_image"]: data.publicUrl } : f);
+    setEditing((f) => f ? { ...f, cover_image: data.publicUrl } : f);
     setUploading(null);
   };
+
+  const uploadVideo = async (file: File) => {
+    setError(null);
+    // Validate duration ≤ 6 minutes client-side
+    const duration = await new Promise<number>((resolve) => {
+      const url = URL.createObjectURL(file);
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(v.duration || 0); };
+      v.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
+      v.src = url;
+    });
+    if (duration > 361) { setError("Video must be 6 minutes or less."); return; }
+    if (file.size > 500 * 1024 * 1024) { setError("Video must be under 500MB."); return; }
+    setUploading("video");
+    setVideoProgress(0);
+    const ext = file.name.split(".").pop() || "mp4";
+    const path = `courses/promo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("videos").upload(path, file, { upsert: false, contentType: file.type || "video/mp4" });
+    if (error) { setUploading(null); setError(error.message); return; }
+    const { data } = supabase.storage.from("videos").getPublicUrl(path);
+    setEditing((f) => f ? { ...f, hero_video_url: data.publicUrl } : f);
+    setUploading(null);
+    setVideoProgress(0);
+  };
+
 
   return (
     <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
@@ -160,21 +189,27 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
               <input placeholder="https://…" value={editing.cover_image} onChange={(e) => setEditing({ ...editing, cover_image: e.target.value })} className={inputCls} />
               <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
                 <Upload size={14} />{uploading === "cover" ? "…" : "Upload"}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], "cover")} />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0])} />
               </label>
             </div>
           </Row>
 
-          <Row label="Hero banner (optional, wide)">
-            {editing.hero_image && <img src={editing.hero_image} alt="" className="w-full aspect-[16/9] object-cover rounded-lg mb-2" />}
+          <Row label="Promo video (max 6 min, shown to viewers instead of hero image)">
+            {editing.hero_video_url && (
+              <video src={editing.hero_video_url} controls className="w-full aspect-video rounded-lg mb-2 bg-black" />
+            )}
             <div className="flex gap-2">
-              <input placeholder="https://…" value={editing.hero_image} onChange={(e) => setEditing({ ...editing, hero_image: e.target.value })} className={inputCls} />
+              <input placeholder="https://… (or upload)" value={editing.hero_video_url} onChange={(e) => setEditing({ ...editing, hero_video_url: e.target.value })} className={inputCls} />
               <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
-                <Upload size={14} />{uploading === "hero" ? "…" : "Upload"}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], "hero")} />
+                <Upload size={14} />{uploading === "video" ? "Uploading…" : "Upload"}
+                <input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadVideo(e.target.files[0])} />
               </label>
             </div>
+            {editing.hero_video_url && (
+              <button type="button" onClick={() => setEditing({ ...editing, hero_video_url: "" })} className="mt-2 text-xs text-destructive">Remove video</button>
+            )}
           </Row>
+
 
           <Row label="Affiliate link"><input value={editing.affiliate_link} onChange={(e) => setEditing({ ...editing, affiliate_link: e.target.value })} className={inputCls} placeholder="https://…" /></Row>
 
