@@ -87,6 +87,7 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
       category: editing.category,
       cover_image: editing.cover_image.trim(),
       hero_image: editing.hero_image.trim() || null,
+      hero_video_url: editing.hero_video_url.trim() || null,
       duration: editing.duration.trim() || null,
       lessons_count: editing.lessons_count ? Number(editing.lessons_count) : 0,
       level: editing.level,
