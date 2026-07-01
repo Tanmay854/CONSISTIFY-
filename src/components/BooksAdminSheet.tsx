@@ -24,7 +24,7 @@ type Form = {
 
 const empty = (): Form => ({
   title: "", author: "", category: BOOK_CATEGORIES[0], description: "",
-  key_takeaways: "", why_read: "", cover_url: "", amazon_url: "",
+  key_takeaways: "", why_read: "", cover_url: "", cover_url_2: "", amazon_url: "",
   price: "", rating: "",
   is_featured: false, is_trending: false, is_best_seller: false, is_new_release: false,
 });
