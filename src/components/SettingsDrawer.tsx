@@ -103,7 +103,7 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
     <>
       <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={onClose}>
         <div
-          className="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-card border-l border-border animate-float-up overflow-y-auto"
+          className="absolute left-0 top-0 bottom-0 w-[85%] max-w-sm bg-card border-r border-border animate-float-up overflow-y-auto"
           style={{ animationDuration: "0.3s" }}
           onClick={(e) => e.stopPropagation()}
         >
