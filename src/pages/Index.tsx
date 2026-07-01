@@ -56,8 +56,12 @@ const AppContent = () => {
       {activeTab === "quotes" && <QuotesTab />}
       {activeTab === "upload" && <UploadTab />}
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} showUpload={canUpload} />
-      <SettingsDrawer open={showSettings} onClose={() => setShowSettings(false)} />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <SettingsDrawer
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        onOpenUpload={canUpload ? () => { setActiveTab("upload"); setShowSettings(false); } : undefined}
+      />
     </div>
   );
 };

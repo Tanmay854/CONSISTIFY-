@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
@@ -8,7 +8,7 @@ import ApplyUploaderSheet from "./ApplyUploaderSheet";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
-const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClose: () => void; onOpenUpload?: () => void }) => {
   const { user, isAdmin, canUpload, signOut, loading: authLoading } = useAuth();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);
@@ -175,6 +175,19 @@ const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void 
               <p className="text-muted-foreground text-[10px] mt-2 text-center">Saving...</p>
             )}
           </div>
+
+          {/* Upload content (uploaders / admins) */}
+          {user && canUpload && onOpenUpload && (
+            <div className="px-5 py-4 border-t border-border">
+              <button
+                onClick={onOpenUpload}
+                className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+              >
+                <Upload size={18} className="text-primary" />
+                <span className="text-foreground text-sm font-medium">Upload Content</span>
+              </button>
+            </div>
+          )}
 
           {/* Apply as uploader */}
           {user && !canUpload && (
