@@ -52,7 +52,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       id: b.id,
       title: b.title, author: b.author, category: b.category,
       description: b.description ?? "", key_takeaways: b.key_takeaways ?? "", why_read: b.why_read ?? "",
-      cover_url: b.cover_url, amazon_url: b.amazon_url,
+      cover_url: b.cover_url, cover_url_2: b.cover_url_2 ?? "", amazon_url: b.amazon_url,
       price: b.price?.toString() ?? "", rating: b.rating?.toString() ?? "",
       is_featured: b.is_featured, is_trending: b.is_trending,
       is_best_seller: b.is_best_seller, is_new_release: b.is_new_release,
