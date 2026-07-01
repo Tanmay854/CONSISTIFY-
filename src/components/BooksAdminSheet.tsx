@@ -98,7 +98,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     load();
   };
 
-  const uploadCover = async (file: File) => {
+  const uploadCover = async (file: File, slot: 1 | 2) => {
     setUploading(true);
     setError(null);
     const ext = file.name.split(".").pop() || "jpg";
@@ -106,7 +106,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     const { error } = await supabase.storage.from("quote-images").upload(path, file, { upsert: false });
     if (error) { setUploading(false); setError(error.message); return; }
     const { data } = supabase.storage.from("quote-images").getPublicUrl(path);
-    setEditing((f) => f ? { ...f, cover_url: data.publicUrl } : f);
+    setEditing((f) => f ? { ...f, [slot === 1 ? "cover_url" : "cover_url_2"]: data.publicUrl } : f);
     setUploading(false);
   };
 
