@@ -74,6 +74,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       key_takeaways: editing.key_takeaways.trim() || null,
       why_read: editing.why_read.trim() || null,
       cover_url: editing.cover_url.trim(),
+      cover_url_2: editing.cover_url_2.trim() || null,
       amazon_url: editing.amazon_url.trim(),
       price: editing.price ? Number(editing.price) : null,
       rating: editing.rating ? Number(editing.rating) : null,
