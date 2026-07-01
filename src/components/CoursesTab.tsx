@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { COURSE_CATEGORIES, type Course } from "@/lib/courseCategories";
 import { Search, Star, Clock, Play, X } from "lucide-react";
 import CourseDetailSheet from "./CourseDetailSheet";
+import HlsVideo from "./HlsVideo";
 
 const LEVEL_FILTERS = ["Beginner", "Intermediate", "Advanced"] as const;
 const PRICE_FILTERS = ["Free", "Paid"] as const;
