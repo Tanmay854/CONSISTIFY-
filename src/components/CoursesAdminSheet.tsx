@@ -160,6 +160,7 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
 
     // Direct TUS upload to Bunny.net — single streamed request at full
     // connection speed (no chunking = no per-chunk round-trip overhead)
+    const startTime = Date.now();
     const uploadErr = await new Promise<string | null>((resolve) => {
       const upload = new tus.Upload(file, {
         endpoint: ticket.tusEndpoint,
@@ -174,16 +175,21 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
         },
         metadata: { filetype: file.type, title },
         onError: (err) => resolve(err?.message || String(err)),
-        onProgress: (sent, total) => setVideoProgress(Math.round((sent / total) * 100)),
+        onProgress: (sent, total) => {
+          setVideoProgress(Math.round((sent / total) * 100));
+          const secs = (Date.now() - startTime) / 1000;
+          if (secs > 0.5) setVideoSpeed(`${(sent / 1024 / 1024 / secs).toFixed(1)} MB/s`);
+        },
         onSuccess: () => resolve(null),
       });
       upload.start();
     });
-    if (uploadErr) { setUploading(null); setVideoProgress(0); setError("Upload failed: " + uploadErr); return; }
+    if (uploadErr) { setUploading(null); setVideoProgress(0); setVideoSpeed(""); setError("Upload failed: " + uploadErr); return; }
 
     setEditing((f) => f ? { ...f, hero_video_url: ticket.playbackUrl } : f);
     setUploading(null);
     setVideoProgress(0);
+    setVideoSpeed("");
   };
 
 
