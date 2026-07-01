@@ -28,6 +28,7 @@ export type Book = {
   key_takeaways: string | null;
   why_read: string | null;
   cover_url: string;
+  cover_url_2: string | null;
   amazon_url: string;
   price: number | null;
   rating: number | null;

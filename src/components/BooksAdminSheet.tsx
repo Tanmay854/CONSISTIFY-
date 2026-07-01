@@ -12,6 +12,7 @@ type Form = {
   key_takeaways: string;
   why_read: string;
   cover_url: string;
+  cover_url_2: string;
   amazon_url: string;
   price: string;
   rating: string;
@@ -23,7 +24,7 @@ type Form = {
 
 const empty = (): Form => ({
   title: "", author: "", category: BOOK_CATEGORIES[0], description: "",
-  key_takeaways: "", why_read: "", cover_url: "", amazon_url: "",
+  key_takeaways: "", why_read: "", cover_url: "", cover_url_2: "", amazon_url: "",
   price: "", rating: "",
   is_featured: false, is_trending: false, is_best_seller: false, is_new_release: false,
 });
@@ -51,7 +52,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       id: b.id,
       title: b.title, author: b.author, category: b.category,
       description: b.description ?? "", key_takeaways: b.key_takeaways ?? "", why_read: b.why_read ?? "",
-      cover_url: b.cover_url, amazon_url: b.amazon_url,
+      cover_url: b.cover_url, cover_url_2: b.cover_url_2 ?? "", amazon_url: b.amazon_url,
       price: b.price?.toString() ?? "", rating: b.rating?.toString() ?? "",
       is_featured: b.is_featured, is_trending: b.is_trending,
       is_best_seller: b.is_best_seller, is_new_release: b.is_new_release,
@@ -73,6 +74,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       key_takeaways: editing.key_takeaways.trim() || null,
       why_read: editing.why_read.trim() || null,
       cover_url: editing.cover_url.trim(),
+      cover_url_2: editing.cover_url_2.trim() || null,
       amazon_url: editing.amazon_url.trim(),
       price: editing.price ? Number(editing.price) : null,
       rating: editing.rating ? Number(editing.rating) : null,
@@ -96,7 +98,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     load();
   };
 
-  const uploadCover = async (file: File) => {
+  const uploadCover = async (file: File, slot: 1 | 2) => {
     setUploading(true);
     setError(null);
     const ext = file.name.split(".").pop() || "jpg";
@@ -104,7 +106,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     const { error } = await supabase.storage.from("quote-images").upload(path, file, { upsert: false });
     if (error) { setUploading(false); setError(error.message); return; }
     const { data } = supabase.storage.from("quote-images").getPublicUrl(path);
-    setEditing((f) => f ? { ...f, cover_url: data.publicUrl } : f);
+    setEditing((f) => f ? { ...f, [slot === 1 ? "cover_url" : "cover_url_2"]: data.publicUrl } : f);
     setUploading(false);
   };
 
@@ -140,8 +142,24 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
               <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
                 <Upload size={14} />
                 {uploading ? "…" : "Upload"}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0], 1)} />
               </label>
+            </div>
+          </Row>
+          <Row label="Cover image 2 (optional)">
+            {editing.cover_url_2 && (
+              <img src={editing.cover_url_2} alt="" className="w-24 aspect-[2/3] object-cover rounded-lg mb-2" />
+            )}
+            <div className="flex gap-2">
+              <input placeholder="https://…" value={editing.cover_url_2} onChange={(e) => setEditing({ ...editing, cover_url_2: e.target.value })} className={inputCls} />
+              <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
+                <Upload size={14} />
+                {uploading ? "…" : "Upload"}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0], 2)} />
+              </label>
+              {editing.cover_url_2 && (
+                <button onClick={() => setEditing({ ...editing, cover_url_2: "" })} className="shrink-0 px-3 h-10 rounded-lg bg-secondary text-destructive text-sm">Remove</button>
+              )}
             </div>
           </Row>
           <Row label="Amazon URL"><input value={editing.amazon_url} onChange={(e) => setEditing({ ...editing, amazon_url: e.target.value })} className={inputCls} placeholder="https://amzn.to/…" /></Row>
