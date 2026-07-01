@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { COURSE_CATEGORIES, type Course } from "@/lib/courseCategories";
-import { Search, Star, Clock, Play, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Star, Clock, Play, X } from "lucide-react";
 import CourseDetailSheet from "./CourseDetailSheet";
 
 const LEVEL_FILTERS = ["Beginner", "Intermediate", "Advanced"] as const;
