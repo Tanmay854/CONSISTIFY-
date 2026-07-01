@@ -233,7 +233,7 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
             <div className="flex gap-2">
               <input placeholder="https://… (or upload)" value={editing.hero_video_url} onChange={(e) => setEditing({ ...editing, hero_video_url: e.target.value })} className={inputCls} />
               <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
-                <Upload size={14} />{uploading === "video" ? "Uploading…" : "Upload"}
+                <Upload size={14} />{uploading === "video" ? `Uploading ${videoProgress}%` : "Upload"}
                 <input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadVideo(e.target.files[0])} />
               </label>
             </div>
