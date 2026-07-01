@@ -36,11 +36,23 @@ const CourseDetailSheet = ({
     <div className="fixed inset-0 z-[70] bg-black text-white overflow-y-auto animate-fade-in">
       {/* Hero */}
       <div className="relative h-[62vh] w-full">
-        <img
-          src={course.hero_image || course.cover_image}
-          alt={course.title}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        {course.hero_video_url ? (
+          <video
+            src={course.hero_video_url}
+            poster={course.hero_image || course.cover_image}
+            controls
+            playsInline
+            autoPlay
+            muted
+            className="absolute inset-0 w-full h-full object-cover bg-black"
+          />
+        ) : (
+          <img
+            src={course.hero_image || course.cover_image}
+            alt={course.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
         <button
           onClick={onClose}
