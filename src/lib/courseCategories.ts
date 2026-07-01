@@ -23,6 +23,7 @@ export type Course = {
   category: string;
   cover_image: string;
   hero_image: string | null;
+  hero_video_url: string | null;
   duration: string | null;
   lessons_count: number | null;
   level: string | null;
