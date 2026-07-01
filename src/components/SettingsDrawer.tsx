@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, BookOpen } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, BookOpen, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
 import AdminPanel from "./AdminPanel";
 import ApplyUploaderSheet from "./ApplyUploaderSheet";
 import BooksAdminSheet from "./BooksAdminSheet";
+import CoursesAdminSheet from "./CoursesAdminSheet";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
@@ -15,6 +16,7 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
   const [showAuth, setShowAuth] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showBooksAdmin, setShowBooksAdmin] = useState(false);
+  const [showCoursesAdmin, setShowCoursesAdmin] = useState(false);
   const [showApply, setShowApply] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
@@ -221,6 +223,13 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
                 <BookOpen size={18} className="text-primary" />
                 <span className="text-foreground text-sm font-medium">Manage Books</span>
               </button>
+              <button
+                onClick={() => setShowCoursesAdmin(true)}
+                className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+              >
+                <GraduationCap size={18} className="text-primary" />
+                <span className="text-foreground text-sm font-medium">Manage Courses</span>
+              </button>
             </div>
           )}
 
@@ -285,6 +294,7 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
       <AuthSheet open={showAuth} onClose={() => { setShowAuth(false); fetchPreferences(); }} />
       <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
       <BooksAdminSheet open={showBooksAdmin} onClose={() => setShowBooksAdmin(false)} />
+      <CoursesAdminSheet open={showCoursesAdmin} onClose={() => setShowCoursesAdmin(false)} />
       <ApplyUploaderSheet open={showApply} onClose={() => setShowApply(false)} />
     </>
   );

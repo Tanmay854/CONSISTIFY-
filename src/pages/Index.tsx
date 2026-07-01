@@ -6,6 +6,7 @@ import MusicTab from "@/components/MusicTab";
 import QuotesTab from "@/components/QuotesTab";
 import UploadTab from "@/components/UploadTab";
 import BooksTab from "@/components/BooksTab";
+import CoursesTab from "@/components/CoursesTab";
 import SettingsDrawer from "@/components/SettingsDrawer";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { MoreVertical, Volume2, VolumeX } from "lucide-react";
@@ -59,12 +60,7 @@ const AppContent = () => {
       {activeTab === "quotes" && <QuotesTab />}
       {activeTab === "upload" && <UploadTab />}
       {activeTab === "books" && <BooksTab />}
-      {activeTab === "courses" && (
-        <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-center px-6">
-          <h2 className="text-foreground text-2xl font-extrabold tracking-wide uppercase">Courses</h2>
-          <p className="text-muted-foreground text-sm max-w-xs">Coming soon.</p>
-        </div>
-      )}
+      {activeTab === "courses" && <CoursesTab />}
 
       <BottomNav
         activeTab={(activeTab === "upload" ? "reels" : activeTab) as "reels" | "books" | "music" | "quotes" | "courses"}
