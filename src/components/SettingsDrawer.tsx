@@ -8,7 +8,7 @@ import ApplyUploaderSheet from "./ApplyUploaderSheet";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
-const SettingsDrawer = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClose: () => void; onOpenUpload?: () => void }) => {
   const { user, isAdmin, canUpload, signOut, loading: authLoading } = useAuth();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);
