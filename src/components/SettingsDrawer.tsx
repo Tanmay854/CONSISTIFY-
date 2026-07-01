@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
 import AdminPanel from "./AdminPanel";
 import ApplyUploaderSheet from "./ApplyUploaderSheet";
+import BooksAdminSheet from "./BooksAdminSheet";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
@@ -13,6 +14,7 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showBooksAdmin, setShowBooksAdmin] = useState(false);
   const [showApply, setShowApply] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
@@ -204,13 +206,20 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
 
           {/* Admin */}
           {user && isAdmin && (
-            <div className="px-5 py-4 border-t border-border">
+            <div className="px-5 py-4 border-t border-border space-y-2">
               <button
                 onClick={() => setShowAdmin(true)}
                 className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
               >
                 <Shield size={18} className="text-primary" />
                 <span className="text-foreground text-sm font-medium">Admin Panel</span>
+              </button>
+              <button
+                onClick={() => setShowBooksAdmin(true)}
+                className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+              >
+                <BookOpen size={18} className="text-primary" />
+                <span className="text-foreground text-sm font-medium">Manage Books</span>
               </button>
             </div>
           )}
@@ -275,6 +284,7 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
 
       <AuthSheet open={showAuth} onClose={() => { setShowAuth(false); fetchPreferences(); }} />
       <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
+      <BooksAdminSheet open={showBooksAdmin} onClose={() => setShowBooksAdmin(false)} />
       <ApplyUploaderSheet open={showApply} onClose={() => setShowApply(false)} />
     </>
   );
