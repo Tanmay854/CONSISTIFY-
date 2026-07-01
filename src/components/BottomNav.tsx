@@ -1,11 +1,10 @@
-import { House, Music2, Quote, Upload } from "lucide-react";
+import { House, Music2, Quote } from "lucide-react";
 
 type Tab = "reels" | "music" | "quotes" | "upload";
 
 const BottomNav = ({
   activeTab,
   onTabChange,
-  showUpload,
 }: {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
@@ -16,10 +15,6 @@ const BottomNav = ({
     { id: "music", label: "Music", icon: Music2 },
     { id: "quotes", label: "Quotes", icon: Quote },
   ];
-
-  if (showUpload) {
-    tabs.push({ id: "upload", label: "Upload", icon: Upload });
-  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#111111] border-t border-white/5 shadow-[0_-8px_24px_rgba(0,0,0,0.45)]">
