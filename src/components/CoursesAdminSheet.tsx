@@ -31,7 +31,7 @@ type Form = {
 const empty = (): Form => ({
   title: "", subtitle: "", description: "", instructor: "",
   category: COURSE_CATEGORIES[0],
-  cover_image: "", hero_image: "",
+  cover_image: "", hero_image: "", hero_video_url: "",
   duration: "", lessons_count: "", level: COURSE_LEVELS[0],
   rating: "", affiliate_link: "",
   what_youll_learn: "", curriculum: "", requirements: "",
