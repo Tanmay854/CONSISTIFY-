@@ -46,6 +46,7 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
   const [uploading, setUploading] = useState<null | "cover" | "video">(null);
   const [error, setError] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState<number>(0);
+  const [videoSpeed, setVideoSpeed] = useState<string>("");
 
   const load = async () => {
     const { data } = await supabase.from("courses" as never).select("*").order("created_at", { ascending: false });
@@ -159,6 +160,7 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
 
     // Direct TUS upload to Bunny.net — single streamed request at full
     // connection speed (no chunking = no per-chunk round-trip overhead)
+    const startTime = Date.now();
     const uploadErr = await new Promise<string | null>((resolve) => {
       const upload = new tus.Upload(file, {
         endpoint: ticket.tusEndpoint,
@@ -173,16 +175,21 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
         },
         metadata: { filetype: file.type, title },
         onError: (err) => resolve(err?.message || String(err)),
-        onProgress: (sent, total) => setVideoProgress(Math.round((sent / total) * 100)),
+        onProgress: (sent, total) => {
+          setVideoProgress(Math.round((sent / total) * 100));
+          const secs = (Date.now() - startTime) / 1000;
+          if (secs > 0.5) setVideoSpeed(`${(sent / 1024 / 1024 / secs).toFixed(1)} MB/s`);
+        },
         onSuccess: () => resolve(null),
       });
       upload.start();
     });
-    if (uploadErr) { setUploading(null); setVideoProgress(0); setError("Upload failed: " + uploadErr); return; }
+    if (uploadErr) { setUploading(null); setVideoProgress(0); setVideoSpeed(""); setError("Upload failed: " + uploadErr); return; }
 
     setEditing((f) => f ? { ...f, hero_video_url: ticket.playbackUrl } : f);
     setUploading(null);
     setVideoProgress(0);
+    setVideoSpeed("");
   };
 
 
@@ -232,7 +239,7 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
             <div className="flex gap-2">
               <input placeholder="https://… (or upload)" value={editing.hero_video_url} onChange={(e) => setEditing({ ...editing, hero_video_url: e.target.value })} className={inputCls} />
               <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
-                <Upload size={14} />{uploading === "video" ? `Uploading ${videoProgress}%` : "Upload"}
+                <Upload size={14} />{uploading === "video" ? `${videoProgress}%${videoSpeed ? ` · ${videoSpeed}` : ""}` : "Upload"}
                 <input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadVideo(e.target.files[0])} />
               </label>
             </div>
