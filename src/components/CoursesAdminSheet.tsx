@@ -12,6 +12,7 @@ type Form = {
   category: string;
   cover_image: string;
   hero_image: string;
+  hero_video_url: string;
   duration: string;
   lessons_count: string;
   level: string;
