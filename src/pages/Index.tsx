@@ -58,7 +58,10 @@ const AppContent = () => {
       {activeTab === "quotes" && <QuotesTab />}
       {activeTab === "upload" && <UploadTab />}
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav
+        activeTab={(activeTab === "upload" ? "reels" : activeTab) as "reels" | "books" | "music" | "quotes" | "courses"}
+        onTabChange={(t) => setActiveTab(t)}
+      />
       <SettingsDrawer
         open={showSettings}
         onClose={() => setShowSettings(false)}
