@@ -162,3 +162,7 @@ video::-internal-media-controls-overlay-cast-button {
 video {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Hide horizontal scrollbar utility used in Courses rows */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
