@@ -155,6 +155,7 @@ export type Database = {
           duration: string | null
           featured: boolean
           hero_image: string | null
+          hero_video_url: string | null
           id: string
           instructor: string
           is_best_seller: boolean
@@ -181,6 +182,7 @@ export type Database = {
           duration?: string | null
           featured?: boolean
           hero_image?: string | null
+          hero_video_url?: string | null
           id?: string
           instructor?: string
           is_best_seller?: boolean
@@ -207,6 +209,7 @@ export type Database = {
           duration?: string | null
           featured?: boolean
           hero_image?: string | null
+          hero_video_url?: string | null
           id?: string
           instructor?: string
           is_best_seller?: boolean
