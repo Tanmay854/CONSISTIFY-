@@ -133,7 +133,7 @@ const CoursesTab = () => {
       {hero && (
         <div className="relative h-[68vh] w-full overflow-hidden">
           {hero.hero_video_url ? (
-            <video
+            <HlsVideo
               key={hero.id}
               src={hero.hero_video_url}
               poster={hero.hero_image || hero.cover_image}
