@@ -162,10 +162,7 @@ const UploadTab = () => {
         const uploadErr = await new Promise<string | null>((resolve) => {
           const upload = new tus.Upload(videoFile, {
             endpoint: ticket.tusEndpoint,
-            retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
-            // Small chunks + no resume storage so mobile WebViews don't OOM
-            chunkSize: 2 * 1024 * 1024,
-            parallelUploads: 1,
+            retryDelays: [0, 2000, 5000, 10000],
             storeFingerprintForResuming: false,
             removeFingerprintOnSuccess: true,
             headers: {

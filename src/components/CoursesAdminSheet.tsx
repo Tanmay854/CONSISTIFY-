@@ -157,13 +157,12 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
       return;
     }
 
-    // Direct TUS upload to Bunny.net — fast, resumable, no Edge Function time limit
+    // Direct TUS upload to Bunny.net — single streamed request at full
+    // connection speed (no chunking = no per-chunk round-trip overhead)
     const uploadErr = await new Promise<string | null>((resolve) => {
       const upload = new tus.Upload(file, {
         endpoint: ticket.tusEndpoint,
-        retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
-        chunkSize: 2 * 1024 * 1024,
-        parallelUploads: 1,
+        retryDelays: [0, 2000, 5000, 10000],
         storeFingerprintForResuming: false,
         removeFingerprintOnSuccess: true,
         headers: {
