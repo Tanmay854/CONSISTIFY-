@@ -38,14 +38,14 @@ const UploadTab = () => {
   // (Music uploads removed — Music tab is now powered by Spotify.)
 
 
-  // Photo fields
+  // Photo fields (supports up to 20 in a set)
   const [photoTitle, setPhotoTitle] = useState("");
   const [photoDescription, setPhotoDescription] = useState("");
   const [photoCategory, setPhotoCategory] = useState("Motivation");
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoAspect, setPhotoAspect] = useState<PhotoAspect>("original");
-  const photoPreviewUrl = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile]);
-  useEffect(() => () => { if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl); }, [photoPreviewUrl]);
+  const photoPreviewUrls = useMemo(() => photoFiles.map((f) => URL.createObjectURL(f)), [photoFiles]);
+  useEffect(() => () => { photoPreviewUrls.forEach((u) => URL.revokeObjectURL(u)); }, [photoPreviewUrls]);
   const aspectClass: Record<PhotoAspect, string> = {
     original: "aspect-[3/4]",
     "9:16": "aspect-[9/16]",
