@@ -32,8 +32,8 @@ const BottomNav = ({
       }}
     >
       <div
-        className="flex items-end justify-around gap-2 px-3 pt-3 pb-2 max-w-lg mx-auto"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)" }}
+        className="flex items-end justify-around gap-2 px-3 pt-1.5 pb-1 max-w-lg mx-auto"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 4px)" }}
       >
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -42,11 +42,11 @@ const BottomNav = ({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className="relative flex flex-1 min-w-0 flex-col items-center gap-1.5 transition-transform duration-200"
+              className="relative flex flex-1 min-w-0 flex-col items-center gap-1 transition-transform duration-200"
               aria-label={tab.label}
             >
               <div
-                className="flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200"
+                className="flex items-center justify-center w-9 h-9 rounded-2xl transition-all duration-200"
                 style={
                   isActive
                     ? {

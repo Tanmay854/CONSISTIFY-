@@ -95,7 +95,7 @@ const SetPage = ({ set, onReport }: { set: PhotoSet; onReport: (q: QuoteRow) => 
 
       <button
         onClick={() => onReport(currentPhoto)}
-        className="absolute bottom-[72px] right-4 z-30 bg-secondary/80 rounded-full p-2 text-foreground/80 hover:text-foreground"
+        className="absolute bottom-20 right-4 z-30 bg-secondary/80 rounded-full p-2 text-foreground/80 hover:text-foreground"
         aria-label="Report"
       >
         <CircleAlert size={14} />
