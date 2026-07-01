@@ -5,6 +5,7 @@ import ReelsTab from "@/components/ReelsTab";
 import MusicTab from "@/components/MusicTab";
 import QuotesTab from "@/components/QuotesTab";
 import UploadTab from "@/components/UploadTab";
+import BooksTab from "@/components/BooksTab";
 import SettingsDrawer from "@/components/SettingsDrawer";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { MoreVertical, Volume2, VolumeX } from "lucide-react";
@@ -57,11 +58,10 @@ const AppContent = () => {
       {activeTab === "music" && <MusicTab />}
       {activeTab === "quotes" && <QuotesTab />}
       {activeTab === "upload" && <UploadTab />}
-      {(activeTab === "books" || activeTab === "courses") && (
+      {activeTab === "books" && <BooksTab />}
+      {activeTab === "courses" && (
         <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-center px-6">
-          <h2 className="text-foreground text-2xl font-extrabold tracking-wide uppercase">
-            {activeTab === "books" ? "Books" : "Courses"}
-          </h2>
+          <h2 className="text-foreground text-2xl font-extrabold tracking-wide uppercase">Courses</h2>
           <p className="text-muted-foreground text-sm max-w-xs">Coming soon.</p>
         </div>
       )}
