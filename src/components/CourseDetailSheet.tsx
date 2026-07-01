@@ -38,7 +38,7 @@ const CourseDetailSheet = ({
       {/* Hero */}
       <div className="relative h-[62vh] w-full">
         {course.hero_video_url ? (
-          <video
+          <HlsVideo
             src={course.hero_video_url}
             poster={course.hero_image || course.cover_image}
             controls
