@@ -45,7 +45,7 @@ const AppContent = () => {
         <button
           onClick={() => setMuted((m) => !m)}
           aria-label={muted ? "Unmute video" : "Mute video"}
-          className="fixed top-16 left-4 z-30 w-9 h-9 rounded-full bg-secondary/80 flex items-center justify-center"
+          className="fixed bottom-20 left-4 z-30 w-9 h-9 rounded-full bg-secondary/80 flex items-center justify-center"
         >
           {muted ? <VolumeX size={18} className="text-foreground" /> : <Volume2 size={18} className="text-foreground" />}
         </button>
