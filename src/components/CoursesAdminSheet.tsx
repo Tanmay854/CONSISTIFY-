@@ -117,17 +117,43 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
     load();
   };
 
-  const uploadImage = async (file: File, slot: "cover" | "hero") => {
-    setUploading(slot);
+  const uploadImage = async (file: File) => {
+    setUploading("cover");
     setError(null);
     const ext = file.name.split(".").pop() || "jpg";
     const path = `courses/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { error } = await supabase.storage.from("quote-images").upload(path, file, { upsert: false });
     if (error) { setUploading(null); setError(error.message); return; }
     const { data } = supabase.storage.from("quote-images").getPublicUrl(path);
-    setEditing((f) => f ? { ...f, [slot === "cover" ? "cover_image" : "hero_image"]: data.publicUrl } : f);
+    setEditing((f) => f ? { ...f, cover_image: data.publicUrl } : f);
     setUploading(null);
   };
+
+  const uploadVideo = async (file: File) => {
+    setError(null);
+    // Validate duration ≤ 6 minutes client-side
+    const duration = await new Promise<number>((resolve) => {
+      const url = URL.createObjectURL(file);
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(v.duration || 0); };
+      v.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
+      v.src = url;
+    });
+    if (duration > 361) { setError("Video must be 6 minutes or less."); return; }
+    if (file.size > 500 * 1024 * 1024) { setError("Video must be under 500MB."); return; }
+    setUploading("video");
+    setVideoProgress(0);
+    const ext = file.name.split(".").pop() || "mp4";
+    const path = `courses/promo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("videos").upload(path, file, { upsert: false, contentType: file.type || "video/mp4" });
+    if (error) { setUploading(null); setError(error.message); return; }
+    const { data } = supabase.storage.from("videos").getPublicUrl(path);
+    setEditing((f) => f ? { ...f, hero_video_url: data.publicUrl } : f);
+    setUploading(null);
+    setVideoProgress(0);
+  };
+
 
   return (
     <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
