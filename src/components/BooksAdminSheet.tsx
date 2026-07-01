@@ -12,6 +12,7 @@ type Form = {
   key_takeaways: string;
   why_read: string;
   cover_url: string;
+  cover_url_2: string;
   amazon_url: string;
   price: string;
   rating: string;
