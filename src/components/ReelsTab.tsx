@@ -533,7 +533,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       {!reel.id.startsWith("d") && (
         <button
           onClick={(e) => { e.stopPropagation(); onReport(reel); }}
-          className="absolute bottom-[72px] right-4 z-30 bg-secondary/80 rounded-full p-2 text-foreground/80 hover:text-foreground"
+          className="absolute bottom-20 right-4 z-30 bg-secondary/80 rounded-full p-2 text-foreground/80 hover:text-foreground"
           aria-label="Report"
         >
           <CircleAlert size={14} />
