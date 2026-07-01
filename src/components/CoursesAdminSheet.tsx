@@ -46,6 +46,7 @@ const CoursesAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => vo
   const [uploading, setUploading] = useState<null | "cover" | "video">(null);
   const [error, setError] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState<number>(0);
+  const [videoSpeed, setVideoSpeed] = useState<string>("");
 
   const load = async () => {
     const { data } = await supabase.from("courses" as never).select("*").order("created_at", { ascending: false });
