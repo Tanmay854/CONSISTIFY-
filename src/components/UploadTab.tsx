@@ -38,14 +38,14 @@ const UploadTab = () => {
   // (Music uploads removed — Music tab is now powered by Spotify.)
 
 
-  // Photo fields
+  // Photo fields (supports up to 20 in a set)
   const [photoTitle, setPhotoTitle] = useState("");
   const [photoDescription, setPhotoDescription] = useState("");
   const [photoCategory, setPhotoCategory] = useState("Motivation");
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoAspect, setPhotoAspect] = useState<PhotoAspect>("original");
-  const photoPreviewUrl = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile]);
-  useEffect(() => () => { if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl); }, [photoPreviewUrl]);
+  const photoPreviewUrls = useMemo(() => photoFiles.map((f) => URL.createObjectURL(f)), [photoFiles]);
+  useEffect(() => () => { photoPreviewUrls.forEach((u) => URL.revokeObjectURL(u)); }, [photoPreviewUrls]);
   const aspectClass: Record<PhotoAspect, string> = {
     original: "aspect-[3/4]",
     "9:16": "aspect-[9/16]",
@@ -81,7 +81,7 @@ const UploadTab = () => {
 
   const resetFields = () => {
     setVideoTitle(""); setVideoDescription(""); setVideoFile(null);
-    setPhotoTitle(""); setPhotoDescription(""); setPhotoFile(null);
+    setPhotoTitle(""); setPhotoDescription(""); setPhotoFiles([]);
     setAdTitle(""); setAdLink(""); setAdUrl(""); setAdFile(null);
   };
 
@@ -189,26 +189,31 @@ const UploadTab = () => {
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
 
       } else if (activeType === "photo") {
-        if (!photoFile) { setError("Select an image"); setLoading(false); return; }
-        let fileToUpload = photoFile;
-        try {
-          fileToUpload = await cropImageToAspect(photoFile, photoAspect);
-        } catch {
-          // fall back to original on crop failure
-          fileToUpload = photoFile;
+        if (photoFiles.length === 0) { setError("Select at least one image"); setLoading(false); return; }
+        if (photoFiles.length > 20) { setError("Maximum 20 photos per set"); setLoading(false); return; }
+        const setId = photoFiles.length > 1 ? crypto.randomUUID() : null;
+        const rows: Array<{ title: string | null; description: string | null; category: string; image_url: string; bunny_storage_path: string | null; is_pro: boolean; uploaded_by: string | undefined; set_id: string | null; set_position: number }> = [];
+        for (let i = 0; i < photoFiles.length; i++) {
+          let fileToUpload = photoFiles[i];
+          try {
+            fileToUpload = await cropImageToAspect(photoFiles[i], photoAspect);
+          } catch { /* keep original */ }
+          const uploaded = await uploadToBunny(fileToUpload, "image");
+          if (!uploaded) { setLoading(false); return; }
+          rows.push({
+            title: photoTitle.trim() || null,
+            description: photoDescription.trim() || null,
+            category: photoCategory.toUpperCase(),
+            image_url: uploaded.url,
+            bunny_storage_path: uploaded.path,
+            is_pro: false,
+            uploaded_by: user?.id,
+            set_id: setId,
+            set_position: i,
+          });
+          setUploadProgress(Math.round(((i + 1) / photoFiles.length) * 100));
         }
-        const uploaded = await uploadToBunny(fileToUpload, "image");
-        if (!uploaded) { setLoading(false); return; }
-        const { error: insertErr } = await supabase.from("quotes").insert({
-          title: photoTitle.trim() || null,
-          description: photoDescription.trim() || null,
-          category: photoCategory.toUpperCase(),
-          image_url: uploaded.url,
-          bunny_storage_path: uploaded.path,
-          is_pro: false,
-          uploaded_by: user?.id,
-        });
-
+        const { error: insertErr } = await supabase.from("quotes").insert(rows);
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
       } else if (activeType === "ad") {
         if (!adTitle.trim()) { setError("Ad title required"); setLoading(false); return; }
@@ -441,16 +446,23 @@ const UploadTab = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Image</label>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Images (up to 20 — swipe carousel)</label>
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []).slice(0, 20);
+                      setPhotoFiles(files);
+                    }}
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
                   />
+                  {photoFiles.length > 0 && (
+                    <p className="text-muted-foreground text-[10px] mt-1">{photoFiles.length} photo{photoFiles.length > 1 ? "s" : ""} selected{photoFiles.length > 1 ? " (will be shown as a swipeable set)" : ""}</p>
+                  )}
                 </div>
 
-                {photoFile && (
+                {photoFiles.length > 0 && (
                   <div>
                     <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Aspect ratio</label>
                     <div className="grid grid-cols-4 gap-2 mb-2">
@@ -473,17 +485,14 @@ const UploadTab = () => {
                         );
                       })}
                     </div>
-                    {photoPreviewUrl && (
-                      <div className={`relative w-full ${aspectClass[photoAspect]} max-h-72 bg-black rounded-xl overflow-hidden mx-auto`}>
-                        <img
-                          src={photoPreviewUrl}
-                          alt="preview"
-                          className="absolute inset-0 w-full h-full"
-                          style={{ objectFit: photoAspect === "original" ? "contain" : "cover" }}
-                        />
-                      </div>
-                    )}
-                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">The image is center-cropped to this ratio before upload.</p>
+                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                      {photoPreviewUrls.map((u, i) => (
+                        <div key={i} className={`relative shrink-0 w-24 ${aspectClass[photoAspect]} bg-black rounded-lg overflow-hidden`}>
+                          <img src={u} alt={`preview ${i + 1}`} className="absolute inset-0 w-full h-full" style={{ objectFit: photoAspect === "original" ? "contain" : "cover" }} />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">Each image is center-cropped to this ratio before upload.</p>
                   </div>
                 )}
               </>

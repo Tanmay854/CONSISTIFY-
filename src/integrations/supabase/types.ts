@@ -162,6 +162,8 @@ export type Database = {
           image_url: string
           is_pro: boolean
           public_id: string
+          set_id: string | null
+          set_position: number
           title: string | null
           uploaded_by: string | null
         }
@@ -174,6 +176,8 @@ export type Database = {
           image_url: string
           is_pro?: boolean
           public_id?: string
+          set_id?: string | null
+          set_position?: number
           title?: string | null
           uploaded_by?: string | null
         }
@@ -186,6 +190,8 @@ export type Database = {
           image_url?: string
           is_pro?: boolean
           public_id?: string
+          set_id?: string | null
+          set_position?: number
           title?: string | null
           uploaded_by?: string | null
         }
