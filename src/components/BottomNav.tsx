@@ -1,4 +1,4 @@
-import { House, Music, Quote, Upload } from "lucide-react";
+import { House, Music2, Quote, Upload } from "lucide-react";
 
 type Tab = "reels" | "music" | "quotes" | "upload";
 
@@ -13,7 +13,7 @@ const BottomNav = ({
 }) => {
   const tabs: { id: Tab; label: string; icon: typeof House }[] = [
     { id: "reels", label: "Home", icon: House },
-    { id: "music", label: "Music", icon: Music },
+    { id: "music", label: "Music", icon: Music2 },
     { id: "quotes", label: "Quotes", icon: Quote },
   ];
 
@@ -37,8 +37,8 @@ const BottomNav = ({
               <Icon
                 size={24}
                 className={isActive ? "text-white" : "text-white/45"}
-                strokeWidth={isActive ? 2.6 : 2.2}
-                fill={isActive ? "currentColor" : "none"}
+                strokeWidth={tab.id === "reels" ? (isActive ? 2.6 : 2.2) : 1.5}
+                fill={tab.id === "reels" ? (isActive ? "currentColor" : "none") : "currentColor"}
               />
               <span
                 className={`text-[10px] font-bold uppercase tracking-wide leading-none ${
