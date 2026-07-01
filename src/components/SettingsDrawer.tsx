@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
