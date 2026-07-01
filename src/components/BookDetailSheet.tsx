@@ -75,6 +75,11 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
           <div className="w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]">
             <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
           </div>
+          {book.cover_url_2 && (
+            <div className="w-40 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)] -mt-2">
+              <img src={book.cover_url_2} alt={`${book.title} alternate cover`} className="w-full h-full object-cover" loading="lazy" />
+            </div>
+          )}
           <div className="text-center max-w-sm">
             <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold mb-2">{book.category}</p>
             <h1 className="text-foreground text-2xl font-extrabold leading-tight">{book.title}</h1>
