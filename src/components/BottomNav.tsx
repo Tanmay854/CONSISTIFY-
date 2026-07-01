@@ -37,8 +37,8 @@ const BottomNav = ({
               <Icon
                 size={24}
                 className={isActive ? "text-white" : "text-white/45"}
-                strokeWidth={isActive ? 2.6 : 2.2}
-                fill={isActive ? "currentColor" : "none"}
+                strokeWidth={tab.id === "reels" ? (isActive ? 2.6 : 2.2) : 1.5}
+                fill={tab.id === "reels" ? (isActive ? "currentColor" : "none") : "currentColor"}
               />
               <span
                 className={`text-[10px] font-bold uppercase tracking-wide leading-none ${
