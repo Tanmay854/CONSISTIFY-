@@ -60,9 +60,7 @@ const AddReelDialog = ({ open, onClose, onAdded }: { open: boolean; onClose: () 
     await new Promise<void>((resolve, reject) => {
       const upload = new tus.Upload(file, {
         endpoint: data.tusEndpoint,
-        retryDelays: [0, 3000, 5000, 10000, 20000, 60000],
-        chunkSize: 2 * 1024 * 1024,
-        parallelUploads: 1,
+        retryDelays: [0, 2000, 5000, 10000],
         storeFingerprintForResuming: false,
         removeFingerprintOnSuccess: true,
         headers: {
