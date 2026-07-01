@@ -142,8 +142,24 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
               <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
                 <Upload size={14} />
                 {uploading ? "…" : "Upload"}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0], 1)} />
               </label>
+            </div>
+          </Row>
+          <Row label="Cover image 2 (optional)">
+            {editing.cover_url_2 && (
+              <img src={editing.cover_url_2} alt="" className="w-24 aspect-[2/3] object-cover rounded-lg mb-2" />
+            )}
+            <div className="flex gap-2">
+              <input placeholder="https://…" value={editing.cover_url_2} onChange={(e) => setEditing({ ...editing, cover_url_2: e.target.value })} className={inputCls} />
+              <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
+                <Upload size={14} />
+                {uploading ? "…" : "Upload"}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0], 2)} />
+              </label>
+              {editing.cover_url_2 && (
+                <button onClick={() => setEditing({ ...editing, cover_url_2: "" })} className="shrink-0 px-3 h-10 rounded-lg bg-secondary text-destructive text-sm">Remove</button>
+              )}
             </div>
           </Row>
           <Row label="Amazon URL"><input value={editing.amazon_url} onChange={(e) => setEditing({ ...editing, amazon_url: e.target.value })} className={inputCls} placeholder="https://amzn.to/…" /></Row>
