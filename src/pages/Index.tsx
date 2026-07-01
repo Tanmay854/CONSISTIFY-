@@ -9,13 +9,15 @@ import SettingsDrawer from "@/components/SettingsDrawer";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { MoreVertical, Volume2, VolumeX } from "lucide-react";
 
-type Tab = "reels" | "music" | "quotes" | "upload";
+type Tab = "reels" | "books" | "music" | "quotes" | "courses" | "upload";
 
 const AppContent = () => {
   const { canUpload } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tab = new URLSearchParams(window.location.search).get("tab");
-    return tab === "music" || tab === "quotes" || tab === "upload" ? tab : "reels";
+    return tab === "music" || tab === "quotes" || tab === "upload" || tab === "books" || tab === "courses"
+      ? (tab as Tab)
+      : "reels";
   });
   const [showSettings, setShowSettings] = useState(false);
   const [muted, setMuted] = useState<boolean>(() => {
@@ -55,8 +57,19 @@ const AppContent = () => {
       {activeTab === "music" && <MusicTab />}
       {activeTab === "quotes" && <QuotesTab />}
       {activeTab === "upload" && <UploadTab />}
+      {(activeTab === "books" || activeTab === "courses") && (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-center px-6">
+          <h2 className="text-foreground text-2xl font-extrabold tracking-wide uppercase">
+            {activeTab === "books" ? "Books" : "Courses"}
+          </h2>
+          <p className="text-muted-foreground text-sm max-w-xs">Coming soon.</p>
+        </div>
+      )}
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav
+        activeTab={(activeTab === "upload" ? "reels" : activeTab) as "reels" | "books" | "music" | "quotes" | "courses"}
+        onTabChange={(t) => setActiveTab(t)}
+      />
       <SettingsDrawer
         open={showSettings}
         onClose={() => setShowSettings(false)}
