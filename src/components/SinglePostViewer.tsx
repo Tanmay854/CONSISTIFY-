@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { X, Volume2, VolumeX, CircleAlert } from "lucide-react";
 import HlsVideo from "@/components/HlsVideo";
+import ReportDialog from "@/components/ReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 type ReelPost = {
