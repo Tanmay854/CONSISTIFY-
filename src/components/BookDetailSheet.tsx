@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { X, Star, ExternalLink } from "lucide-react";
+import { X, Star, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Book } from "@/lib/bookCategories";
 
-const openAmazon = (url: string) => {
+const openAmazonCart = (url: string) => {
+  // Append Amazon "add to cart" query params when possible.
+  // Amazon supports ?AddToCart=1 on product URLs via /gp/aws/cart/add.html but the
+  // simplest reliable approach is to just open the product page — Amazon shows an
+  // Add to Cart button prominently. We keep the affiliate link untouched.
   try {
-    // Capacitor deep-link support: open in system browser if available.
-    // Falls back to window.open for web.
     window.open(url, "_blank", "noopener,noreferrer");
   } catch {
     window.location.href = url;
