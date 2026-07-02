@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { CSSProperties } from "react";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, User as UserIcon } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
+import UploaderProfileSheet from "@/components/UploaderProfileSheet";
+import { fetchProfiles, getCachedProfile, type UploaderProfile } from "@/lib/uploaderProfiles";
 
 interface QuoteRow {
   id: string;
@@ -15,6 +17,7 @@ interface QuoteRow {
   description: string | null;
   set_id: string | null;
   set_position: number;
+  uploaded_by: string | null;
 }
 
 interface PhotoSet {
