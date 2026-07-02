@@ -162,7 +162,7 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
         <ReportDialog
           open={showReport}
           onClose={() => setShowReport(false)}
-          contentType={post.kind === "reel" ? "reel" : "quote"}
+          contentType={post.kind === "reel" ? "video" : "photo"}
           contentId={post.id}
           contentTitle={post.title || "Untitled"}
         />
