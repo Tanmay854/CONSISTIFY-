@@ -71,20 +71,21 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
       <button
         onClick={onClose}
         aria-label="Close"
-        className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
+        className="absolute top-4 left-4 z-20 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
       >
         <X size={20} className="text-white" />
       </button>
 
       {post.kind === "reel" ? (
         <HlsVideo
+          ref={videoRef}
           src={getPlayableVideoUrl(post.video_url)}
           className="w-full h-full"
           style={{ objectFit: (post.video_fit as React.CSSProperties["objectFit"]) || "cover" }}
           autoPlay
           loop
           playsInline
-          controls
+          muted={muted}
         />
       ) : (
         <div className="relative w-full h-full flex items-center justify-center">
@@ -122,8 +123,28 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
         </div>
       )}
 
+      {/* Report (top of stack) */}
+      <button
+        onClick={() => setShowReport(true)}
+        aria-label="Report"
+        className="absolute bottom-20 right-4 z-30 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white/80"
+      >
+        <CircleAlert size={13} />
+      </button>
+
+      {/* Mute (only for videos) */}
+      {post.kind === "reel" && (
+        <button
+          onClick={() => setMuted((m) => !m)}
+          aria-label={muted ? "Unmute" : "Mute"}
+          className="absolute bottom-10 right-4 z-30 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center"
+        >
+          {muted ? <VolumeX size={13} className="text-white" /> : <Volume2 size={13} className="text-white" />}
+        </button>
+      )}
+
       {(post.title || post.description) && (
-        <div className="absolute bottom-6 left-4 right-4 z-10 pointer-events-none">
+        <div className="absolute bottom-6 left-4 right-16 z-10 pointer-events-none">
           {post.title && (
             <p className="text-white text-sm font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
               {post.title}
@@ -135,6 +156,16 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
             </p>
           )}
         </div>
+      )}
+
+      {showReport && (
+        <ReportDialog
+          open={showReport}
+          onClose={() => setShowReport(false)}
+          contentType={post.kind === "reel" ? "reel" : "quote"}
+          contentId={post.id}
+          contentTitle={post.title || "Untitled"}
+        />
       )}
     </div>
   );
