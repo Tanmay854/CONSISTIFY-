@@ -247,9 +247,19 @@ const QuotesTab = () => {
   return (
     <>
       <div className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background overscroll-contain" style={snapStyle}>
-        {sets.map((s) => (
-          <SetPage key={s.key} set={s} onReport={setReportTarget} />
-        ))}
+        {sets.map((s) => {
+          const uid = s.items[0]?.uploaded_by;
+          void profilesVersion;
+          return (
+            <SetPage
+              key={s.key}
+              set={s}
+              onReport={setReportTarget}
+              uploaderProfile={uid ? getCachedProfile(uid) ?? null : null}
+              onOpenProfile={setOpenProfileId}
+            />
+          );
+        })}
         {hasMore && <div ref={sentinelRef} className="h-1" />}
       </div>
       {reportTarget && (
@@ -260,6 +270,9 @@ const QuotesTab = () => {
           contentId={reportTarget.id}
           contentTitle={reportTarget.title || "Untitled"}
         />
+      )}
+      {openProfileId && (
+        <UploaderProfileSheet userId={openProfileId} onClose={() => setOpenProfileId(null)} />
       )}
     </>
   );
