@@ -27,6 +27,66 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwInfo, setPwInfo] = useState<string | null>(null);
 
+  // Profile editor state (username / avatar / bio for uploaders + admins)
+  const [profile, setProfile] = useState<UploaderProfile | null>(null);
+  const [pfUsername, setPfUsername] = useState("");
+  const [pfBio, setPfBio] = useState("");
+  const [pfSaving, setPfSaving] = useState(false);
+  const [pfMsg, setPfMsg] = useState<string | null>(null);
+  const [pfErr, setPfErr] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!user || !canUpload) { setProfile(null); return; }
+    fetchProfile(user.id).then((p) => {
+      if (p) {
+        setProfile(p);
+        setPfUsername(p.username || "");
+        setPfBio(p.bio || "");
+      }
+    });
+  }, [user, canUpload]);
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!user) return;
+    setPfErr(null); setPfMsg(null); setPfSaving(true);
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `avatars/${user.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("quote-images").upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("quote-images").getPublicUrl(path);
+      const avatar_url = pub.publicUrl;
+      const { error: dbErr } = await supabase.from("profiles").update({ avatar_url }).eq("user_id", user.id);
+      if (dbErr) throw dbErr;
+      const next = { ...(profile || { user_id: user.id, username: pfUsername, display_name: null, bio: pfBio }), avatar_url } as UploaderProfile;
+      setProfile(next); updateProfileCache(next);
+      setPfMsg("Photo updated.");
+    } catch (e) {
+      setPfErr(e instanceof Error ? e.message : "Failed to upload");
+    } finally { setPfSaving(false); }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    const clean = pfUsername.trim().replace(/[^a-zA-Z0-9_.]/g, "").slice(0, 24);
+    if (clean.length < 2) { setPfErr("Username must be at least 2 characters (letters, digits, _ or .)"); return; }
+    setPfErr(null); setPfMsg(null); setPfSaving(true);
+    const { error } = await supabase.from("profiles")
+      .update({ username: clean, bio: pfBio.trim() || null })
+      .eq("user_id", user.id);
+    setPfSaving(false);
+    if (error) {
+      setPfErr(error.message.includes("profiles_username_unique") ? "That username is taken." : error.message);
+      return;
+    }
+    setPfUsername(clean);
+    const next = { ...(profile || { user_id: user.id, display_name: null, avatar_url: null }), username: clean, bio: pfBio.trim() || null } as UploaderProfile;
+    setProfile(next); updateProfileCache(next);
+    setPfMsg("Profile saved.");
+    setTimeout(() => setPfMsg(null), 1800);
+  };
+
   const handleChangePassword = async () => {
     setPwError(null); setPwInfo(null);
     if (newPw.length < 6) { setPwError("Password must be at least 6 characters."); return; }
