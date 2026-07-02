@@ -70,7 +70,6 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
 
       {post.kind === "reel" ? (
         <HlsVideo
-          ref={videoRef as never}
           src={getPlayableVideoUrl(post.video_url)}
           className="w-full h-full"
           style={{ objectFit: (post.video_fit as React.CSSProperties["objectFit"]) || "cover" }}
