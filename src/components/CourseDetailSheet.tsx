@@ -33,56 +33,90 @@ const CourseDetailSheet = ({
   const curr = bullets(course.curriculum);
   const reqs = bullets(course.requirements);
 
+  const hasVideo = !!course.hero_video_url;
+
   return (
     <div className="fixed inset-0 z-[70] bg-black text-white overflow-y-auto animate-fade-in">
-      {/* Hero */}
-      <div className="relative h-[62vh] w-full">
-        {course.hero_video_url ? (
-          <HlsVideo
-            src={course.hero_video_url}
-            poster={course.hero_image || course.cover_image}
-            controls
-            playsInline
-            autoPlay
-            muted
-            className="absolute inset-0 w-full h-full object-cover bg-black"
-          />
-        ) : (
+      {hasVideo ? (
+        <>
+          {/* Compact video player */}
+          <div className="relative w-full bg-black aspect-video">
+            <HlsVideo
+              src={course.hero_video_url!}
+              poster={course.hero_image || course.cover_image}
+              controls
+              playsInline
+              autoPlay
+              muted
+              className="w-full h-full object-contain bg-black"
+            />
+            <button
+              onClick={onClose}
+              aria-label="Back"
+              className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 flex items-center justify-center"
+            >
+              <ChevronLeft size={20} className="text-white" />
+            </button>
+          </div>
+          {/* Info block below video */}
+          <div className="px-6 pt-5 pb-2">
+            <p className="text-white/60 text-[11px] uppercase tracking-[0.2em] font-semibold">{course.category}</p>
+            <h1 className="mt-2 text-white text-2xl font-bold leading-tight tracking-tight">{course.title}</h1>
+            {course.subtitle && <p className="text-white/70 text-sm mt-1.5">{course.subtitle}</p>}
+            <p className="text-white/50 text-xs mt-2">{course.instructor}</p>
+            <div className="flex flex-wrap items-center gap-4 text-white/70 text-xs mt-3">
+              {course.rating ? (
+                <span className="flex items-center gap-1"><Star size={12} fill="currentColor" className="text-yellow-400" />{course.rating}</span>
+              ) : null}
+              {course.duration && <span className="flex items-center gap-1"><Clock size={12} />{course.duration}</span>}
+              {course.lessons_count ? (
+                <span className="flex items-center gap-1"><PlayCircle size={12} />{course.lessons_count} lessons</span>
+              ) : null}
+              {course.level && (
+                <span className="flex items-center gap-1 bg-white/10 backdrop-blur px-2 py-0.5 rounded-full border border-white/10">
+                  <Award size={11} />{course.level}
+                </span>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="relative h-[62vh] w-full">
           <img
             src={course.hero_image || course.cover_image}
             alt={course.title}
             className="absolute inset-0 w-full h-full object-cover"
           />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
-        <button
-          onClick={onClose}
-          aria-label="Back"
-          className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/50 backdrop-blur-xl border border-white/10 flex items-center justify-center"
-        >
-          <ChevronLeft size={20} className="text-white" />
-        </button>
-        <div className="absolute inset-x-0 bottom-0 p-6 pb-7">
-          <p className="text-white/60 text-[11px] uppercase tracking-[0.2em] font-semibold">{course.category}</p>
-          <h1 className="mt-2 text-white text-3xl font-bold leading-tight tracking-tight">{course.title}</h1>
-          {course.subtitle && <p className="text-white/70 text-sm mt-1.5">{course.subtitle}</p>}
-          <p className="text-white/50 text-xs mt-2">{course.instructor}</p>
-          <div className="flex items-center gap-4 text-white/70 text-xs mt-3">
-            {course.rating ? (
-              <span className="flex items-center gap-1"><Star size={12} fill="currentColor" className="text-yellow-400" />{course.rating}</span>
-            ) : null}
-            {course.duration && <span className="flex items-center gap-1"><Clock size={12} />{course.duration}</span>}
-            {course.lessons_count ? (
-              <span className="flex items-center gap-1"><PlayCircle size={12} />{course.lessons_count} lessons</span>
-            ) : null}
-            {course.level && (
-              <span className="flex items-center gap-1 bg-white/10 backdrop-blur px-2 py-0.5 rounded-full border border-white/10">
-                <Award size={11} />{course.level}
-              </span>
-            )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
+          <button
+            onClick={onClose}
+            aria-label="Back"
+            className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/50 backdrop-blur-xl border border-white/10 flex items-center justify-center"
+          >
+            <ChevronLeft size={20} className="text-white" />
+          </button>
+          <div className="absolute inset-x-0 bottom-0 p-6 pb-7">
+            <p className="text-white/60 text-[11px] uppercase tracking-[0.2em] font-semibold">{course.category}</p>
+            <h1 className="mt-2 text-white text-3xl font-bold leading-tight tracking-tight">{course.title}</h1>
+            {course.subtitle && <p className="text-white/70 text-sm mt-1.5">{course.subtitle}</p>}
+            <p className="text-white/50 text-xs mt-2">{course.instructor}</p>
+            <div className="flex items-center gap-4 text-white/70 text-xs mt-3">
+              {course.rating ? (
+                <span className="flex items-center gap-1"><Star size={12} fill="currentColor" className="text-yellow-400" />{course.rating}</span>
+              ) : null}
+              {course.duration && <span className="flex items-center gap-1"><Clock size={12} />{course.duration}</span>}
+              {course.lessons_count ? (
+                <span className="flex items-center gap-1"><PlayCircle size={12} />{course.lessons_count} lessons</span>
+              ) : null}
+              {course.level && (
+                <span className="flex items-center gap-1 bg-white/10 backdrop-blur px-2 py-0.5 rounded-full border border-white/10">
+                  <Award size={11} />{course.level}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Body */}
       <div className="px-6 py-6 space-y-8 pb-32">

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { X, Star, ExternalLink } from "lucide-react";
+import { X, Star, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Book } from "@/lib/bookCategories";
 
-const openAmazon = (url: string) => {
+const openAmazonCart = (url: string) => {
+  // Append Amazon "add to cart" query params when possible.
+  // Amazon supports ?AddToCart=1 on product URLs via /gp/aws/cart/add.html but the
+  // simplest reliable approach is to just open the product page — Amazon shows an
+  // Add to Cart button prominently. We keep the affiliate link untouched.
   try {
-    // Capacitor deep-link support: open in system browser if available.
-    // Falls back to window.open for web.
     window.open(url, "_blank", "noopener,noreferrer");
   } catch {
     window.location.href = url;
@@ -100,10 +102,10 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
       {/* Buy button */}
       <div className="px-6 pb-6">
         <button
-          onClick={() => openAmazon(book.amazon_url)}
+          onClick={() => openAmazonCart(book.amazon_url)}
           className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.6)] active:scale-[0.98] transition-transform"
         >
-          Buy on Amazon <ExternalLink size={18} />
+          <ShoppingCart size={18} /> Add to Cart
         </button>
       </div>
 

@@ -61,7 +61,8 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
     return () => { cancelled = true; };
   }, [userId]);
 
-  const handle = profile?.username || profile?.display_name || "user";
+  const safeName = (v: string | null | undefined) => (v && !v.includes("@") ? v : null);
+  const handle = profile?.username || safeName(profile?.display_name) || "user";
   const totalPosts = reels.length + quoteSets.length;
 
   return (
@@ -105,7 +106,7 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
             </div>
             <div className="mt-4">
               <p className="text-foreground text-sm font-semibold">
-                {profile?.display_name || handle}
+                @{handle}
               </p>
               {profile?.bio && (
                 <p className="text-foreground/80 text-sm mt-1 whitespace-pre-wrap">{profile.bio}</p>

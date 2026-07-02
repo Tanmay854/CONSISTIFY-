@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import Hls from "hls.js";
 
 type Props = React.VideoHTMLAttributes<HTMLVideoElement> & { src: string };
 
-const HlsVideo = ({ src, ...rest }: Props) => {
+const HlsVideo = forwardRef<HTMLVideoElement, Props>(({ src, ...rest }, forwardedRef) => {
   const ref = useRef<HTMLVideoElement>(null);
+  useImperativeHandle(forwardedRef, () => ref.current as HTMLVideoElement);
   useEffect(() => {
     const video = ref.current;
     if (!video || !src) return;
@@ -22,6 +23,8 @@ const HlsVideo = ({ src, ...rest }: Props) => {
     video.src = src;
   }, [src]);
   return <video ref={ref} {...rest} />;
-};
+});
+
+HlsVideo.displayName = "HlsVideo";
 
 export default HlsVideo;
