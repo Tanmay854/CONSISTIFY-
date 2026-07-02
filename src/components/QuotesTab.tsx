@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { CSSProperties } from "react";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, User as UserIcon } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
+import UploaderProfileSheet from "@/components/UploaderProfileSheet";
+import { fetchProfiles, getCachedProfile, type UploaderProfile } from "@/lib/uploaderProfiles";
 
 interface QuoteRow {
   id: string;
@@ -15,6 +17,7 @@ interface QuoteRow {
   description: string | null;
   set_id: string | null;
   set_position: number;
+  uploaded_by: string | null;
 }
 
 interface PhotoSet {
@@ -40,7 +43,7 @@ const SinglePhoto = ({ photo }: { photo: QuoteRow }) => (
   </div>
 );
 
-const SetPage = ({ set, onReport }: { set: PhotoSet; onReport: (q: QuoteRow) => void }) => {
+const SetPage = ({ set, onReport, uploaderProfile, onOpenProfile }: { set: PhotoSet; onReport: (q: QuoteRow) => void; uploaderProfile: UploaderProfile | null; onOpenProfile: (userId: string) => void }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const tracked = useRef<Set<string>>(new Set());
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: "start" });
@@ -114,20 +117,38 @@ const SetPage = ({ set, onReport }: { set: PhotoSet; onReport: (q: QuoteRow) => 
         </div>
       )}
 
-      <div className="absolute bottom-24 left-4 right-16 z-20 pointer-events-none">
+      <div className="absolute bottom-24 left-4 right-16 z-20">
+        {currentPhoto.uploaded_by && (
+          <button
+            type="button"
+            onClick={() => onOpenProfile(currentPhoto.uploaded_by!)}
+            className="flex items-center gap-2 mb-2 pointer-events-auto"
+          >
+            <span className="w-7 h-7 rounded-full bg-secondary overflow-hidden flex items-center justify-center ring-1 ring-white/30 shrink-0">
+              {uploaderProfile?.avatar_url ? (
+                <img src={uploaderProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon size={14} className="text-white/80" />
+              )}
+            </span>
+            <span className="text-white font-semibold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
+              @{uploaderProfile?.username || uploaderProfile?.display_name || "user"}
+            </span>
+          </button>
+        )}
         {currentPhoto.title && (
-          <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
+          <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate pointer-events-none">
             {currentPhoto.title}
           </p>
         )}
-        <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase tracking-widest mt-0.5">
+        <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase tracking-widest mt-0.5 pointer-events-none">
           {currentPhoto.category}
           {set.items.length > 1 && (
             <span className="ml-2 opacity-80">{selectedIndex + 1}/{set.items.length}</span>
           )}
         </p>
         {currentPhoto.description && (
-          <p className="text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1.5 line-clamp-3 whitespace-pre-wrap">
+          <p className="text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1.5 line-clamp-3 whitespace-pre-wrap pointer-events-none">
             {currentPhoto.description}
           </p>
         )}
@@ -168,7 +189,16 @@ const QuotesTab = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [reportTarget, setReportTarget] = useState<QuoteRow | null>(null);
+  const [openProfileId, setOpenProfileId] = useState<string | null>(null);
+  const [profilesVersion, setProfilesVersion] = useState(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ids = Array.from(new Set(rows.map((r) => r.uploaded_by).filter((v): v is string => !!v)));
+    const missing = ids.filter((id) => !getCachedProfile(id));
+    if (missing.length === 0) return;
+    fetchProfiles(missing).then(() => setProfilesVersion((v) => v + 1));
+  }, [rows]);
 
   const fetchPage = useCallback(async (p: number) => {
     setLoading(true);
@@ -176,7 +206,7 @@ const QuotesTab = () => {
     const to = from + PAGE_SIZE - 1;
     const { data } = await supabase
       .from("quotes")
-      .select("id,title,category,image_url,is_pro,description,set_id,set_position")
+      .select("id,title,category,image_url,is_pro,description,set_id,set_position,uploaded_by")
       .order("created_at", { ascending: false })
       .order("set_position", { ascending: true })
       .range(from, to);
@@ -217,9 +247,19 @@ const QuotesTab = () => {
   return (
     <>
       <div className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-background overscroll-contain" style={snapStyle}>
-        {sets.map((s) => (
-          <SetPage key={s.key} set={s} onReport={setReportTarget} />
-        ))}
+        {sets.map((s) => {
+          const uid = s.items[0]?.uploaded_by;
+          void profilesVersion;
+          return (
+            <SetPage
+              key={s.key}
+              set={s}
+              onReport={setReportTarget}
+              uploaderProfile={uid ? getCachedProfile(uid) ?? null : null}
+              onOpenProfile={setOpenProfileId}
+            />
+          );
+        })}
         {hasMore && <div ref={sentinelRef} className="h-1" />}
       </div>
       {reportTarget && (
@@ -230,6 +270,9 @@ const QuotesTab = () => {
           contentId={reportTarget.id}
           contentTitle={reportTarget.title || "Untitled"}
         />
+      )}
+      {openProfileId && (
+        <UploaderProfileSheet userId={openProfileId} onClose={() => setOpenProfileId(null)} />
       )}
     </>
   );

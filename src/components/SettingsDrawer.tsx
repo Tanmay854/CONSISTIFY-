@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, BookOpen, GraduationCap } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, BookOpen, GraduationCap, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
@@ -7,6 +7,7 @@ import AdminPanel from "./AdminPanel";
 import ApplyUploaderSheet from "./ApplyUploaderSheet";
 import BooksAdminSheet from "./BooksAdminSheet";
 import CoursesAdminSheet from "./CoursesAdminSheet";
+import { fetchProfile, updateProfileCache, type UploaderProfile } from "@/lib/uploaderProfiles";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
@@ -25,6 +26,66 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
   const [pwBusy, setPwBusy] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwInfo, setPwInfo] = useState<string | null>(null);
+
+  // Profile editor state (username / avatar / bio for uploaders + admins)
+  const [profile, setProfile] = useState<UploaderProfile | null>(null);
+  const [pfUsername, setPfUsername] = useState("");
+  const [pfBio, setPfBio] = useState("");
+  const [pfSaving, setPfSaving] = useState(false);
+  const [pfMsg, setPfMsg] = useState<string | null>(null);
+  const [pfErr, setPfErr] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!user || !canUpload) { setProfile(null); return; }
+    fetchProfile(user.id).then((p) => {
+      if (p) {
+        setProfile(p);
+        setPfUsername(p.username || "");
+        setPfBio(p.bio || "");
+      }
+    });
+  }, [user, canUpload]);
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!user) return;
+    setPfErr(null); setPfMsg(null); setPfSaving(true);
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `avatars/${user.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("quote-images").upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("quote-images").getPublicUrl(path);
+      const avatar_url = pub.publicUrl;
+      const { error: dbErr } = await supabase.from("profiles").update({ avatar_url }).eq("user_id", user.id);
+      if (dbErr) throw dbErr;
+      const next = { ...(profile || { user_id: user.id, username: pfUsername, display_name: null, bio: pfBio }), avatar_url } as UploaderProfile;
+      setProfile(next); updateProfileCache(next);
+      setPfMsg("Photo updated.");
+    } catch (e) {
+      setPfErr(e instanceof Error ? e.message : "Failed to upload");
+    } finally { setPfSaving(false); }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    const clean = pfUsername.trim().replace(/[^a-zA-Z0-9_.]/g, "").slice(0, 24);
+    if (clean.length < 2) { setPfErr("Username must be at least 2 characters (letters, digits, _ or .)"); return; }
+    setPfErr(null); setPfMsg(null); setPfSaving(true);
+    const { error } = await supabase.from("profiles")
+      .update({ username: clean, bio: pfBio.trim() || null })
+      .eq("user_id", user.id);
+    setPfSaving(false);
+    if (error) {
+      setPfErr(error.message.includes("profiles_username_unique") ? "That username is taken." : error.message);
+      return;
+    }
+    setPfUsername(clean);
+    const next = { ...(profile || { user_id: user.id, display_name: null, avatar_url: null }), username: clean, bio: pfBio.trim() || null } as UploaderProfile;
+    setProfile(next); updateProfileCache(next);
+    setPfMsg("Profile saved.");
+    setTimeout(() => setPfMsg(null), 1800);
+  };
 
   const handleChangePassword = async () => {
     setPwError(null); setPwInfo(null);
@@ -180,7 +241,70 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
             )}
           </div>
 
-          {/* Upload content (uploaders / admins) */}
+          {/* Public profile editor (uploaders / admins) */}
+          {user && canUpload && (
+            <div className="px-5 py-4 border-t border-border space-y-3">
+              <p className="text-muted-foreground text-[11px] uppercase tracking-widest">Public Profile</p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="relative w-16 h-16 rounded-full bg-secondary overflow-hidden flex items-center justify-center ring-1 ring-border shrink-0"
+                >
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={22} className="text-muted-foreground" />
+                  )}
+                  <span className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1">
+                    <Camera size={10} />
+                  </span>
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); e.currentTarget.value = ""; }}
+                />
+                <div className="flex-1 min-w-0">
+                  <label className="text-[10px] text-muted-foreground uppercase tracking-widest">Username</label>
+                  <div className="flex items-center gap-1 mt-1 bg-secondary rounded-lg px-2">
+                    <span className="text-muted-foreground text-sm">@</span>
+                    <input
+                      value={pfUsername}
+                      onChange={(e) => setPfUsername(e.target.value)}
+                      placeholder="username"
+                      className="flex-1 bg-transparent py-2 text-sm text-foreground outline-none"
+                      maxLength={24}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground uppercase tracking-widest">Bio</label>
+                <textarea
+                  value={pfBio}
+                  onChange={(e) => setPfBio(e.target.value)}
+                  rows={2}
+                  maxLength={160}
+                  placeholder="Short description"
+                  className="w-full mt-1 bg-secondary rounded-lg p-2 text-sm text-foreground outline-none resize-none"
+                />
+              </div>
+              {pfErr && <p className="text-destructive text-xs">{pfErr}</p>}
+              {pfMsg && <p className="text-primary text-xs">{pfMsg}</p>}
+              <button
+                onClick={handleSaveProfile}
+                disabled={pfSaving}
+                className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+              >
+                {pfSaving ? "Saving..." : "Save Profile"}
+              </button>
+            </div>
+          )}
+
+
           {user && canUpload && onOpenUpload && (
             <div className="px-5 py-4 border-t border-border">
               <button

@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { CSSProperties } from "react";
 import Hls from "hls.js";
-import { Play, ExternalLink, CircleAlert } from "lucide-react";
+import { Play, ExternalLink, CircleAlert, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
+import UploaderProfileSheet from "@/components/UploaderProfileSheet";
+import { fetchProfiles, getCachedProfile, type UploaderProfile } from "@/lib/uploaderProfiles";
 
 // Attach an HLS (.m3u8) or progressive source to a <video>. Returns a cleanup fn.
 // onReady fires when the stream is parsed and a play() can be attempted.
@@ -248,6 +250,7 @@ interface Reel {
   video_fit?: string | null;
   bunny_video_guid?: string | null;
   bunny_library_id?: string | null;
+  uploaded_by?: string | null;
 }
 
 
@@ -320,7 +323,7 @@ const isSlowDevice = (() => {
   }
 })();
 
-const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: Reel; isActive: boolean; distance: number; index: number; muted: boolean; onReport: (r: Reel) => void }) => {
+const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderProfile, onOpenProfile }: { reel: Reel; isActive: boolean; distance: number; index: number; muted: boolean; onReport: (r: Reel) => void; uploaderProfile: UploaderProfile | null; onOpenProfile: (userId: string) => void }) => {
   const hasVideo = reel.video_url && reel.video_url.length > 0 && isValidUrl(reel.video_url);
   const playableUrl = hasVideo ? getPlayableVideoUrl(reel.video_url) : "";
   const gradient = gradients[index % gradients.length];
@@ -541,6 +544,24 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
       )}
 
       <div className="absolute bottom-20 left-4 right-16 z-20">
+        {reel.uploaded_by && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpenProfile(reel.uploaded_by!); }}
+            className="flex items-center gap-2 mb-2"
+          >
+            <span className="w-7 h-7 rounded-full bg-secondary overflow-hidden flex items-center justify-center ring-1 ring-white/30 shrink-0">
+              {uploaderProfile?.avatar_url ? (
+                <img src={uploaderProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon size={14} className="text-white/80" />
+              )}
+            </span>
+            <span className="text-white font-semibold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
+              @{uploaderProfile?.username || uploaderProfile?.display_name || "user"}
+            </span>
+          </button>
+        )}
         <button
           type="button"
           onClick={toggleDescription}
@@ -549,11 +570,6 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: 
           <p className="text-white/95 font-medium text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
             {reel.title}
           </p>
-          {reel.author_name && reel.author_name.toLowerCase() !== "anonymous" && (
-            <p className="text-white/70 text-[10px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate mt-0.5">
-              {reel.author_name}
-            </p>
-          )}
         </button>
         {reel.description && (
           <div
@@ -619,8 +635,18 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [usingDefaults, setUsingDefaults] = useState(true);
   const [reportTarget, setReportTarget] = useState<Reel | null>(null);
+  const [openProfileId, setOpenProfileId] = useState<string | null>(null);
+  const [profilesVersion, setProfilesVersion] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Batch-fetch uploader profiles for every loaded reel and refresh once available.
+  useEffect(() => {
+    const ids = Array.from(new Set(reels.map((r) => r.uploaded_by).filter((v): v is string => !!v)));
+    const missing = ids.filter((id) => !getCachedProfile(id));
+    if (missing.length === 0) return;
+    fetchProfiles(missing).then(() => setProfilesVersion((v) => v + 1));
+  }, [reels]);
 
   const fetchPage = useCallback(async (p: number) => {
     setLoading(true);
@@ -673,6 +699,8 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
 
   const feed: FeedItem[] = [];
   let adIdx = 0;
+  // Referenced so ESLint/TS keep the setter subscription alive; state change already re-renders.
+  void profilesVersion;
   reels.forEach((r, i) => {
     feed.push({ kind: "reel", data: r });
     if (ads.length > 0 && (i + 1) % 5 === 0) {
@@ -720,7 +748,17 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
 
         {feed.map((item, index) =>
           item.kind === "reel" ? (
-            <ReelCard key={`r-${item.data.id}`} reel={item.data} isActive={index === activeIndex} distance={Math.abs(index - activeIndex)} index={index} muted={muted} onReport={setReportTarget} />
+            <ReelCard
+              key={`r-${item.data.id}`}
+              reel={item.data}
+              isActive={index === activeIndex}
+              distance={Math.abs(index - activeIndex)}
+              index={index}
+              muted={muted}
+              onReport={setReportTarget}
+              uploaderProfile={item.data.uploaded_by ? getCachedProfile(item.data.uploaded_by) ?? null : null}
+              onOpenProfile={setOpenProfileId}
+            />
           ) : (
             <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={index === activeIndex} />
           )
@@ -736,6 +774,10 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
           contentId={reportTarget.id}
           contentTitle={reportTarget.title || "Untitled"}
         />
+      )}
+
+      {openProfileId && (
+        <UploaderProfileSheet userId={openProfileId} onClose={() => setOpenProfileId(null)} />
       )}
     </>
   );
