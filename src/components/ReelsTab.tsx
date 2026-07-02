@@ -250,6 +250,7 @@ interface Reel {
   video_fit?: string | null;
   bunny_video_guid?: string | null;
   bunny_library_id?: string | null;
+  uploaded_by?: string | null;
 }
 
 
