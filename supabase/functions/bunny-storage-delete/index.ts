@@ -111,8 +111,11 @@ Deno.serve(async (req) => {
       if (delRes.status === 404) sawNotFound = true;
       attempts.push({ host, status: delRes.status, detail: (await delRes.text()).slice(0, 200) });
     }
-    if (sawNotFound && !attempts.some((attempt) => attempt.status === 401 || attempt.status === 403)) {
-      return new Response(JSON.stringify({ deleted: true, path }),
+    // Idempotent: if any region returned 404, the object doesn't exist in the
+    // authenticated zone — treat as already deleted. 401s from other regions
+    // just mean those regions host different zones (expected).
+    if (sawNotFound) {
+      return new Response(JSON.stringify({ deleted: true, path, alreadyMissing: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     return new Response(JSON.stringify({
