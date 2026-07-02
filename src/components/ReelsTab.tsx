@@ -699,6 +699,8 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
 
   const feed: FeedItem[] = [];
   let adIdx = 0;
+  // Referenced so ESLint/TS keep the setter subscription alive; state change already re-renders.
+  void profilesVersion;
   reels.forEach((r, i) => {
     feed.push({ kind: "reel", data: r });
     if (ads.length > 0 && (i + 1) % 5 === 0) {
