@@ -39,6 +39,16 @@ const CourseDetailSheet = ({
     <div className="fixed inset-0 z-[70] bg-black text-white overflow-y-auto animate-fade-in">
       {hasVideo ? (
         <>
+          {/* Back bar above the player so it doesn't overlap native video controls */}
+          <div className="sticky top-0 z-10 flex items-center h-12 px-3 bg-black">
+            <button
+              onClick={onClose}
+              aria-label="Back"
+              className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center"
+            >
+              <ChevronLeft size={20} className="text-white" />
+            </button>
+          </div>
           {/* Compact video player */}
           <div className="relative w-full bg-black aspect-video">
             <HlsVideo
@@ -50,13 +60,6 @@ const CourseDetailSheet = ({
               muted
               className="w-full h-full object-contain bg-black"
             />
-            <button
-              onClick={onClose}
-              aria-label="Back"
-              className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 flex items-center justify-center"
-            >
-              <ChevronLeft size={20} className="text-white" />
-            </button>
           </div>
           {/* Info block below video */}
           <div className="px-6 pt-5 pb-2">

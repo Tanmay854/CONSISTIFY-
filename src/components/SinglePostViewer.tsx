@@ -81,11 +81,12 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
           ref={videoRef}
           src={getPlayableVideoUrl(post.video_url)}
           className="w-full h-full"
-          style={{ objectFit: (post.video_fit as React.CSSProperties["objectFit"]) || "cover" }}
+          style={{ objectFit: (post.video_fit as React.CSSProperties["objectFit"]) || "contain" }}
           autoPlay
           loop
           playsInline
           muted={muted}
+          controls
         />
       ) : (
         <div className="relative w-full h-full flex items-center justify-center">

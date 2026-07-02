@@ -88,9 +88,6 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
             <p className="text-muted-foreground text-sm mt-1">by {book.author}</p>
             <div className="flex items-center justify-center gap-4 mt-3">
               <Rating value={book.rating} />
-              {book.price != null && (
-                <span className="text-foreground text-sm font-semibold">${book.price.toFixed(2)}</span>
-              )}
               {book.public_id && (
                 <span className="text-muted-foreground text-[11px] font-mono">#{book.public_id}</span>
               )}
