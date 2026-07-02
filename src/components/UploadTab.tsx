@@ -484,12 +484,45 @@ const UploadTab = () => {
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                       {photoPreviewUrls.map((u, i) => (
-                        <div key={i} className={`relative shrink-0 w-24 ${aspectClass[photoAspect]} bg-black rounded-lg overflow-hidden`}>
+                        <div key={i} className={`relative shrink-0 w-24 ${aspectClass[photoAspect]} bg-black rounded-lg overflow-hidden group`}>
                           <img src={u} alt={`preview ${i + 1}`} className="absolute inset-0 w-full h-full" style={{ objectFit: photoAspect === "original" ? "contain" : "cover" }} />
+                          <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] font-semibold rounded px-1.5 py-0.5">{i + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => setPhotoFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                            aria-label="Remove"
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white text-[11px] flex items-center justify-center"
+                          >×</button>
+                          <div className="absolute bottom-1 left-1 right-1 flex gap-1 justify-between">
+                            <button
+                              type="button"
+                              disabled={i === 0}
+                              onClick={() => setPhotoFiles((prev) => {
+                                if (i === 0) return prev;
+                                const next = [...prev];
+                                [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                                return next;
+                              })}
+                              aria-label="Move left"
+                              className="flex-1 h-5 rounded bg-black/70 text-white text-[11px] disabled:opacity-30"
+                            >‹</button>
+                            <button
+                              type="button"
+                              disabled={i === photoPreviewUrls.length - 1}
+                              onClick={() => setPhotoFiles((prev) => {
+                                if (i === prev.length - 1) return prev;
+                                const next = [...prev];
+                                [next[i + 1], next[i]] = [next[i], next[i + 1]];
+                                return next;
+                              })}
+                              aria-label="Move right"
+                              className="flex-1 h-5 rounded bg-black/70 text-white text-[11px] disabled:opacity-30"
+                            >›</button>
+                          </div>
                         </div>
                       ))}
                     </div>
-                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">Each image is center-cropped to this ratio before upload.</p>
+                    <p className="text-muted-foreground text-[10px] mt-1.5 text-center">Reorder with ‹ ›, remove with ×. Each image is center-cropped to this ratio.</p>
                   </div>
                 )}
               </>
