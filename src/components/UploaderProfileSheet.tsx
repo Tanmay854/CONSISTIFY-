@@ -67,7 +67,8 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] bg-background flex flex-col animate-in slide-in-from-bottom duration-300">
+      <div className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center animate-in fade-in duration-200">
+        <div className="w-full h-[96dvh] sm:h-[92dvh] sm:max-w-md bg-background flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2 min-w-0">
