@@ -558,7 +558,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderPr
               )}
             </span>
             <span className="text-white font-semibold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
-              @{uploaderProfile?.username || uploaderProfile?.display_name || "user"}
+              @{uploaderProfile?.username || (uploaderProfile?.display_name && !uploaderProfile.display_name.includes("@") ? uploaderProfile.display_name : "user")}
             </span>
           </button>
         )}
