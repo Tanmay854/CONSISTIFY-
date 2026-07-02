@@ -37,7 +37,6 @@ const getPlayableVideoUrl = (url: string): string => {
 const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () => void }) => {
   const [setImages, setSetImages] = useState<string[] | null>(null);
   const [idx, setIdx] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (post.kind !== "quote") return;
