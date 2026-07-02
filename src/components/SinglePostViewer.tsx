@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import HlsVideo from "@/components/HlsVideo";
 import { supabase } from "@/integrations/supabase/client";
