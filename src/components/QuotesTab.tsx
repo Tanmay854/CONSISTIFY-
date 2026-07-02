@@ -189,7 +189,16 @@ const QuotesTab = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [reportTarget, setReportTarget] = useState<QuoteRow | null>(null);
+  const [openProfileId, setOpenProfileId] = useState<string | null>(null);
+  const [profilesVersion, setProfilesVersion] = useState(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ids = Array.from(new Set(rows.map((r) => r.uploaded_by).filter((v): v is string => !!v)));
+    const missing = ids.filter((id) => !getCachedProfile(id));
+    if (missing.length === 0) return;
+    fetchProfiles(missing).then(() => setProfilesVersion((v) => v + 1));
+  }, [rows]);
 
   const fetchPage = useCallback(async (p: number) => {
     setLoading(true);
