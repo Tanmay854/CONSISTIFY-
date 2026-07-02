@@ -61,7 +61,8 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
     return () => { cancelled = true; };
   }, [userId]);
 
-  const handle = profile?.username || profile?.display_name || "user";
+  const safeName = (v: string | null | undefined) => (v && !v.includes("@") ? v : null);
+  const handle = profile?.username || safeName(profile?.display_name) || "user";
   const totalPosts = reels.length + quoteSets.length;
 
   return (
