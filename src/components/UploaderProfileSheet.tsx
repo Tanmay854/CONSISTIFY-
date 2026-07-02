@@ -106,7 +106,7 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
             </div>
             <div className="mt-4">
               <p className="text-foreground text-sm font-semibold">
-                {profile?.display_name || handle}
+                @{handle}
               </p>
               {profile?.bio && (
                 <p className="text-foreground/80 text-sm mt-1 whitespace-pre-wrap">{profile.bio}</p>
