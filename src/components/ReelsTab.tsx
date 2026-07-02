@@ -746,7 +746,17 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
 
         {feed.map((item, index) =>
           item.kind === "reel" ? (
-            <ReelCard key={`r-${item.data.id}`} reel={item.data} isActive={index === activeIndex} distance={Math.abs(index - activeIndex)} index={index} muted={muted} onReport={setReportTarget} />
+            <ReelCard
+              key={`r-${item.data.id}`}
+              reel={item.data}
+              isActive={index === activeIndex}
+              distance={Math.abs(index - activeIndex)}
+              index={index}
+              muted={muted}
+              onReport={setReportTarget}
+              uploaderProfile={item.data.uploaded_by ? getCachedProfile(item.data.uploaded_by) ?? null : null}
+              onOpenProfile={setOpenProfileId}
+            />
           ) : (
             <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={index === activeIndex} />
           )
@@ -762,6 +772,10 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
           contentId={reportTarget.id}
           contentTitle={reportTarget.title || "Untitled"}
         />
+      )}
+
+      {openProfileId && (
+        <UploaderProfileSheet userId={openProfileId} onClose={() => setOpenProfileId(null)} />
       )}
     </>
   );
