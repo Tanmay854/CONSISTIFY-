@@ -233,8 +233,8 @@ const MusicTab = () => {
 
   return (
     <div className="min-h-screen pb-28 pt-4" style={{ backgroundColor: "#000", color: "#fff" }}>
-      {/* Header */}
-      <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+      {/* Header — pl-14 clears the top-left settings icon */}
+      <div className="px-5 pt-4 pb-2 pl-14 flex items-center justify-between">
         <h2 className="font-bold text-2xl text-white">Music</h2>
         <SpotifyBadge />
       </div>

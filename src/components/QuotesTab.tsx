@@ -26,18 +26,13 @@ interface PhotoSet {
 }
 
 const SinglePhoto = ({ photo }: { photo: QuoteRow }) => (
-  <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-    <img
-      src={photo.image_url}
-      alt=""
-      aria-hidden="true"
-      className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60"
-      loading="lazy"
-    />
+  // Fill width; height auto keeps aspect. Black bars appear only on top/bottom.
+  // pb-24 keeps the image clear of the bottom navigation bar.
+  <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black pb-24">
     <img
       src={photo.image_url}
       alt={photo.title || "quote"}
-      className="relative z-10 max-w-full max-h-full w-auto h-auto object-contain"
+      className="w-full h-auto max-h-full object-contain"
       loading="lazy"
     />
   </div>
@@ -141,12 +136,11 @@ const SetPage = ({ set, onReport, uploaderProfile, onOpenProfile }: { set: Photo
             {currentPhoto.title}
           </p>
         )}
-        <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase tracking-widest mt-0.5 pointer-events-none">
-          {currentPhoto.category}
-          {set.items.length > 1 && (
-            <span className="ml-2 opacity-80">{selectedIndex + 1}/{set.items.length}</span>
-          )}
-        </p>
+        {set.items.length > 1 && (
+          <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase tracking-widest mt-0.5 pointer-events-none">
+            {selectedIndex + 1}/{set.items.length}
+          </p>
+        )}
         {currentPhoto.description && (
           <p className="text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1.5 line-clamp-3 whitespace-pre-wrap pointer-events-none">
             {currentPhoto.description}

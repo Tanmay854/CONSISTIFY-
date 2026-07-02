@@ -250,9 +250,6 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: (b: Book) => void }) =
           <Star size={10} className="fill-primary text-primary" /> {book.rating.toFixed(1)}
         </span>
       )}
-      {book.price != null && (
-        <span className="text-[10px] text-muted-foreground">${book.price.toFixed(2)}</span>
-      )}
     </div>
   </button>
 );
