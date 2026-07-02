@@ -43,7 +43,7 @@ const SinglePhoto = ({ photo }: { photo: QuoteRow }) => (
   </div>
 );
 
-const SetPage = ({ set, onReport }: { set: PhotoSet; onReport: (q: QuoteRow) => void }) => {
+const SetPage = ({ set, onReport, uploaderProfile, onOpenProfile }: { set: PhotoSet; onReport: (q: QuoteRow) => void; uploaderProfile: UploaderProfile | null; onOpenProfile: (userId: string) => void }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const tracked = useRef<Set<string>>(new Set());
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: "start" });
