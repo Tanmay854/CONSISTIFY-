@@ -323,7 +323,7 @@ const isSlowDevice = (() => {
   }
 })();
 
-const ReelCard = ({ reel, isActive, distance, index, muted, onReport }: { reel: Reel; isActive: boolean; distance: number; index: number; muted: boolean; onReport: (r: Reel) => void }) => {
+const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderProfile, onOpenProfile }: { reel: Reel; isActive: boolean; distance: number; index: number; muted: boolean; onReport: (r: Reel) => void; uploaderProfile: UploaderProfile | null; onOpenProfile: (userId: string) => void }) => {
   const hasVideo = reel.video_url && reel.video_url.length > 0 && isValidUrl(reel.video_url);
   const playableUrl = hasVideo ? getPlayableVideoUrl(reel.video_url) : "";
   const gradient = gradients[index % gradients.length];
