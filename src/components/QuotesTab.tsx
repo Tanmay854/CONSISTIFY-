@@ -26,9 +26,9 @@ interface PhotoSet {
 }
 
 const SinglePhoto = ({ photo }: { photo: QuoteRow }) => (
-  // Fill width; height auto keeps aspect. Black bars appear only on top/bottom.
-  // pb-24 keeps the image clear of the bottom navigation bar.
-  <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black pb-24">
+  // Symmetric top/bottom black bars: bottom equals space taken by nav so the
+  // gap between photo and nav bar mirrors the top black bar.
+  <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black pt-24 pb-24">
     <img
       src={photo.image_url}
       alt={photo.title || "quote"}
