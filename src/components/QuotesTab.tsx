@@ -117,20 +117,38 @@ const SetPage = ({ set, onReport, uploaderProfile, onOpenProfile }: { set: Photo
         </div>
       )}
 
-      <div className="absolute bottom-24 left-4 right-16 z-20 pointer-events-none">
+      <div className="absolute bottom-24 left-4 right-16 z-20">
+        {currentPhoto.uploaded_by && (
+          <button
+            type="button"
+            onClick={() => onOpenProfile(currentPhoto.uploaded_by!)}
+            className="flex items-center gap-2 mb-2 pointer-events-auto"
+          >
+            <span className="w-7 h-7 rounded-full bg-secondary overflow-hidden flex items-center justify-center ring-1 ring-white/30 shrink-0">
+              {uploaderProfile?.avatar_url ? (
+                <img src={uploaderProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon size={14} className="text-white/80" />
+              )}
+            </span>
+            <span className="text-white font-semibold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
+              @{uploaderProfile?.username || uploaderProfile?.display_name || "user"}
+            </span>
+          </button>
+        )}
         {currentPhoto.title && (
-          <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
+          <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate pointer-events-none">
             {currentPhoto.title}
           </p>
         )}
-        <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase tracking-widest mt-0.5">
+        <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase tracking-widest mt-0.5 pointer-events-none">
           {currentPhoto.category}
           {set.items.length > 1 && (
             <span className="ml-2 opacity-80">{selectedIndex + 1}/{set.items.length}</span>
           )}
         </p>
         {currentPhoto.description && (
-          <p className="text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1.5 line-clamp-3 whitespace-pre-wrap">
+          <p className="text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1.5 line-clamp-3 whitespace-pre-wrap pointer-events-none">
             {currentPhoto.description}
           </p>
         )}
