@@ -241,7 +241,70 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
             )}
           </div>
 
-          {/* Upload content (uploaders / admins) */}
+          {/* Public profile editor (uploaders / admins) */}
+          {user && canUpload && (
+            <div className="px-5 py-4 border-t border-border space-y-3">
+              <p className="text-muted-foreground text-[11px] uppercase tracking-widest">Public Profile</p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="relative w-16 h-16 rounded-full bg-secondary overflow-hidden flex items-center justify-center ring-1 ring-border shrink-0"
+                >
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={22} className="text-muted-foreground" />
+                  )}
+                  <span className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1">
+                    <Camera size={10} />
+                  </span>
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); e.currentTarget.value = ""; }}
+                />
+                <div className="flex-1 min-w-0">
+                  <label className="text-[10px] text-muted-foreground uppercase tracking-widest">Username</label>
+                  <div className="flex items-center gap-1 mt-1 bg-secondary rounded-lg px-2">
+                    <span className="text-muted-foreground text-sm">@</span>
+                    <input
+                      value={pfUsername}
+                      onChange={(e) => setPfUsername(e.target.value)}
+                      placeholder="username"
+                      className="flex-1 bg-transparent py-2 text-sm text-foreground outline-none"
+                      maxLength={24}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground uppercase tracking-widest">Bio</label>
+                <textarea
+                  value={pfBio}
+                  onChange={(e) => setPfBio(e.target.value)}
+                  rows={2}
+                  maxLength={160}
+                  placeholder="Short description"
+                  className="w-full mt-1 bg-secondary rounded-lg p-2 text-sm text-foreground outline-none resize-none"
+                />
+              </div>
+              {pfErr && <p className="text-destructive text-xs">{pfErr}</p>}
+              {pfMsg && <p className="text-primary text-xs">{pfMsg}</p>}
+              <button
+                onClick={handleSaveProfile}
+                disabled={pfSaving}
+                className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+              >
+                {pfSaving ? "Saving..." : "Save Profile"}
+              </button>
+            </div>
+          )}
+
+
           {user && canUpload && onOpenUpload && (
             <div className="px-5 py-4 border-t border-border">
               <button
