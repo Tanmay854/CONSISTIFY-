@@ -189,6 +189,7 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
           )}
           <div className="h-10" />
         </div>
+        </div>
       </div>
 
       {viewing && <SinglePostViewer post={viewing} onClose={() => setViewing(null)} />}
