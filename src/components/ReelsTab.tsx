@@ -544,6 +544,24 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderPr
       )}
 
       <div className="absolute bottom-20 left-4 right-16 z-20">
+        {reel.uploaded_by && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpenProfile(reel.uploaded_by!); }}
+            className="flex items-center gap-2 mb-2"
+          >
+            <span className="w-7 h-7 rounded-full bg-secondary overflow-hidden flex items-center justify-center ring-1 ring-white/30 shrink-0">
+              {uploaderProfile?.avatar_url ? (
+                <img src={uploaderProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon size={14} className="text-white/80" />
+              )}
+            </span>
+            <span className="text-white font-semibold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
+              @{uploaderProfile?.username || uploaderProfile?.display_name || "user"}
+            </span>
+          </button>
+        )}
         <button
           type="button"
           onClick={toggleDescription}
@@ -552,11 +570,6 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderPr
           <p className="text-white/95 font-medium text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
             {reel.title}
           </p>
-          {reel.author_name && reel.author_name.toLowerCase() !== "anonymous" && (
-            <p className="text-white/70 text-[10px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate mt-0.5">
-              {reel.author_name}
-            </p>
-          )}
         </button>
         {reel.description && (
           <div
