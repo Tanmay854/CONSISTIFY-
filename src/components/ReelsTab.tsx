@@ -635,8 +635,18 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [usingDefaults, setUsingDefaults] = useState(true);
   const [reportTarget, setReportTarget] = useState<Reel | null>(null);
+  const [openProfileId, setOpenProfileId] = useState<string | null>(null);
+  const [profilesVersion, setProfilesVersion] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Batch-fetch uploader profiles for every loaded reel and refresh once available.
+  useEffect(() => {
+    const ids = Array.from(new Set(reels.map((r) => r.uploaded_by).filter((v): v is string => !!v)));
+    const missing = ids.filter((id) => !getCachedProfile(id));
+    if (missing.length === 0) return;
+    fetchProfiles(missing).then(() => setProfilesVersion((v) => v + 1));
+  }, [reels]);
 
   const fetchPage = useCallback(async (p: number) => {
     setLoading(true);
