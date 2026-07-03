@@ -100,7 +100,8 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
       <div className="px-6 pb-6">
         <button
           onClick={() => openAmazonCart(book.amazon_url)}
-          className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.6)] active:scale-[0.98] transition-transform"
+          className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-10px_rgba(29,185,84,0.6)] active:scale-[0.98] transition-transform"
+          style={{ backgroundColor: "#1DB954", color: "#000" }}
         >
           <ShoppingCart size={18} /> Add to Cart
         </button>
