@@ -27,14 +27,14 @@ const PasswordRecoveryRedirect = () => {
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const search = new URLSearchParams(window.location.search);
-    const hasRecoveryToken =
-      hash.get("type") === "recovery" ||
-      hash.has("access_token") ||
-      search.has("code") ||
-      search.get("type") === "recovery";
+    // Only treat as recovery when the link explicitly identifies itself as such.
+    // Supabase signup/magic-link callbacks also carry `?code=` or `#access_token=`
+    // but must NOT be routed to the reset-password screen.
+    const isRecovery =
+      hash.get("type") === "recovery" || search.get("type") === "recovery";
 
     if (
-      hasRecoveryToken &&
+      isRecovery &&
       location.pathname !== "/reset-password" &&
       location.pathname !== "/spotify-callback"
     ) {
