@@ -19,7 +19,7 @@ const Rating = ({ value }: { value: number | null }) => {
   const r = value ?? 0;
   return (
     <div className="flex items-center gap-1">
-      <Star size={14} className="fill-primary text-primary" />
+      <Star size={14} className="fill-yellow-400 text-yellow-400" />
       <span className="text-foreground text-sm font-semibold">{r ? r.toFixed(1) : "—"}</span>
     </div>
   );
