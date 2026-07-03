@@ -247,7 +247,7 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: (b: Book) => void }) =
     <div className="flex items-center gap-2 mt-1">
       {book.rating != null && (
         <span className="flex items-center gap-0.5 text-[10px] text-foreground">
-          <Star size={10} className="fill-primary text-primary" /> {book.rating.toFixed(1)}
+          <Star size={10} className="fill-yellow-400 text-yellow-400" /> {book.rating.toFixed(1)}
         </span>
       )}
     </div>

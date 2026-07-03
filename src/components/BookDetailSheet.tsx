@@ -19,7 +19,7 @@ const Rating = ({ value }: { value: number | null }) => {
   const r = value ?? 0;
   return (
     <div className="flex items-center gap-1">
-      <Star size={14} className="fill-primary text-primary" />
+      <Star size={14} className="fill-yellow-400 text-yellow-400" />
       <span className="text-foreground text-sm font-semibold">{r ? r.toFixed(1) : "—"}</span>
     </div>
   );
@@ -100,7 +100,8 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
       <div className="px-6 pb-6">
         <button
           onClick={() => openAmazonCart(book.amazon_url)}
-          className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.6)] active:scale-[0.98] transition-transform"
+          className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-10px_rgba(29,185,84,0.6)] active:scale-[0.98] transition-transform"
+          style={{ backgroundColor: "#1DB954", color: "#000" }}
         >
           <ShoppingCart size={18} /> Add to Cart
         </button>
