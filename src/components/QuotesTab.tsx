@@ -26,9 +26,9 @@ interface PhotoSet {
 }
 
 const SinglePhoto = ({ photo }: { photo: QuoteRow }) => (
-  // Symmetric top/bottom black bars: bottom equals space taken by nav so the
-  // gap between photo and nav bar mirrors the top black bar.
-  <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black pt-24 pb-24">
+  // Visually symmetric black bars: bottom padding = top padding + bottom nav
+  // height (~56px) so the visible gap between photo and nav mirrors the top.
+  <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black pt-20 pb-36">
     <img
       src={photo.image_url}
       alt={photo.title || "quote"}
