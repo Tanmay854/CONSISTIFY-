@@ -92,17 +92,15 @@ const attachHls = (
     const createHls = (audio: boolean) => new Hls({
       enableWorker: true,
       lowLatencyMode: false,
-      // Do not let ABR do the default low-bitrate startup test. We choose the
-      // highest level after the manifest is known, then start loading manually.
+      // Let ABR pick a level the connection can actually sustain; assume a
+      // modest ~3 Mbps starting estimate instead of forcing the top rendition.
       startLevel: -1,
-      capLevelToPlayerSize: false,
+      capLevelToPlayerSize: true,
       autoStartLoad: false,
-      testBandwidth: false,
       startFragPrefetch: true,
-      abrEwmaDefaultEstimate: 50_000_000,
-      abrEwmaDefaultEstimateMax: 100_000_000,
-      maxStarvationDelay: 12,
-      maxLoadingDelay: 12,
+      abrEwmaDefaultEstimate: 3_000_000,
+      maxStarvationDelay: 4,
+      maxLoadingDelay: 4,
       maxBufferLength: 24,
       maxMaxBufferLength: 60,
       backBufferLength: 10,
