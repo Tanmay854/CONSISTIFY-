@@ -108,41 +108,21 @@ const attachHls = (
     });
     let hls = createHls(false);
     const bindHls = (instance: Hls) => {
-      instance.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
-        try {
-          const levels = ((data as { levels?: HlsLevelInfo[] })?.levels || instance.levels || []) as HlsLevelInfo[];
-          if (levels.length > 0) {
-            topLevel = 0;
-            for (let i = 1; i < levels.length; i++) {
-              if ((levels[i].bitrate || 0) > (levels[topLevel].bitrate || 0)) topLevel = i;
-            }
-            lockTopQuality(instance);
-          }
-        } catch { /* empty */ }
+      instance.on(Hls.Events.MANIFEST_PARSED, () => {
         try { instance.startLoad(startPosition); } catch { /* empty */ }
       });
 
-      instance.on(Hls.Events.FRAG_LOADING, () => {
-        if (!readyFired) lockTopQuality(instance);
-      });
-
-      instance.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
-        const fragLevel = (data as { frag?: { level?: number } })?.frag?.level;
-        const levels = instance.levels || [];
-        const topBitrate = topLevel >= 0 ? levels[topLevel]?.bitrate || 0 : 0;
-        const fragBitrate = typeof fragLevel === "number" && fragLevel >= 0 ? levels[fragLevel]?.bitrate || 0 : 0;
-        const closeToTop = topBitrate > 0 && fragBitrate >= topBitrate * 0.72;
-        if (topLevel < 0 || fragLevel === topLevel || closeToTop || instance.levels.length <= 1) fireReady();
+      // Show the video as soon as the first fragment of ANY quality is
+      // buffered — waiting for the top rendition made slow connections
+      // buffer forever.
+      instance.on(Hls.Events.FRAG_BUFFERED, () => {
+        fireReady();
       });
 
       instance.on(Hls.Events.LEVEL_LOADED, () => {
         if (!readyFired && !readyFallbackTimer) {
           readyFallbackTimer = window.setTimeout(fireReady, 1800);
         }
-      });
-
-      instance.on(Hls.Events.LEVEL_SWITCHING, () => {
-        if (!readyFired) lockTopQuality(instance);
       });
 
       instance.on(Hls.Events.ERROR, (_e, data) => {
