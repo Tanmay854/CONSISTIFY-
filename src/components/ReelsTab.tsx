@@ -11,7 +11,6 @@ import { fetchProfiles, getCachedProfile, type UploaderProfile } from "@/lib/upl
 // Attach an HLS (.m3u8) or progressive source to a <video>. Returns a cleanup fn.
 // onReady fires when the stream is parsed and a play() can be attempted.
 // onFail fires on a fatal error so the spinner can be cleared and UI can recover.
-type HlsLevelInfo = { bitrate?: number };
 type NetworkInformationLike = { saveData?: boolean; effectiveType?: string };
 type NavigatorWithConnection = Navigator & {
   deviceMemory?: number;
