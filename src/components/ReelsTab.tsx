@@ -168,26 +168,6 @@ const attachHls = (
       if (readyFired) return;
       readyFired = true;
       onReady?.();
-      // Keep the first seconds biased sharp, then let ABR react normally so
-      // weaker Android WebViews do not stall forever on the first reel.
-      qualityReleaseTimer = window.setTimeout(() => {
-        try {
-          hls.autoLevelCapping = -1;
-          hls.nextLevel = -1;
-          hls.loadLevel = -1;
-          hls.nextLoadLevel = -1;
-        } catch { /* empty */ }
-      }, 8000);
-    };
-    const lockTopQuality = (instance: Hls) => {
-      if (topLevel < 0) return;
-      try {
-        instance.startLevel = topLevel;
-        instance.nextLevel = topLevel;
-        instance.loadLevel = topLevel;
-        instance.nextLoadLevel = topLevel;
-        instance.autoLevelCapping = topLevel;
-      } catch { /* empty */ }
     };
     bindHls(hls);
     hls.attachMedia(video);
