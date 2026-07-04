@@ -145,7 +145,6 @@ const attachHls = (
             retryTimer = window.setTimeout(() => {
               try {
                 instance.loadSource(url);
-                lockTopQuality(instance);
                 instance.startLoad(startPosition);
               } catch { /* empty */ }
             }, Math.min(2500 * retries, 10000));
