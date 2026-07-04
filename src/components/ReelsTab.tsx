@@ -67,10 +67,8 @@ const attachHls = (
     let retries = 0;
     let manifestCodecRetry = false;
     let retryTimer: number | null = null;
-    let qualityReleaseTimer: number | null = null;
     let readyFallbackTimer: number | null = null;
     let nativeFallbackCleanup: (() => void) | null = null;
-    let topLevel = -1;
     let readyFired = false;
     const fallbackToNative = () => {
       if (nativeFallbackCleanup) return;
@@ -173,7 +171,7 @@ const attachHls = (
     hls.attachMedia(video);
     return () => {
       if (retryTimer) window.clearTimeout(retryTimer);
-      if (qualityReleaseTimer) window.clearTimeout(qualityReleaseTimer);
+      
       if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
       nativeFallbackCleanup?.();
       try { hls.destroy(); } catch { /* empty */ }
