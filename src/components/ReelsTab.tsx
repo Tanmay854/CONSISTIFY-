@@ -11,7 +11,6 @@ import { fetchProfiles, getCachedProfile, type UploaderProfile } from "@/lib/upl
 // Attach an HLS (.m3u8) or progressive source to a <video>. Returns a cleanup fn.
 // onReady fires when the stream is parsed and a play() can be attempted.
 // onFail fires on a fatal error so the spinner can be cleared and UI can recover.
-type HlsLevelInfo = { bitrate?: number };
 type NetworkInformationLike = { saveData?: boolean; effectiveType?: string };
 type NavigatorWithConnection = Navigator & {
   deviceMemory?: number;
@@ -67,10 +66,8 @@ const attachHls = (
     let retries = 0;
     let manifestCodecRetry = false;
     let retryTimer: number | null = null;
-    let qualityReleaseTimer: number | null = null;
     let readyFallbackTimer: number | null = null;
     let nativeFallbackCleanup: (() => void) | null = null;
-    let topLevel = -1;
     let readyFired = false;
     const fallbackToNative = () => {
       if (nativeFallbackCleanup) return;
@@ -92,17 +89,15 @@ const attachHls = (
     const createHls = (audio: boolean) => new Hls({
       enableWorker: true,
       lowLatencyMode: false,
-      // Do not let ABR do the default low-bitrate startup test. We choose the
-      // highest level after the manifest is known, then start loading manually.
+      // Let ABR pick a level the connection can actually sustain; assume a
+      // modest ~3 Mbps starting estimate instead of forcing the top rendition.
       startLevel: -1,
-      capLevelToPlayerSize: false,
+      capLevelToPlayerSize: true,
       autoStartLoad: false,
-      testBandwidth: false,
       startFragPrefetch: true,
-      abrEwmaDefaultEstimate: 50_000_000,
-      abrEwmaDefaultEstimateMax: 100_000_000,
-      maxStarvationDelay: 12,
-      maxLoadingDelay: 12,
+      abrEwmaDefaultEstimate: 3_000_000,
+      maxStarvationDelay: 4,
+      maxLoadingDelay: 4,
       maxBufferLength: 24,
       maxMaxBufferLength: 60,
       backBufferLength: 10,
@@ -110,41 +105,21 @@ const attachHls = (
     });
     let hls = createHls(false);
     const bindHls = (instance: Hls) => {
-      instance.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
-        try {
-          const levels = ((data as { levels?: HlsLevelInfo[] })?.levels || instance.levels || []) as HlsLevelInfo[];
-          if (levels.length > 0) {
-            topLevel = 0;
-            for (let i = 1; i < levels.length; i++) {
-              if ((levels[i].bitrate || 0) > (levels[topLevel].bitrate || 0)) topLevel = i;
-            }
-            lockTopQuality(instance);
-          }
-        } catch { /* empty */ }
+      instance.on(Hls.Events.MANIFEST_PARSED, () => {
         try { instance.startLoad(startPosition); } catch { /* empty */ }
       });
 
-      instance.on(Hls.Events.FRAG_LOADING, () => {
-        if (!readyFired) lockTopQuality(instance);
-      });
-
-      instance.on(Hls.Events.FRAG_BUFFERED, (_e, data) => {
-        const fragLevel = (data as { frag?: { level?: number } })?.frag?.level;
-        const levels = instance.levels || [];
-        const topBitrate = topLevel >= 0 ? levels[topLevel]?.bitrate || 0 : 0;
-        const fragBitrate = typeof fragLevel === "number" && fragLevel >= 0 ? levels[fragLevel]?.bitrate || 0 : 0;
-        const closeToTop = topBitrate > 0 && fragBitrate >= topBitrate * 0.72;
-        if (topLevel < 0 || fragLevel === topLevel || closeToTop || instance.levels.length <= 1) fireReady();
+      // Show the video as soon as the first fragment of ANY quality is
+      // buffered — waiting for the top rendition made slow connections
+      // buffer forever.
+      instance.on(Hls.Events.FRAG_BUFFERED, () => {
+        fireReady();
       });
 
       instance.on(Hls.Events.LEVEL_LOADED, () => {
         if (!readyFired && !readyFallbackTimer) {
           readyFallbackTimer = window.setTimeout(fireReady, 1800);
         }
-      });
-
-      instance.on(Hls.Events.LEVEL_SWITCHING, () => {
-        if (!readyFired) lockTopQuality(instance);
       });
 
       instance.on(Hls.Events.ERROR, (_e, data) => {
@@ -167,7 +142,6 @@ const attachHls = (
             retryTimer = window.setTimeout(() => {
               try {
                 instance.loadSource(url);
-                lockTopQuality(instance);
                 instance.startLoad(startPosition);
               } catch { /* empty */ }
             }, Math.min(2500 * retries, 10000));
@@ -191,32 +165,12 @@ const attachHls = (
       if (readyFired) return;
       readyFired = true;
       onReady?.();
-      // Keep the first seconds biased sharp, then let ABR react normally so
-      // weaker Android WebViews do not stall forever on the first reel.
-      qualityReleaseTimer = window.setTimeout(() => {
-        try {
-          hls.autoLevelCapping = -1;
-          hls.nextLevel = -1;
-          hls.loadLevel = -1;
-          hls.nextLoadLevel = -1;
-        } catch { /* empty */ }
-      }, 8000);
-    };
-    const lockTopQuality = (instance: Hls) => {
-      if (topLevel < 0) return;
-      try {
-        instance.startLevel = topLevel;
-        instance.nextLevel = topLevel;
-        instance.loadLevel = topLevel;
-        instance.nextLoadLevel = topLevel;
-        instance.autoLevelCapping = topLevel;
-      } catch { /* empty */ }
     };
     bindHls(hls);
     hls.attachMedia(video);
     return () => {
       if (retryTimer) window.clearTimeout(retryTimer);
-      if (qualityReleaseTimer) window.clearTimeout(qualityReleaseTimer);
+      
       if (readyFallbackTimer) window.clearTimeout(readyFallbackTimer);
       nativeFallbackCleanup?.();
       try { hls.destroy(); } catch { /* empty */ }
