@@ -3,6 +3,7 @@ import { X, Volume2, VolumeX, CircleAlert } from "lucide-react";
 import HlsVideo from "@/components/HlsVideo";
 import ReportDialog from "@/components/ReportDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { getVideoThumbnail } from "@/lib/thumbUrl";
 
 type ReelPost = {
   kind: "reel";
