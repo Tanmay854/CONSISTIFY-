@@ -63,12 +63,22 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const startNew = () => { setError(null); setEditing(empty()); };
   const startEdit = (b: Book) => {
     setError(null);
+    const pages = Array.isArray(b.summary_pages) ? [...b.summary_pages] : [];
+    while (pages.length < 10) pages.push("");
+    const quiz = Array.isArray(b.quiz_questions) ? [...b.quiz_questions] : [];
+    while (quiz.length < 15) quiz.push(emptyQuestion());
     setEditing({
       id: b.id,
       title: b.title, author: b.author, category: b.category,
       description: b.description ?? "", key_takeaways: b.key_takeaways ?? "", why_read: b.why_read ?? "",
       cover_url: b.cover_url, cover_url_2: b.cover_url_2 ?? "", amazon_url: b.amazon_url,
       price: b.price?.toString() ?? "", rating: b.rating?.toString() ?? "",
+      reading_time_minutes: b.reading_time_minutes?.toString() ?? "",
+      listening_time_minutes: b.listening_time_minutes?.toString() ?? "",
+      audio_url: b.audio_url ?? "",
+      summary_pages: pages.slice(0, 10),
+      quiz_questions: quiz.slice(0, 15),
+      is_published: b.is_published ?? true,
       is_featured: b.is_featured, is_trending: b.is_trending,
       is_best_seller: b.is_best_seller, is_new_release: b.is_new_release,
     });
@@ -93,11 +103,18 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       amazon_url: editing.amazon_url.trim(),
       price: editing.price ? Number(editing.price) : null,
       rating: editing.rating ? Number(editing.rating) : null,
+      reading_time_minutes: editing.reading_time_minutes ? Number(editing.reading_time_minutes) : null,
+      listening_time_minutes: editing.listening_time_minutes ? Number(editing.listening_time_minutes) : null,
+      audio_url: editing.audio_url.trim() || null,
+      summary_pages: editing.summary_pages.map((p) => p.trim()),
+      quiz_questions: editing.quiz_questions.filter((q) => q.q.trim() && q.options.every((o) => o.trim())),
+      is_published: editing.is_published,
       is_featured: editing.is_featured,
       is_trending: editing.is_trending,
       is_best_seller: editing.is_best_seller,
       is_new_release: editing.is_new_release,
     };
+
     const { error } = editing.id
       ? await supabase.from("books").update(payload).eq("id", editing.id)
       : await supabase.from("books").insert({ ...payload, created_by: (await supabase.auth.getUser()).data.user?.id });
