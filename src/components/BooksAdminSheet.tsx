@@ -142,6 +142,31 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     setUploading(false);
   };
 
+  const uploadAudio = async (file: File) => {
+    setUploading(true); setError(null);
+    const ext = file.name.split(".").pop() || "mp3";
+    const path = `books/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("audio").upload(path, file, { upsert: false, contentType: file.type });
+    if (error) { setUploading(false); setError(error.message); return; }
+    const { data } = supabase.storage.from("audio").getPublicUrl(path);
+    setEditing((f) => f ? { ...f, audio_url: data.publicUrl } : f);
+    setUploading(false);
+  };
+
+  const setPage = (i: number, v: string) =>
+    setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => idx === i ? v : p) } : f);
+
+  const setQ = (i: number, patch: Partial<QuizQuestion>) =>
+    setEditing((f) => f ? { ...f, quiz_questions: f.quiz_questions.map((q, idx) => idx === i ? { ...q, ...patch } : q) } : f);
+
+  const setOpt = (i: number, oi: 0|1|2|3, v: string) =>
+    setEditing((f) => f ? { ...f, quiz_questions: f.quiz_questions.map((q, idx) => {
+      if (idx !== i) return q;
+      const options = [...q.options] as [string,string,string,string];
+      options[oi] = v;
+      return { ...q, options };
+    }) } : f);
+
   return (
     <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
       <header className="sticky top-0 z-10 bg-background/90 backdrop-blur px-5 py-3 flex items-center justify-between border-b border-border">
