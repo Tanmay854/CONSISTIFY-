@@ -268,12 +268,21 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
           <div className="pt-3">
             <p className="text-foreground text-sm font-bold uppercase tracking-wider mb-2">Summary pages (10)</p>
             <div className="space-y-2">
-              {editing.summary_pages.map((p, i) => (
-                <div key={i}>
-                  <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block mb-1">Page {i + 1}</label>
-                  <textarea rows={4} value={p} onChange={(e) => setPage(i, e.target.value)} className={inputCls} placeholder="100–150 words…" />
-                </div>
-              ))}
+              {editing.summary_pages.map((p, i) => {
+                const { title, body } = splitPage(p);
+                return (
+                  <div key={i} className="space-y-1">
+                    <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block">Page {i + 1}</label>
+                    <input
+                      value={title}
+                      onChange={(e) => setPageTitle(i, e.target.value)}
+                      className={inputCls}
+                      placeholder={`Page ${i + 1} title`}
+                    />
+                    <textarea rows={4} value={body} onChange={(e) => setPageBody(i, e.target.value)} className={inputCls} placeholder="100–150 words…" />
+                  </div>
+                );
+              })}
             </div>
           </div>
 
