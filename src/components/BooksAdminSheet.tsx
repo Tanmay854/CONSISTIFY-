@@ -153,8 +153,26 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     setUploading(false);
   };
 
-  const setPage = (i: number, v: string) =>
-    setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => idx === i ? v : p) } : f);
+  const splitPage = (raw: string) => {
+    const nl = raw.indexOf("\n");
+    if (nl === -1) return { title: raw, body: "" };
+    return { title: raw.slice(0, nl), body: raw.slice(nl + 1) };
+  };
+  const joinPage = (title: string, body: string) => `${title}\n${body}`;
+
+  const setPageTitle = (i: number, v: string) =>
+    setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => {
+      if (idx !== i) return p;
+      const { body } = splitPage(p);
+      return joinPage(v, body);
+    }) } : f);
+
+  const setPageBody = (i: number, v: string) =>
+    setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => {
+      if (idx !== i) return p;
+      const { title } = splitPage(p);
+      return joinPage(title, v);
+    }) } : f);
 
   const setQ = (i: number, patch: Partial<QuizQuestion>) =>
     setEditing((f) => f ? { ...f, quiz_questions: f.quiz_questions.map((q, idx) => idx === i ? { ...q, ...patch } : q) } : f);
@@ -250,12 +268,21 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
           <div className="pt-3">
             <p className="text-foreground text-sm font-bold uppercase tracking-wider mb-2">Summary pages (10)</p>
             <div className="space-y-2">
-              {editing.summary_pages.map((p, i) => (
-                <div key={i}>
-                  <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block mb-1">Page {i + 1}</label>
-                  <textarea rows={4} value={p} onChange={(e) => setPage(i, e.target.value)} className={inputCls} placeholder="100–150 words…" />
-                </div>
-              ))}
+              {editing.summary_pages.map((p, i) => {
+                const { title, body } = splitPage(p);
+                return (
+                  <div key={i} className="space-y-1">
+                    <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block">Page {i + 1}</label>
+                    <input
+                      value={title}
+                      onChange={(e) => setPageTitle(i, e.target.value)}
+                      className={inputCls}
+                      placeholder={`Page ${i + 1} title`}
+                    />
+                    <textarea rows={4} value={body} onChange={(e) => setPageBody(i, e.target.value)} className={inputCls} placeholder="100–150 words…" />
+                  </div>
+                );
+              })}
             </div>
           </div>
 
