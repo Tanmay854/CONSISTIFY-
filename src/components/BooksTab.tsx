@@ -208,7 +208,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
     if (!el || books.length <= 1) return;
 
     let lastTime = performance.now();
-    const speed = 0.35;
+    const speed = 0.12;
 
     const tick = (time: number) => {
       if (time < pausedUntilRef.current) {
