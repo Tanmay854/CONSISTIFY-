@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
-import { X, Plus, Pencil, Trash2, Upload } from "lucide-react";
+import { X, Plus, Pencil, Trash2, Upload, Music } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
+import { BOOK_CATEGORIES, type Book, type QuizQuestion } from "@/lib/bookCategories";
+
+const emptyQuestion = (): QuizQuestion => ({ q: "", options: ["", "", "", ""], correct: 0, explanation: "" });
+const emptyPages = (): string[] => Array.from({ length: 10 }, () => "");
+const emptyQuiz = (): QuizQuestion[] => Array.from({ length: 15 }, emptyQuestion);
+
 
 type Form = {
   id?: string;
@@ -16,6 +21,12 @@ type Form = {
   amazon_url: string;
   price: string;
   rating: string;
+  reading_time_minutes: string;
+  listening_time_minutes: string;
+  audio_url: string;
+  summary_pages: string[];
+  quiz_questions: QuizQuestion[];
+  is_published: boolean;
   is_featured: boolean;
   is_trending: boolean;
   is_best_seller: boolean;
@@ -26,8 +37,12 @@ const empty = (): Form => ({
   title: "", author: "", category: BOOK_CATEGORIES[0], description: "",
   key_takeaways: "", why_read: "", cover_url: "", cover_url_2: "", amazon_url: "",
   price: "", rating: "",
+  reading_time_minutes: "", listening_time_minutes: "", audio_url: "",
+  summary_pages: emptyPages(), quiz_questions: emptyQuiz(),
+  is_published: true,
   is_featured: false, is_trending: false, is_best_seller: false, is_new_release: false,
 });
+
 
 const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -38,7 +53,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
 
   const load = async () => {
     const { data } = await supabase.from("books").select("*").order("created_at", { ascending: false });
-    setBooks((data as Book[]) ?? []);
+    setBooks((data as unknown as Book[]) ?? []);
   };
 
   useEffect(() => { if (open) load(); }, [open]);
@@ -48,12 +63,22 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const startNew = () => { setError(null); setEditing(empty()); };
   const startEdit = (b: Book) => {
     setError(null);
+    const pages = Array.isArray(b.summary_pages) ? [...b.summary_pages] : [];
+    while (pages.length < 10) pages.push("");
+    const quiz = Array.isArray(b.quiz_questions) ? [...b.quiz_questions] : [];
+    while (quiz.length < 15) quiz.push(emptyQuestion());
     setEditing({
       id: b.id,
       title: b.title, author: b.author, category: b.category,
       description: b.description ?? "", key_takeaways: b.key_takeaways ?? "", why_read: b.why_read ?? "",
       cover_url: b.cover_url, cover_url_2: b.cover_url_2 ?? "", amazon_url: b.amazon_url,
       price: b.price?.toString() ?? "", rating: b.rating?.toString() ?? "",
+      reading_time_minutes: b.reading_time_minutes?.toString() ?? "",
+      listening_time_minutes: b.listening_time_minutes?.toString() ?? "",
+      audio_url: b.audio_url ?? "",
+      summary_pages: pages.slice(0, 10),
+      quiz_questions: quiz.slice(0, 15),
+      is_published: b.is_published ?? true,
       is_featured: b.is_featured, is_trending: b.is_trending,
       is_best_seller: b.is_best_seller, is_new_release: b.is_new_release,
     });
@@ -78,11 +103,18 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       amazon_url: editing.amazon_url.trim(),
       price: editing.price ? Number(editing.price) : null,
       rating: editing.rating ? Number(editing.rating) : null,
+      reading_time_minutes: editing.reading_time_minutes ? Number(editing.reading_time_minutes) : null,
+      listening_time_minutes: editing.listening_time_minutes ? Number(editing.listening_time_minutes) : null,
+      audio_url: editing.audio_url.trim() || null,
+      summary_pages: editing.summary_pages.map((p) => p.trim()),
+      quiz_questions: editing.quiz_questions.filter((q) => q.q.trim() && q.options.every((o) => o.trim())),
+      is_published: editing.is_published,
       is_featured: editing.is_featured,
       is_trending: editing.is_trending,
       is_best_seller: editing.is_best_seller,
       is_new_release: editing.is_new_release,
     };
+
     const { error } = editing.id
       ? await supabase.from("books").update(payload).eq("id", editing.id)
       : await supabase.from("books").insert({ ...payload, created_by: (await supabase.auth.getUser()).data.user?.id });
@@ -109,6 +141,31 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     setEditing((f) => f ? { ...f, [slot === 1 ? "cover_url" : "cover_url_2"]: data.publicUrl } : f);
     setUploading(false);
   };
+
+  const uploadAudio = async (file: File) => {
+    setUploading(true); setError(null);
+    const ext = file.name.split(".").pop() || "mp3";
+    const path = `books/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("audio").upload(path, file, { upsert: false, contentType: file.type });
+    if (error) { setUploading(false); setError(error.message); return; }
+    const { data } = supabase.storage.from("audio").getPublicUrl(path);
+    setEditing((f) => f ? { ...f, audio_url: data.publicUrl } : f);
+    setUploading(false);
+  };
+
+  const setPage = (i: number, v: string) =>
+    setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => idx === i ? v : p) } : f);
+
+  const setQ = (i: number, patch: Partial<QuizQuestion>) =>
+    setEditing((f) => f ? { ...f, quiz_questions: f.quiz_questions.map((q, idx) => idx === i ? { ...q, ...patch } : q) } : f);
+
+  const setOpt = (i: number, oi: 0|1|2|3, v: string) =>
+    setEditing((f) => f ? { ...f, quiz_questions: f.quiz_questions.map((q, idx) => {
+      if (idx !== i) return q;
+      const options = [...q.options] as [string,string,string,string];
+      options[oi] = v;
+      return { ...q, options };
+    }) } : f);
 
   return (
     <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
@@ -171,6 +228,61 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
           <Row label="Key takeaways"><textarea rows={3} value={editing.key_takeaways} onChange={(e) => setEditing({ ...editing, key_takeaways: e.target.value })} className={inputCls} /></Row>
           <Row label="Why read this book"><textarea rows={3} value={editing.why_read} onChange={(e) => setEditing({ ...editing, why_read: e.target.value })} className={inputCls} /></Row>
 
+          <div className="grid grid-cols-2 gap-3">
+            <Row label="Reading time (min)"><input inputMode="numeric" value={editing.reading_time_minutes} onChange={(e) => setEditing({ ...editing, reading_time_minutes: e.target.value })} className={inputCls} /></Row>
+            <Row label="Listening time (min)"><input inputMode="numeric" value={editing.listening_time_minutes} onChange={(e) => setEditing({ ...editing, listening_time_minutes: e.target.value })} className={inputCls} /></Row>
+          </div>
+
+          <Row label="Audio summary">
+            {editing.audio_url && (
+              <audio src={editing.audio_url} controls className="w-full mb-2" />
+            )}
+            <div className="flex gap-2">
+              <input placeholder="https://…" value={editing.audio_url} onChange={(e) => setEditing({ ...editing, audio_url: e.target.value })} className={inputCls} />
+              <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
+                <Music size={14} />
+                {uploading ? "…" : "Upload"}
+                <input type="file" accept="audio/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadAudio(e.target.files[0])} />
+              </label>
+            </div>
+          </Row>
+
+          <div className="pt-3">
+            <p className="text-foreground text-sm font-bold uppercase tracking-wider mb-2">Summary pages (10)</p>
+            <div className="space-y-2">
+              {editing.summary_pages.map((p, i) => (
+                <div key={i}>
+                  <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block mb-1">Page {i + 1}</label>
+                  <textarea rows={4} value={p} onChange={(e) => setPage(i, e.target.value)} className={inputCls} placeholder="100–150 words…" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-3">
+            <p className="text-foreground text-sm font-bold uppercase tracking-wider mb-2">Quiz questions (15)</p>
+            <div className="space-y-3">
+              {editing.quiz_questions.map((q, i) => (
+                <div key={i} className="p-3 rounded-xl bg-secondary/40 border border-border/50 space-y-2">
+                  <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block">Question {i + 1}</label>
+                  <textarea rows={2} value={q.q} onChange={(e) => setQ(i, { q: e.target.value })} className={inputCls} placeholder="Question…" />
+                  {([0,1,2,3] as const).map((oi) => (
+                    <div key={oi} className="flex items-center gap-2">
+                      <input type="radio" name={`correct-${i}`} checked={q.correct === oi} onChange={() => setQ(i, { correct: oi })} />
+                      <input value={q.options[oi]} onChange={(e) => setOpt(i, oi, e.target.value)} className={inputCls} placeholder={`Option ${String.fromCharCode(65+oi)}`} />
+                    </div>
+                  ))}
+                  <input value={q.explanation ?? ""} onChange={(e) => setQ(i, { explanation: e.target.value })} className={inputCls} placeholder="Explanation (optional)" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 px-3 py-2 mt-3 rounded-lg bg-secondary text-foreground text-sm">
+            <input type="checkbox" checked={editing.is_published} onChange={(e) => setEditing({ ...editing, is_published: e.target.checked })} />
+            Published
+          </label>
+
           <div className="grid grid-cols-2 gap-2 pt-2">
             {(["is_featured", "is_trending", "is_best_seller", "is_new_release"] as const).map((k) => (
               <label key={k} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm">
@@ -179,6 +291,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
               </label>
             ))}
           </div>
+
 
           {error && <p className="text-destructive text-sm">{error}</p>}
 

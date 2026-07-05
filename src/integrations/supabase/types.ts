@@ -53,6 +53,7 @@ export type Database = {
       books: {
         Row: {
           amazon_url: string
+          audio_url: string | null
           author: string
           category: string
           cover_url: string
@@ -64,17 +65,23 @@ export type Database = {
           is_best_seller: boolean
           is_featured: boolean
           is_new_release: boolean
+          is_published: boolean
           is_trending: boolean
           key_takeaways: string | null
+          listening_time_minutes: number | null
           price: number | null
           public_id: string | null
+          quiz_questions: Json
           rating: number | null
+          reading_time_minutes: number | null
+          summary_pages: Json
           title: string
           updated_at: string
           why_read: string | null
         }
         Insert: {
           amazon_url: string
+          audio_url?: string | null
           author: string
           category: string
           cover_url: string
@@ -86,17 +93,23 @@ export type Database = {
           is_best_seller?: boolean
           is_featured?: boolean
           is_new_release?: boolean
+          is_published?: boolean
           is_trending?: boolean
           key_takeaways?: string | null
+          listening_time_minutes?: number | null
           price?: number | null
           public_id?: string | null
+          quiz_questions?: Json
           rating?: number | null
+          reading_time_minutes?: number | null
+          summary_pages?: Json
           title: string
           updated_at?: string
           why_read?: string | null
         }
         Update: {
           amazon_url?: string
+          audio_url?: string | null
           author?: string
           category?: string
           cover_url?: string
@@ -108,11 +121,16 @@ export type Database = {
           is_best_seller?: boolean
           is_featured?: boolean
           is_new_release?: boolean
+          is_published?: boolean
           is_trending?: boolean
           key_takeaways?: string | null
+          listening_time_minutes?: number | null
           price?: number | null
           public_id?: string | null
+          quiz_questions?: Json
           rating?: number | null
+          reading_time_minutes?: number | null
+          summary_pages?: Json
           title?: string
           updated_at?: string
           why_read?: string | null
