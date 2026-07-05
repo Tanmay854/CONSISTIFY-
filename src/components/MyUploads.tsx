@@ -238,10 +238,17 @@ const MyUploads = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
-                        <div className="flex gap-2 items-center">
-                          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="flex-1 bg-background text-foreground rounded-lg px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-primary" autoFocus />
-                          <button onClick={() => handleSaveTitle("reels", reel.id)} disabled={busy} className="text-primary"><Check size={16} /></button>
-                          <button onClick={() => setEditingId(null)} className="text-muted-foreground"><X size={16} /></button>
+                        <div className="space-y-2">
+                          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Title" className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary" autoFocus />
+                          <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" rows={2} className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary resize-none" />
+                          <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary">
+                            <option value="">Select category</option>
+                            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                          <div className="flex gap-2 justify-end">
+                            <button onClick={() => setEditingId(null)} className="text-xs px-3 py-1.5 rounded-lg bg-muted text-muted-foreground flex items-center gap-1"><X size={13} /> Cancel</button>
+                            <button onClick={() => handleSaveEdit("reels", reel.id)} disabled={busy} className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground flex items-center gap-1"><Check size={13} /> Save</button>
+                          </div>
                         </div>
                       ) : (
                         <div className="flex items-start justify-between gap-2">
@@ -251,7 +258,7 @@ const MyUploads = () => {
                           </div>
 
                           <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => { setEditingId(reel.id); setEditTitle(reel.title || ""); }} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
+                            <button onClick={() => startEdit(reel)} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
                             <button onClick={() => setTrimmingId(isTrimming ? null : reel.id)} className={isTrimming ? "text-primary" : "text-muted-foreground hover:text-primary"}><Scissors size={14} /></button>
                             <button onClick={() => setStatsOpen(statsOpen === `reel:${reel.id}` ? null : `reel:${reel.id}`)} className={statsOpen === `reel:${reel.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
                             <button onClick={() => handleDelete("reels", reel.id, reel.video_url, ytId ? null : "videos", { videoGuid: reel.bunny_video_guid, libraryId: reel.bunny_library_id })} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
