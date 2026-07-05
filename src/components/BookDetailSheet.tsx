@@ -112,6 +112,17 @@ const Overview = ({ book, similar, onQuiz, onListen }: { book: Book; similar: Bo
         </button>
       </div>
 
+      {(book.summary_pages ?? []).filter(Boolean).length > 0 && (
+        <section className="px-6 py-5 border-t border-border/60 mt-2 space-y-4">
+          <h3 className="text-foreground text-sm font-bold uppercase tracking-wider mb-3">Summary</h3>
+          {(book.summary_pages ?? []).filter(Boolean).map((page, idx) => (
+            <div key={idx} className="rounded-2xl bg-secondary/40 border border-border/40 p-5">
+              <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold mb-2">Page {idx + 1}</p>
+              <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">{page}</p>
+            </div>
+          ))}
+        </section>
+      )}
       {book.description && (
         <Section title="About this book">
           <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">{book.description}</p>
@@ -120,6 +131,11 @@ const Overview = ({ book, similar, onQuiz, onListen }: { book: Book; similar: Bo
       {book.key_takeaways && (
         <Section title="Key takeaways">
           <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">{book.key_takeaways}</p>
+        </Section>
+      )}
+      {book.why_read && (
+        <Section title="Why read this book">
+          <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">{book.why_read}</p>
         </Section>
       )}
       {similar.length > 0 && (
