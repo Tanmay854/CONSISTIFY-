@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Search, X, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
+import { useAuth } from "@/hooks/useAuth";
 import BookDetailSheet from "./BookDetailSheet";
 
 const POPULAR = ["Discipline", "Atomic Habits", "Deep Work", "Stoicism", "Focus"];
@@ -194,28 +195,86 @@ const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => v
   </button>
 );
 
-const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => void }) => (
-  <section>
-    <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
-    <div className="flex gap-4 overflow-x-auto scrollbar-hide px-5 pb-2 snap-x snap-mandatory">
-      {books.map((b) => (
-        <button
-          key={b.id}
-          onClick={() => onOpen(b)}
-          className="relative shrink-0 w-[78vw] max-w-[340px] h-56 rounded-3xl overflow-hidden snap-start text-left active:scale-[0.98] transition-transform"
-        >
-          <img src={b.cover_url} alt={b.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 p-4">
-            <p className="text-primary text-[10px] uppercase tracking-[0.2em] font-semibold mb-1">Featured</p>
-            <h3 className="text-foreground text-lg font-extrabold leading-tight line-clamp-2">{b.title}</h3>
-            <p className="text-muted-foreground text-xs mt-0.5">by {b.author}</p>
-          </div>
-        </button>
-      ))}
-    </div>
-  </section>
-);
+const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => void }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
+  const pausedUntilRef = useRef(0);
+  const scrollPosRef = useRef(0);
+  const directionRef = useRef<1 | -1>(1);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || books.length <= 1) return;
+
+    let lastTime = performance.now();
+    const speed = 0.35;
+
+    const tick = (time: number) => {
+      if (time < pausedUntilRef.current || user) {
+        lastTime = time;
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      const dt = time - lastTime;
+      lastTime = time;
+
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (maxScroll <= 0) {
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      scrollPosRef.current += speed * dt * directionRef.current;
+
+      if (scrollPosRef.current >= maxScroll) {
+        scrollPosRef.current = maxScroll;
+        directionRef.current = -1;
+      } else if (scrollPosRef.current <= 0) {
+        scrollPosRef.current = 0;
+        directionRef.current = 1;
+      }
+
+      el.scrollLeft = scrollPosRef.current;
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [books.length, user]);
+
+  const pause = () => { pausedUntilRef.current = performance.now() + 4000; };
+
+  return (
+    <section>
+      <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
+      <div
+        ref={scrollRef}
+        onMouseEnter={pause}
+        onTouchStart={pause}
+        onScroll={pause}
+        className="flex gap-4 overflow-x-auto scrollbar-hide px-5 pb-2"
+      >
+        {books.map((b) => (
+          <button
+            key={b.id}
+            onClick={() => onOpen(b)}
+            className="relative shrink-0 w-[78vw] max-w-[340px] h-56 rounded-3xl overflow-hidden text-left active:scale-[0.98] transition-transform"
+          >
+            <img src={b.cover_url} alt={b.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-4">
+              <p className="text-primary text-[10px] uppercase tracking-[0.2em] font-semibold mb-1">Featured</p>
+              <h3 className="text-foreground text-lg font-extrabold leading-tight line-clamp-2">{b.title}</h3>
+              <p className="text-muted-foreground text-xs mt-0.5">by {b.author}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+};
 
 const Row = ({
   title, books, onOpen, onSeeAll,
