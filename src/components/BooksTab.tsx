@@ -211,7 +211,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
     const speed = 0.35;
 
     const tick = (time: number) => {
-      if (time < pausedUntilRef.current || user) {
+      if (time < pausedUntilRef.current) {
         lastTime = time;
         rafRef.current = requestAnimationFrame(tick);
         return;
