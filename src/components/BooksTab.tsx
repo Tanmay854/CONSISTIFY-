@@ -213,7 +213,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
     slideWidthRef.current = slideWidth;
     isSlidingRef.current = true;
 
-    const duration = slideWidth / 0.03; // ms
+    const duration = slideWidth / 0.015; // ms
 
     track.style.transform = 'translate3d(0, 0, 0)';
     track.style.willChange = 'transform';
