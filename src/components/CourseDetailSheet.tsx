@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { ChevronLeft, Star, Clock, PlayCircle, Award } from "lucide-react";
 import type { Course } from "@/lib/courseCategories";
-import HlsVideo from "./HlsVideo";
+import VideoPlayer from "./VideoPlayer";
 
 const CourseDetailSheet = ({
   course,
