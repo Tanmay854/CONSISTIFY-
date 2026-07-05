@@ -21,6 +21,12 @@ type Form = {
   amazon_url: string;
   price: string;
   rating: string;
+  reading_time_minutes: string;
+  listening_time_minutes: string;
+  audio_url: string;
+  summary_pages: string[];
+  quiz_questions: QuizQuestion[];
+  is_published: boolean;
   is_featured: boolean;
   is_trending: boolean;
   is_best_seller: boolean;
@@ -31,8 +37,12 @@ const empty = (): Form => ({
   title: "", author: "", category: BOOK_CATEGORIES[0], description: "",
   key_takeaways: "", why_read: "", cover_url: "", cover_url_2: "", amazon_url: "",
   price: "", rating: "",
+  reading_time_minutes: "", listening_time_minutes: "", audio_url: "",
+  summary_pages: emptyPages(), quiz_questions: emptyQuiz(),
+  is_published: true,
   is_featured: false, is_trending: false, is_best_seller: false, is_new_release: false,
 });
+
 
 const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const [books, setBooks] = useState<Book[]>([]);
