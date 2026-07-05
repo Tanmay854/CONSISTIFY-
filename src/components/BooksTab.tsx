@@ -202,46 +202,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
   const isSlidingRef = useRef(false);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    const track = trackRef.current;
-    if (!el || !track || books.length <= 1) return;
-
-    const firstCard = track.firstElementChild as HTMLElement | null;
-    const gap = 16;
-    const slideWidth = firstCard ? firstCard.offsetWidth + gap : el.clientWidth * 0.78 + gap;
-    slideWidthRef.current = slideWidth;
-    isSlidingRef.current = true;
-
-    const duration = slideWidth / 0.015; // ms
-
-    track.style.transform = 'translate3d(0, 0, 0)';
-    track.style.willChange = 'transform';
-    requestAnimationFrame(() => {
-      track.style.transition = `transform ${duration}ms linear`;
-      track.style.transform = `translate3d(-${slideWidth}px, 0, 0)`;
-    });
-
-    const onTransitionEnd = () => {
-      el.scrollLeft = slideWidth;
-      track.style.transition = 'none';
-      track.style.transform = '';
-      track.style.willChange = '';
-      isSlidingRef.current = false;
-    };
-
-    track.addEventListener('transitionend', onTransitionEnd);
-
-    return () => {
-      track.removeEventListener('transitionend', onTransitionEnd);
-      track.style.transition = 'none';
-      track.style.transform = '';
-      track.style.willChange = '';
-      isSlidingRef.current = false;
-    };
-  }, [books.length]);
-
-  const stopAndSync = () => {
+  const stopAndSync = useCallback(() => {
     const el = scrollRef.current;
     const track = trackRef.current;
     if (!el || !track || !isSlidingRef.current) return;
@@ -254,11 +215,75 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
     }
 
     track.style.transition = 'none';
-    track.style.transform = '';
+    track.style.transform = 'translate3d(0, 0, 0)';
     track.style.willChange = '';
     el.scrollLeft = Math.round(currentX);
+    // Clear inline transform after committing scrollLeft to avoid any flash
+    requestAnimationFrame(() => {
+      if (trackRef.current) trackRef.current.style.transform = '';
+    });
     isSlidingRef.current = false;
-  };
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    const track = trackRef.current;
+    if (!el || !track || books.length <= 1) return;
+
+    const firstCard = track.firstElementChild as HTMLElement | null;
+    const gap = 16;
+    const slideWidth = firstCard ? firstCard.offsetWidth + gap : el.clientWidth * 0.78 + gap;
+    slideWidthRef.current = slideWidth;
+
+    const duration = slideWidth / 0.015; // ms
+
+    // Reset scroll and transform in one frame to avoid initial jump
+    el.scrollLeft = 0;
+    track.style.transition = 'none';
+    track.style.transform = 'translate3d(0, 0, 0)';
+    track.style.willChange = 'transform';
+
+    // Force layout so the starting transform is committed
+    void track.offsetWidth;
+
+    let started = false;
+    const startId = requestAnimationFrame(() => {
+      if (!trackRef.current) return;
+      isSlidingRef.current = true;
+      started = true;
+      trackRef.current.style.transition = `transform ${duration}ms linear`;
+      trackRef.current.style.transform = `translate3d(-${slideWidth}px, 0, 0)`;
+    });
+
+    const onTransitionEnd = () => {
+      if (!isSlidingRef.current) return;
+      track.style.transition = 'none';
+      el.scrollLeft = slideWidth;
+      track.style.transform = 'translate3d(0, 0, 0)';
+      track.style.willChange = '';
+      requestAnimationFrame(() => {
+        if (trackRef.current) trackRef.current.style.transform = '';
+      });
+      isSlidingRef.current = false;
+    };
+
+    track.addEventListener('transitionend', onTransitionEnd);
+
+    // Stop animation on ANY page scroll (vertical) or interaction outside the carousel
+    const onWindowScroll = () => stopAndSync();
+    window.addEventListener('scroll', onWindowScroll, { passive: true, capture: true });
+
+    return () => {
+      cancelAnimationFrame(startId);
+      track.removeEventListener('transitionend', onTransitionEnd);
+      window.removeEventListener('scroll', onWindowScroll, { capture: true } as any);
+      track.style.transition = 'none';
+      track.style.transform = '';
+      track.style.willChange = '';
+      isSlidingRef.current = false;
+      void started;
+    };
+  }, [books.length, stopAndSync]);
 
   return (
     <section>
