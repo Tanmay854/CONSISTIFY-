@@ -117,10 +117,10 @@ const Overview = ({ book, similar, onQuiz, onListen }: { book: Book; similar: Bo
         <section className="px-6 py-5 border-t border-border/60 mt-2 space-y-2">
           <h3 className="text-foreground text-sm font-bold uppercase tracking-wider mb-3">Summary</h3>
           {(book.summary_pages ?? []).filter(Boolean).map((page, idx) => {
-            const nl = page.indexOf("\n");
-            const rawTitle = (nl === -1 ? page : page.slice(0, nl)).trim();
-            const body = (nl === -1 ? "" : page.slice(nl + 1)).trim();
-            const title = rawTitle || `Chapter ${idx + 1}`;
+            const lines = page.split("\n").map((l) => l.trim()).filter(Boolean);
+            const hasTitle = lines.length > 1;
+            const title = hasTitle ? lines[0] : "";
+            const body = hasTitle ? lines.slice(1).join("\n") : page.trim();
             const isOpen = expandedPage === idx;
             return (
               <button
@@ -131,7 +131,7 @@ const Overview = ({ book, similar, onQuiz, onListen }: { book: Book; similar: Bo
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold">Page {idx + 1}</p>
-                    <p className="text-foreground text-sm font-bold mt-1 truncate">{title}</p>
+                    {title && <p className="text-foreground text-sm font-bold mt-1 truncate">{title}</p>}
                   </div>
                   <span className="text-muted-foreground text-lg leading-none shrink-0">{isOpen ? "−" : "+"}</span>
                 </div>
