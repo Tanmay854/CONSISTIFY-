@@ -200,12 +200,19 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
   const rafRef = useRef<number>(0);
   const pausedUntilRef = useRef(0);
   const scrollPosRef = useRef(0);
-  const directionRef = useRef<1 | -1>(1);
+  const hasSlidRef = useRef(false);
+  const targetRef = useRef(0);
   const { user } = useAuth();
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || books.length <= 1) return;
+
+    const firstCard = el.firstElementChild as HTMLElement | null;
+    const gap = 16;
+    const slideWidth = (firstCard ? firstCard.offsetWidth + gap : el.clientWidth * 0.78 + gap);
+    targetRef.current = slideWidth;
+    hasSlidRef.current = false;
 
     let lastTime = performance.now();
     const speed = 0.12;
@@ -226,18 +233,20 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
         return;
       }
 
-      scrollPosRef.current += speed * dt * directionRef.current;
+      if (hasSlidRef.current) return;
 
-      if (scrollPosRef.current >= maxScroll) {
-        scrollPosRef.current = maxScroll;
-        directionRef.current = -1;
-      } else if (scrollPosRef.current <= 0) {
-        scrollPosRef.current = 0;
-        directionRef.current = 1;
+      scrollPosRef.current += speed * dt;
+
+      if (scrollPosRef.current >= targetRef.current) {
+        scrollPosRef.current = targetRef.current;
+        hasSlidRef.current = true;
       }
 
       el.scrollLeft = scrollPosRef.current;
-      rafRef.current = requestAnimationFrame(tick);
+
+      if (!hasSlidRef.current) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
     };
 
     rafRef.current = requestAnimationFrame(tick);
