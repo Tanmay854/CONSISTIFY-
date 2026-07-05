@@ -64,9 +64,6 @@ const HlsVideo = forwardRef<HTMLVideoElement, Props>(({ src, ...rest }, forwarde
     <video
       ref={ref}
       playsInline
-      // @ts-expect-error non-standard iOS attribute
-      webkit-playsinline="true"
-      x5-playsinline="true"
       preload="auto"
       crossOrigin="anonymous"
       {...rest}
