@@ -15,10 +15,14 @@ import { Slider } from "@/components/ui/slider";
 import StatsChart from "@/components/StatsChart";
 import { deleteContent } from "@/lib/deleteContent";
 
+const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"];
+
 interface Reel {
   id: string;
   public_id: string | null;
   title: string | null;
+  description: string | null;
+  category: string | null;
   video_url: string;
   bunny_video_guid: string | null;
   bunny_library_id: string | null;
@@ -31,6 +35,7 @@ interface Quote {
   id: string;
   public_id: string | null;
   title: string | null;
+  description: string | null;
   category: string;
   image_url: string;
   bunny_storage_path: string | null;
