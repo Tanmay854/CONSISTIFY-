@@ -38,7 +38,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
 
   const load = async () => {
     const { data } = await supabase.from("books").select("*").order("created_at", { ascending: false });
-    setBooks((data as Book[]) ?? []);
+    setBooks((data as unknown as Book[]) ?? []);
   };
 
   useEffect(() => { if (open) load(); }, [open]);

@@ -46,8 +46,8 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
           .order("created_at", { ascending: false })
           .limit(10),
       ]);
-      setSimilar((sim as Book[]) ?? []);
-      setCategory((cat as Book[]) ?? []);
+      setSimilar((sim as unknown as Book[]) ?? []);
+      setCategory((cat as unknown as Book[]) ?? []);
     })();
   }, [book.id, book.category]);
 

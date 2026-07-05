@@ -38,7 +38,7 @@ const BooksTab = () => {
       .select("*")
       .order("created_at", { ascending: false })
       .limit(1000);
-    setBooks((data as Book[]) ?? []);
+    setBooks((data as unknown as Book[]) ?? []);
     setLoading(false);
   }, []);
 
