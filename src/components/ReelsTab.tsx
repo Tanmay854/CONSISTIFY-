@@ -501,7 +501,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderPr
         {reel.uploaded_by && (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onOpenProfile(reel.uploaded_by!); }}
+            onClick={(e) => { e.stopPropagation(); setIsPlaying(false); onOpenProfile(reel.uploaded_by!); }}
             className="flex items-center gap-2 mb-2"
           >
             <span className="w-7 h-7 rounded-full bg-secondary overflow-hidden flex items-center justify-center ring-1 ring-white/30 shrink-0">
