@@ -234,10 +234,12 @@ const MusicTab = () => {
   return (
     <div className="min-h-screen pb-28 pt-4" style={{ backgroundColor: "#000", color: "#fff" }}>
       {/* Header */}
-      <div className="px-5 pt-4 pb-2 pl-11 flex items-baseline justify-between">
-        <h2 className="font-extrabold text-2xl text-white tracking-tight">Music</h2>
-        <SpotifyBadge />
-      </div>
+      <header className="px-5 pt-4 pb-2">
+        <div className="pl-11 flex items-baseline justify-between">
+          <h2 className="font-extrabold text-2xl text-white tracking-tight">Music</h2>
+          <SpotifyBadge />
+        </div>
+      </header>
 
       {/* Connect Spotify — open to every visitor, no sign-in required */}
       <div className="px-5 pt-3">
