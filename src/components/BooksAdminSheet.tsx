@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
-import { X, Plus, Pencil, Trash2, Upload } from "lucide-react";
+import { X, Plus, Pencil, Trash2, Upload, Music } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
+import { BOOK_CATEGORIES, type Book, type QuizQuestion } from "@/lib/bookCategories";
+
+const emptyQuestion = (): QuizQuestion => ({ q: "", options: ["", "", "", ""], correct: 0, explanation: "" });
+const emptyPages = (): string[] => Array.from({ length: 10 }, () => "");
+const emptyQuiz = (): QuizQuestion[] => Array.from({ length: 15 }, emptyQuestion);
+
 
 type Form = {
   id?: string;
