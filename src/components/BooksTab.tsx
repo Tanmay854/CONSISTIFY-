@@ -36,6 +36,7 @@ const BooksTab = () => {
     const { data } = await supabase
       .from("books")
       .select("*")
+      .eq("is_published", true)
       .order("created_at", { ascending: false })
       .limit(1000);
     setBooks((data as unknown as Book[]) ?? []);
