@@ -215,7 +215,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
     hasSlidRef.current = false;
 
     let lastTime = performance.now();
-    const speed = 0.12;
+    const speed = 0.04;
 
     const tick = (time: number) => {
       if (time < pausedUntilRef.current) {
