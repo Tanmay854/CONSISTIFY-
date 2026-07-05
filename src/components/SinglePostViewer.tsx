@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { X, Volume2, VolumeX, CircleAlert } from "lucide-react";
-import HlsVideo from "@/components/HlsVideo";
+import { useEffect, useState } from "react";
+import { X, CircleAlert } from "lucide-react";
+import VideoPlayer from "@/components/VideoPlayer";
 import ReportDialog from "@/components/ReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getVideoThumbnail } from "@/lib/thumbUrl";
