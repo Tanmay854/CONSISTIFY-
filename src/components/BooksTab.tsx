@@ -197,88 +197,96 @@ const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => v
 
 const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => void }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number>(0);
-  const pausedUntilRef = useRef(0);
-  const scrollPosRef = useRef(0);
-  const hasSlidRef = useRef(false);
-  const targetRef = useRef(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const slideWidthRef = useRef(0);
+  const isSlidingRef = useRef(false);
   const { user } = useAuth();
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el || books.length <= 1) return;
+    const track = trackRef.current;
+    if (!el || !track || books.length <= 1) return;
 
-    const firstCard = el.firstElementChild as HTMLElement | null;
+    const firstCard = track.firstElementChild as HTMLElement | null;
     const gap = 16;
-    const slideWidth = (firstCard ? firstCard.offsetWidth + gap : el.clientWidth * 0.78 + gap);
-    targetRef.current = slideWidth;
-    hasSlidRef.current = false;
+    const slideWidth = firstCard ? firstCard.offsetWidth + gap : el.clientWidth * 0.78 + gap;
+    slideWidthRef.current = slideWidth;
+    isSlidingRef.current = true;
 
-    let lastTime = performance.now();
-    const speed = 0.03;
+    const duration = slideWidth / 0.03; // ms
 
-    const tick = (time: number) => {
-      if (time < pausedUntilRef.current) {
-        lastTime = time;
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
+    track.style.transform = 'translate3d(0, 0, 0)';
+    track.style.willChange = 'transform';
+    requestAnimationFrame(() => {
+      track.style.transition = `transform ${duration}ms linear`;
+      track.style.transform = `translate3d(-${slideWidth}px, 0, 0)`;
+    });
 
-      const dt = time - lastTime;
-      lastTime = time;
-
-      const maxScroll = el.scrollWidth - el.clientWidth;
-      if (maxScroll <= 0) {
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      if (hasSlidRef.current) return;
-
-      scrollPosRef.current += speed * dt;
-
-      if (scrollPosRef.current >= targetRef.current) {
-        scrollPosRef.current = targetRef.current;
-        hasSlidRef.current = true;
-      }
-
-      el.scrollLeft = scrollPosRef.current;
-
-      if (!hasSlidRef.current) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
+    const onTransitionEnd = () => {
+      el.scrollLeft = slideWidth;
+      track.style.transition = 'none';
+      track.style.transform = '';
+      track.style.willChange = '';
+      isSlidingRef.current = false;
     };
 
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
+    track.addEventListener('transitionend', onTransitionEnd);
+
+    return () => {
+      track.removeEventListener('transitionend', onTransitionEnd);
+      track.style.transition = 'none';
+      track.style.transform = '';
+      track.style.willChange = '';
+      isSlidingRef.current = false;
+    };
   }, [books.length]);
 
-  const pause = () => { pausedUntilRef.current = performance.now() + 4000; };
+  const stopAndSync = () => {
+    const el = scrollRef.current;
+    const track = trackRef.current;
+    if (!el || !track || !isSlidingRef.current) return;
+
+    const style = window.getComputedStyle(track).transform;
+    let currentX = 0;
+    if (style && style !== 'none') {
+      const match = style.match(/matrix\([^,]+,[^,]+,[^,]+,[^,]+,([^,]+)/);
+      if (match) currentX = Math.abs(parseFloat(match[1]));
+    }
+
+    track.style.transition = 'none';
+    track.style.transform = '';
+    track.style.willChange = '';
+    el.scrollLeft = Math.round(currentX);
+    isSlidingRef.current = false;
+  };
 
   return (
     <section>
       <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
       <div
         ref={scrollRef}
-        onPointerDown={pause}
-        onWheel={pause}
-        className="flex gap-4 overflow-x-auto scrollbar-hide px-5 pb-2"
+        onPointerDown={stopAndSync}
+        onWheel={stopAndSync}
+        onTouchStart={stopAndSync}
+        className="overflow-x-auto scrollbar-hide px-5 pb-2"
       >
-        {books.map((b) => (
-          <button
-            key={b.id}
-            onClick={() => onOpen(b)}
-            className="relative shrink-0 w-[78vw] max-w-[340px] h-56 rounded-3xl overflow-hidden text-left active:scale-[0.98] transition-transform"
-          >
-            <img src={b.cover_url} alt={b.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-4">
-              <p className="text-primary text-[10px] uppercase tracking-[0.2em] font-semibold mb-1">Featured</p>
-              <h3 className="text-foreground text-lg font-extrabold leading-tight line-clamp-2">{b.title}</h3>
-              <p className="text-muted-foreground text-xs mt-0.5">by {b.author}</p>
-            </div>
-          </button>
-        ))}
+        <div ref={trackRef} className="flex gap-4">
+          {books.map((b) => (
+            <button
+              key={b.id}
+              onClick={() => onOpen(b)}
+              className="relative shrink-0 w-[78vw] max-w-[340px] h-56 rounded-3xl overflow-hidden text-left active:scale-[0.98] transition-transform"
+            >
+              <img src={b.cover_url} alt={b.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <p className="text-primary text-[10px] uppercase tracking-[0.2em] font-semibold mb-1">Featured</p>
+                <h3 className="text-foreground text-lg font-extrabold leading-tight line-clamp-2">{b.title}</h3>
+                <p className="text-muted-foreground text-xs mt-0.5">by {b.author}</p>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );
