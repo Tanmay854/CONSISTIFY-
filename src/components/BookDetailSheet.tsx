@@ -113,14 +113,27 @@ const Overview = ({ book, similar, onQuiz, onListen }: { book: Book; similar: Bo
       </div>
 
       {(book.summary_pages ?? []).filter(Boolean).length > 0 && (
-        <section className="px-6 py-5 border-t border-border/60 mt-2 space-y-4">
+        <section className="px-6 py-5 border-t border-border/60 mt-2 space-y-2">
           <h3 className="text-foreground text-sm font-bold uppercase tracking-wider mb-3">Summary</h3>
-          {(book.summary_pages ?? []).filter(Boolean).map((page, idx) => (
-            <div key={idx} className="rounded-2xl bg-secondary/40 border border-border/40 p-5">
-              <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold mb-2">Page {idx + 1}</p>
-              <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">{page}</p>
-            </div>
-          ))}
+          {(book.summary_pages ?? []).filter(Boolean).map((page, idx) => {
+            const lines = page.split("\n").filter((l) => l.trim());
+            const title = lines[0] ?? `Page ${idx + 1}`;
+            const body = lines.slice(1).join("\n").trim();
+            const isOpen = expandedPage === idx;
+            return (
+              <button
+                key={idx}
+                onClick={() => setExpandedPage(isOpen ? null : idx)}
+                className="w-full text-left rounded-2xl bg-secondary/40 border border-border/40 p-5 transition-colors active:scale-[0.99]"
+              >
+                <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold">Page {idx + 1}</p>
+                <p className="text-foreground text-sm font-bold mt-1">{title}</p>
+                {isOpen && body && (
+                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-3">{body}</p>
+                )}
+              </button>
+            );
+          })}
         </section>
       )}
       {book.description && (
