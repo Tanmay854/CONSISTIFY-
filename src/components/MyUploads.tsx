@@ -144,10 +144,22 @@ const MyUploads = () => {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleSaveTitle = async (table: "reels" | "quotes", id: string) => {
+  const startEdit = (item: { id: string; title: string | null; description: string | null; category: string | null }) => {
+    setEditingId(item.id);
+    setEditTitle(item.title || "");
+    setEditDescription(item.description || "");
+    setEditCategory(item.category || "");
+  };
+
+  const handleSaveEdit = async (table: "reels" | "quotes", id: string) => {
     if (!editTitle.trim()) return;
     setBusy(true);
-    await supabase.from(table).update({ title: editTitle.trim() }).eq("id", id);
+    const payload: { title: string; description: string | null; category?: string } = {
+      title: editTitle.trim(),
+      description: editDescription.trim() || null,
+    };
+    if (editCategory) payload.category = table === "quotes" ? editCategory.toUpperCase() : editCategory;
+    await supabase.from(table).update(payload).eq("id", id);
     setEditingId(null);
     await fetchAll();
     setBusy(false);
