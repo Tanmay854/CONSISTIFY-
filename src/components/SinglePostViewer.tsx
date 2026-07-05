@@ -78,17 +78,29 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
       </button>
 
       {post.kind === "reel" ? (
-        <HlsVideo
-          ref={videoRef}
-          src={getPlayableVideoUrl(post.video_url)}
-          className="w-full h-full"
-          style={{ objectFit: (post.video_fit as React.CSSProperties["objectFit"]) || "contain" }}
-          autoPlay
-          loop
-          playsInline
-          muted={muted}
-          controls
-        />
+        <div
+          className="w-full h-full bg-black"
+          style={{
+            backgroundImage: getVideoThumbnail(post.video_url) ? `url(${getVideoThumbnail(post.video_url)})` : undefined,
+            backgroundSize: (post.video_fit as string) === "cover" ? "cover" : "contain",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          <HlsVideo
+            ref={videoRef}
+            src={getPlayableVideoUrl(post.video_url)}
+            className="w-full h-full"
+            style={{ objectFit: (post.video_fit as React.CSSProperties["objectFit"]) || "contain", backgroundColor: "transparent" }}
+            autoPlay
+            loop
+            playsInline
+            muted={muted}
+            controls
+            preload="auto"
+            poster={getVideoThumbnail(post.video_url) || undefined}
+          />
+        </div>
       ) : (
         <div className="relative w-full h-full flex items-center justify-center">
           {setImages && setImages.length > 0 && (
