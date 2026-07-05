@@ -251,9 +251,8 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
       <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
       <div
         ref={scrollRef}
-        onMouseEnter={pause}
-        onTouchStart={pause}
-        onScroll={pause}
+        onPointerDown={pause}
+        onWheel={pause}
         className="flex gap-4 overflow-x-auto scrollbar-hide px-5 pb-2"
       >
         {books.map((b) => (
