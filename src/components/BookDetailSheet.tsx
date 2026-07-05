@@ -117,18 +117,24 @@ const Overview = ({ book, similar, onQuiz, onListen }: { book: Book; similar: Bo
         <section className="px-6 py-5 border-t border-border/60 mt-2 space-y-2">
           <h3 className="text-foreground text-sm font-bold uppercase tracking-wider mb-3">Summary</h3>
           {(book.summary_pages ?? []).filter(Boolean).map((page, idx) => {
-            const lines = page.split("\n").filter((l) => l.trim());
-            const title = lines[0] ?? `Page ${idx + 1}`;
-            const body = lines.slice(1).join("\n").trim();
+            const lines = page.split("\n").map((l) => l.trim()).filter(Boolean);
+            const hasTitle = lines.length > 1;
+            const title = hasTitle ? lines[0] : "";
+            const body = hasTitle ? lines.slice(1).join("\n") : page.trim();
             const isOpen = expandedPage === idx;
             return (
               <button
                 key={idx}
                 onClick={() => setExpandedPage(isOpen ? null : idx)}
-                className="w-full text-left rounded-2xl bg-secondary/40 border border-border/40 p-5 transition-colors active:scale-[0.99]"
+                className="w-full text-left rounded-2xl bg-secondary/40 border border-border/40 p-4 transition-colors active:scale-[0.99]"
               >
-                <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold">Page {idx + 1}</p>
-                <p className="text-foreground text-sm font-bold mt-1">{title}</p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold">Page {idx + 1}</p>
+                    {title && <p className="text-foreground text-sm font-bold mt-1 truncate">{title}</p>}
+                  </div>
+                  <span className="text-muted-foreground text-lg leading-none shrink-0">{isOpen ? "−" : "+"}</span>
+                </div>
                 {isOpen && body && (
                   <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-3">{body}</p>
                 )}
