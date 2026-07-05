@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { ChevronLeft, Star, Clock, PlayCircle, Award } from "lucide-react";
 import type { Course } from "@/lib/courseCategories";
-import HlsVideo from "./HlsVideo";
+import VideoPlayer from "./VideoPlayer";
 
 const CourseDetailSheet = ({
   course,
@@ -51,14 +51,13 @@ const CourseDetailSheet = ({
           </div>
           {/* Compact video player */}
           <div className="relative w-full bg-black aspect-video">
-            <HlsVideo
+            <VideoPlayer
               src={course.hero_video_url!}
               poster={course.hero_image || course.cover_image}
-              controls
-              playsInline
               autoPlay
               muted
-              className="w-full h-full object-contain bg-black"
+              fit="contain"
+              fill
             />
           </div>
           {/* Info block below video */}

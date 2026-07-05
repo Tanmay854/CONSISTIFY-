@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { X, Volume2, VolumeX, CircleAlert } from "lucide-react";
-import HlsVideo from "@/components/HlsVideo";
+import { useEffect, useState } from "react";
+import { X, CircleAlert } from "lucide-react";
+import VideoPlayer from "@/components/VideoPlayer";
 import ReportDialog from "@/components/ReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getVideoThumbnail } from "@/lib/thumbUrl";
@@ -39,13 +39,7 @@ const getPlayableVideoUrl = (url: string): string => {
 const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () => void }) => {
   const [setImages, setSetImages] = useState<string[] | null>(null);
   const [idx, setIdx] = useState(0);
-  const [muted, setMuted] = useState(true);
   const [showReport, setShowReport] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (videoRef.current) videoRef.current.muted = muted;
-  }, [muted]);
 
   useEffect(() => {
     if (post.kind !== "quote") return;
@@ -87,18 +81,14 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
             backgroundRepeat: "no-repeat",
           }}
         >
-          <HlsVideo
-            ref={videoRef}
+          <VideoPlayer
             src={getPlayableVideoUrl(post.video_url)}
-            className="w-full h-full"
-            style={{ objectFit: (post.video_fit as React.CSSProperties["objectFit"]) || "contain", backgroundColor: "transparent" }}
+            poster={getVideoThumbnail(post.video_url) || undefined}
             autoPlay
             loop
-            playsInline
-            muted={muted}
-            controls
-            preload="auto"
-            poster={getVideoThumbnail(post.video_url) || undefined}
+            muted
+            fit={((post.video_fit as string) === "cover" ? "cover" : "contain")}
+            fill
           />
         </div>
       ) : (
@@ -146,16 +136,7 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
         <CircleAlert size={13} />
       </button>
 
-      {/* Mute (only for videos) */}
-      {post.kind === "reel" && (
-        <button
-          onClick={() => setMuted((m) => !m)}
-          aria-label={muted ? "Unmute" : "Mute"}
-          className="absolute bottom-10 right-4 z-30 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center"
-        >
-          {muted ? <VolumeX size={13} className="text-white" /> : <Volume2 size={13} className="text-white" />}
-        </button>
-      )}
+      {/* Mute control now provided by in-app VideoPlayer overlay */}
 
       {(post.title || post.description) && (
         <div className="absolute bottom-6 left-4 right-16 z-10 pointer-events-none">
