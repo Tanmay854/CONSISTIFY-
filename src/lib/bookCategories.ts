@@ -18,6 +18,13 @@ export const BOOK_CATEGORIES = [
 
 export type BookCategory = (typeof BOOK_CATEGORIES)[number];
 
+export type QuizQuestion = {
+  q: string;
+  options: [string, string, string, string];
+  correct: 0 | 1 | 2 | 3;
+  explanation?: string;
+};
+
 export type Book = {
   id: string;
   public_id: string | null;
@@ -37,4 +44,10 @@ export type Book = {
   is_best_seller: boolean;
   is_new_release: boolean;
   created_at: string;
+  reading_time_minutes: number | null;
+  listening_time_minutes: number | null;
+  summary_pages: string[];
+  quiz_questions: QuizQuestion[];
+  audio_url: string | null;
+  is_published: boolean;
 };
