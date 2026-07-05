@@ -136,16 +136,7 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
         <CircleAlert size={13} />
       </button>
 
-      {/* Mute (only for videos) */}
-      {post.kind === "reel" && (
-        <button
-          onClick={() => setMuted((m) => !m)}
-          aria-label={muted ? "Unmute" : "Mute"}
-          className="absolute bottom-10 right-4 z-30 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center"
-        >
-          {muted ? <VolumeX size={13} className="text-white" /> : <Volume2 size={13} className="text-white" />}
-        </button>
-      )}
+      {/* Mute control now provided by in-app VideoPlayer overlay */}
 
       {(post.title || post.description) && (
         <div className="absolute bottom-6 left-4 right-16 z-10 pointer-events-none">
