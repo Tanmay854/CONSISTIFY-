@@ -81,18 +81,14 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
             backgroundRepeat: "no-repeat",
           }}
         >
-          <HlsVideo
-            ref={videoRef}
+          <VideoPlayer
             src={getPlayableVideoUrl(post.video_url)}
-            className="w-full h-full"
-            style={{ objectFit: (post.video_fit as React.CSSProperties["objectFit"]) || "contain", backgroundColor: "transparent" }}
+            poster={getVideoThumbnail(post.video_url) || undefined}
             autoPlay
             loop
-            playsInline
-            muted={muted}
-            controls
-            preload="auto"
-            poster={getVideoThumbnail(post.video_url) || undefined}
+            muted
+            fit={((post.video_fit as string) === "cover" ? "cover" : "contain")}
+            fill
           />
         </div>
       ) : (
