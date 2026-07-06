@@ -26,11 +26,11 @@ interface PhotoSet {
 }
 
 const SinglePhoto = ({ photo }: { photo: QuoteRow }) => (
-  <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black">
+  <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black pt-20 pb-36">
     <img
       src={photo.image_url}
       alt={photo.title || "quote"}
-      className="w-full h-full object-cover"
+      className="w-full h-full object-contain"
       loading="lazy"
     />
   </div>
