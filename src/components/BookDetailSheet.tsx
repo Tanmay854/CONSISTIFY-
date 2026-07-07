@@ -314,7 +314,7 @@ const SummaryReader = ({ book, onBuy, startPage = 0 }: { book: Book; onBuy: () =
 
   return (
     <div className="h-full flex flex-col">
-      <div className="px-6 pt-12 pb-2 flex items-start justify-between gap-3">
+      <div className="px-6 pt-14 pb-2 pr-16 flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-muted-foreground text-[10px] uppercase tracking-[0.22em] font-semibold">
             {atEnd ? "Complete" : `${p + 1} / ${total}`}
