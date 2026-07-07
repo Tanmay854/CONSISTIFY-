@@ -68,6 +68,8 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     setError(null);
     const pages = Array.isArray(b.summary_pages) ? [...b.summary_pages] : [];
     while (pages.length < 10) pages.push("");
+    const titles = Array.isArray(b.summary_page_titles) ? [...b.summary_page_titles] : [];
+    while (titles.length < 10) titles.push("");
     const quiz = Array.isArray(b.quiz_questions) ? [...b.quiz_questions] : [];
     while (quiz.length < 15) quiz.push(emptyQuestion());
     setEditing({
@@ -80,6 +82,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       listening_time_minutes: b.listening_time_minutes?.toString() ?? "",
       audio_url: b.audio_url ?? "",
       summary_pages: pages.slice(0, 10),
+      summary_page_titles: titles.slice(0, 10),
       quiz_questions: quiz.slice(0, 15),
       is_published: b.is_published ?? true,
       is_featured: b.is_featured, is_trending: b.is_trending,
