@@ -113,6 +113,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       listening_time_minutes: editing.listening_time_minutes ? Number(editing.listening_time_minutes) : null,
       audio_url: editing.audio_url.trim() || null,
       summary_pages: editing.summary_pages.map((p) => p.trim()),
+      summary_page_titles: editing.summary_page_titles.map((t) => t.trim()),
       quiz_questions: editing.quiz_questions.filter((q) => q.q.trim() && q.options.every((o) => o.trim())),
       is_published: editing.is_published,
       is_featured: editing.is_featured,
