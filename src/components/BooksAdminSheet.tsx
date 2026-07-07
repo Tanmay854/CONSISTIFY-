@@ -20,9 +20,7 @@ type Form = {
   cover_url: string;
   cover_url_2: string;
   amazon_url: string;
-  price: string;
   rating: string;
-  reading_time_minutes: string;
   listening_time_minutes: string;
   audio_url: string;
   summary_pages: string[];
@@ -38,8 +36,7 @@ type Form = {
 const empty = (): Form => ({
   title: "", author: "", category: BOOK_CATEGORIES[0], description: "",
   key_takeaways: "", why_read: "", cover_url: "", cover_url_2: "", amazon_url: "",
-  price: "", rating: "",
-  reading_time_minutes: "", listening_time_minutes: "", audio_url: "",
+  rating: "", listening_time_minutes: "", audio_url: "",
   summary_pages: emptyPages(), summary_page_titles: emptyTitles(), quiz_questions: emptyQuiz(),
   is_published: true,
   is_featured: false, is_trending: false, is_best_seller: false, is_new_release: false,
@@ -77,8 +74,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       title: b.title, author: b.author, category: b.category,
       description: b.description ?? "", key_takeaways: b.key_takeaways ?? "", why_read: b.why_read ?? "",
       cover_url: b.cover_url, cover_url_2: b.cover_url_2 ?? "", amazon_url: b.amazon_url,
-      price: b.price?.toString() ?? "", rating: b.rating?.toString() ?? "",
-      reading_time_minutes: b.reading_time_minutes?.toString() ?? "",
+      rating: b.rating?.toString() ?? "",
       listening_time_minutes: b.listening_time_minutes?.toString() ?? "",
       audio_url: b.audio_url ?? "",
       summary_pages: pages.slice(0, 10),
@@ -107,9 +103,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       cover_url: editing.cover_url.trim(),
       cover_url_2: editing.cover_url_2.trim() || null,
       amazon_url: editing.amazon_url.trim(),
-      price: editing.price ? Number(editing.price) : null,
       rating: editing.rating ? Number(editing.rating) : null,
-      reading_time_minutes: editing.reading_time_minutes ? Number(editing.reading_time_minutes) : null,
       listening_time_minutes: editing.listening_time_minutes ? Number(editing.listening_time_minutes) : null,
       audio_url: editing.audio_url.trim() || null,
       summary_pages: editing.summary_pages.map((p) => p.trim()),
@@ -241,18 +235,12 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
             </div>
           </Row>
           <Row label="Amazon URL"><input value={editing.amazon_url} onChange={(e) => setEditing({ ...editing, amazon_url: e.target.value })} className={inputCls} placeholder="https://amzn.to/…" /></Row>
-          <div className="grid grid-cols-2 gap-3">
-            <Row label="Price"><input inputMode="decimal" value={editing.price} onChange={(e) => setEditing({ ...editing, price: e.target.value })} className={inputCls} /></Row>
-            <Row label="Rating (0-5)"><input inputMode="decimal" value={editing.rating} onChange={(e) => setEditing({ ...editing, rating: e.target.value })} className={inputCls} /></Row>
-          </div>
+          <Row label="Rating (0-5)"><input inputMode="decimal" value={editing.rating} onChange={(e) => setEditing({ ...editing, rating: e.target.value })} className={inputCls} /></Row>
           <Row label="Description"><textarea rows={4} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} className={inputCls} /></Row>
           <Row label="Key takeaways"><textarea rows={3} value={editing.key_takeaways} onChange={(e) => setEditing({ ...editing, key_takeaways: e.target.value })} className={inputCls} /></Row>
           <Row label="Why read this book"><textarea rows={3} value={editing.why_read} onChange={(e) => setEditing({ ...editing, why_read: e.target.value })} className={inputCls} /></Row>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Row label="Reading time (min)"><input inputMode="numeric" value={editing.reading_time_minutes} onChange={(e) => setEditing({ ...editing, reading_time_minutes: e.target.value })} className={inputCls} /></Row>
-            <Row label="Listening time (min)"><input inputMode="numeric" value={editing.listening_time_minutes} onChange={(e) => setEditing({ ...editing, listening_time_minutes: e.target.value })} className={inputCls} /></Row>
-          </div>
+          <Row label="Listening time (min)"><input inputMode="numeric" value={editing.listening_time_minutes} onChange={(e) => setEditing({ ...editing, listening_time_minutes: e.target.value })} className={inputCls} /></Row>
 
           <Row label="Audio summary">
             {editing.audio_url && (
