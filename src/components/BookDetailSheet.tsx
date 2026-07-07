@@ -271,11 +271,11 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
 
 /* ---------------- Summary Reader ---------------- */
 
-const SummaryReader = ({ book, onBuy }: { book: Book; onBuy: () => void }) => {
+const SummaryReader = ({ book, onBuy, startPage = 0 }: { book: Book; onBuy: () => void; startPage?: number }) => {
   const pages = useMemo(() => (book.summary_pages ?? []).filter(Boolean), [book.summary_pages]);
   const titles = useMemo(() => book.summary_page_titles ?? [], [book.summary_page_titles]);
   const total = pages.length;
-  const [p, setP] = useState(0);
+  const [p, setP] = useState(Math.min(Math.max(0, startPage), Math.max(0, total - 1)));
   const [size, setSize] = useState<0 | 1 | 2>(1);
   const atEnd = p >= total;
   const touchStartX = useRef<number | null>(null);
