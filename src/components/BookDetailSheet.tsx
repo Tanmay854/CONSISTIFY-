@@ -63,7 +63,6 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
 
 const Overview = ({ book, similar, onQuiz, onListen }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void }) => {
   const [expandedPage, setExpandedPage] = useState<number | null>(null);
-  const rt = book.reading_time_minutes ? `${book.reading_time_minutes} min` : "—";
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   return (
     <div className="h-full overflow-y-auto pb-24">
@@ -87,8 +86,6 @@ const Overview = ({ book, similar, onQuiz, onListen }: { book: Book; similar: Bo
           </div>
 
           <div className="w-full max-w-sm flex items-stretch gap-2 mt-2 py-3 px-4 rounded-2xl bg-secondary/60 border border-border/40">
-            <Stat label="Read" value={rt} />
-            <div className="w-px bg-border/60" />
             <Stat label="Listen" value={lt} />
             <div className="w-px bg-border/60" />
             <Stat label="Pages" value={String((book.summary_pages ?? []).length || "—")} />
