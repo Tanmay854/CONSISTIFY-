@@ -74,6 +74,7 @@ export type Database = {
           quiz_questions: Json
           rating: number | null
           reading_time_minutes: number | null
+          summary_page_titles: string[]
           summary_pages: Json
           title: string
           updated_at: string
@@ -102,6 +103,7 @@ export type Database = {
           quiz_questions?: Json
           rating?: number | null
           reading_time_minutes?: number | null
+          summary_page_titles?: string[]
           summary_pages?: Json
           title: string
           updated_at?: string
@@ -130,6 +132,7 @@ export type Database = {
           quiz_questions?: Json
           rating?: number | null
           reading_time_minutes?: number | null
+          summary_page_titles?: string[]
           summary_pages?: Json
           title?: string
           updated_at?: string
