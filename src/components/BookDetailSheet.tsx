@@ -250,11 +250,13 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
             : diff === 1 ? { label: "Good", tone: "text-sky-400", ring: "border-sky-500/40 bg-sky-500/10" }
             : diff === 2 ? { label: "Not truly correct", tone: "text-amber-400", ring: "border-amber-500/40 bg-amber-500/10" }
             : { label: "Wrong", tone: "text-red-400", ring: "border-red-500/40 bg-red-500/10" };
+          const optExp = q.option_explanations?.[picked]?.trim();
+          const text = optExp || q.explanation;
           return (
             <div className={`mt-5 p-4 rounded-xl border ${verdict.ring}`}>
               <p className={`text-xs font-bold uppercase tracking-[0.18em] mb-1.5 ${verdict.tone}`}>{verdict.label}</p>
-              {q.explanation && (
-                <p className="text-muted-foreground text-sm leading-relaxed">{q.explanation}</p>
+              {text && (
+                <p className="text-muted-foreground text-sm leading-relaxed">{text}</p>
               )}
             </div>
           );
