@@ -272,9 +272,15 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
             <p className="text-foreground text-sm font-bold uppercase tracking-wider mb-2">Summary pages (10)</p>
             <div className="space-y-2">
               {editing.summary_pages.map((p, i) => (
-                <div key={i}>
-                  <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block mb-1">Page {i + 1}</label>
-                  <textarea rows={4} value={p} onChange={(e) => setPage(i, e.target.value)} className={inputCls} placeholder="100–150 words…" />
+                <div key={i} className="p-3 rounded-xl bg-secondary/40 border border-border/50 space-y-2">
+                  <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block">Page {i + 1} title</label>
+                  <input
+                    value={editing.summary_page_titles[i] ?? ""}
+                    onChange={(e) => setPageTitle(i, e.target.value)}
+                    className={inputCls}
+                    placeholder="e.g. The One Habit That Changes Everything"
+                  />
+                  <textarea rows={8} value={p} onChange={(e) => setPage(i, e.target.value)} className={inputCls} placeholder="~320 words for this page…" />
                 </div>
               ))}
             </div>
