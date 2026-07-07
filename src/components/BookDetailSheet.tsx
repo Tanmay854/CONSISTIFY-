@@ -29,6 +29,7 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
 
 const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void }) => {
   const [mode, setMode] = useState<Mode>("overview");
+  const [summaryStart, setSummaryStart] = useState(0);
   const [similar, setSimilar] = useState<Book[]>([]);
 
   useEffect(() => {
@@ -41,6 +42,8 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
     })();
   }, [book.id, book.category]);
 
+  const openSummaryAt = (idx: number) => { setSummaryStart(idx); setMode("summary"); };
+
   return (
     <div className="fixed inset-0 z-50 bg-background overflow-hidden animate-float-up" style={{ animationDuration: "0.25s" }}>
       <button
@@ -51,9 +54,9 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
         <X size={20} className="text-foreground" />
       </button>
 
-      {mode === "overview" && <Overview book={book} similar={similar} onQuiz={() => setMode("quiz")} onListen={() => setMode("audio")} />}
-      {mode === "quiz" && <QuizFlow book={book} onDone={() => setMode("summary")} />}
-      {mode === "summary" && <SummaryReader book={book} onBuy={() => openAmazon(book.amazon_url)} />}
+      {mode === "overview" && <Overview book={book} similar={similar} onQuiz={() => setMode("quiz")} onListen={() => setMode("audio")} onOpenPage={openSummaryAt} />}
+      {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
+      {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
       {mode === "audio" && <AudioPlayer book={book} />}
     </div>
   );
