@@ -20,9 +20,7 @@ type Form = {
   cover_url: string;
   cover_url_2: string;
   amazon_url: string;
-  price: string;
   rating: string;
-  reading_time_minutes: string;
   listening_time_minutes: string;
   audio_url: string;
   summary_pages: string[];
@@ -38,8 +36,7 @@ type Form = {
 const empty = (): Form => ({
   title: "", author: "", category: BOOK_CATEGORIES[0], description: "",
   key_takeaways: "", why_read: "", cover_url: "", cover_url_2: "", amazon_url: "",
-  price: "", rating: "",
-  reading_time_minutes: "", listening_time_minutes: "", audio_url: "",
+  rating: "", listening_time_minutes: "", audio_url: "",
   summary_pages: emptyPages(), summary_page_titles: emptyTitles(), quiz_questions: emptyQuiz(),
   is_published: true,
   is_featured: false, is_trending: false, is_best_seller: false, is_new_release: false,
