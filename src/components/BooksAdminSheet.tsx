@@ -167,6 +167,15 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       return { ...q, options };
     }) } : f);
 
+  const setOptExp = (i: number, oi: 0|1|2|3, v: string) =>
+    setEditing((f) => f ? { ...f, quiz_questions: f.quiz_questions.map((q, idx) => {
+      if (idx !== i) return q;
+      const cur = (q.option_explanations ?? ["","","",""]) as [string,string,string,string];
+      const arr = [...cur] as [string,string,string,string];
+      arr[oi] = v;
+      return { ...q, option_explanations: arr };
+    }) } : f);
+
   return (
     <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
       <header className="sticky top-0 z-10 bg-background/90 backdrop-blur px-5 py-3 flex items-center justify-between border-b border-border">
