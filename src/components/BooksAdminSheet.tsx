@@ -235,18 +235,12 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
             </div>
           </Row>
           <Row label="Amazon URL"><input value={editing.amazon_url} onChange={(e) => setEditing({ ...editing, amazon_url: e.target.value })} className={inputCls} placeholder="https://amzn.to/…" /></Row>
-          <div className="grid grid-cols-2 gap-3">
-            <Row label="Price"><input inputMode="decimal" value={editing.price} onChange={(e) => setEditing({ ...editing, price: e.target.value })} className={inputCls} /></Row>
-            <Row label="Rating (0-5)"><input inputMode="decimal" value={editing.rating} onChange={(e) => setEditing({ ...editing, rating: e.target.value })} className={inputCls} /></Row>
-          </div>
+          <Row label="Rating (0-5)"><input inputMode="decimal" value={editing.rating} onChange={(e) => setEditing({ ...editing, rating: e.target.value })} className={inputCls} /></Row>
           <Row label="Description"><textarea rows={4} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} className={inputCls} /></Row>
           <Row label="Key takeaways"><textarea rows={3} value={editing.key_takeaways} onChange={(e) => setEditing({ ...editing, key_takeaways: e.target.value })} className={inputCls} /></Row>
           <Row label="Why read this book"><textarea rows={3} value={editing.why_read} onChange={(e) => setEditing({ ...editing, why_read: e.target.value })} className={inputCls} /></Row>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Row label="Reading time (min)"><input inputMode="numeric" value={editing.reading_time_minutes} onChange={(e) => setEditing({ ...editing, reading_time_minutes: e.target.value })} className={inputCls} /></Row>
-            <Row label="Listening time (min)"><input inputMode="numeric" value={editing.listening_time_minutes} onChange={(e) => setEditing({ ...editing, listening_time_minutes: e.target.value })} className={inputCls} /></Row>
-          </div>
+          <Row label="Listening time (min)"><input inputMode="numeric" value={editing.listening_time_minutes} onChange={(e) => setEditing({ ...editing, listening_time_minutes: e.target.value })} className={inputCls} /></Row>
 
           <Row label="Audio summary">
             {editing.audio_url && (
