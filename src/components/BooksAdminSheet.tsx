@@ -52,7 +52,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [drafting, setDrafting] = useState(false);
+  
 
   const load = async () => {
     const { data } = await supabase.from("books").select("*").order("created_at", { ascending: false });
