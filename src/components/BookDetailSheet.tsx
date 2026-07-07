@@ -280,12 +280,31 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
 
 const SummaryReader = ({ book, onBuy }: { book: Book; onBuy: () => void }) => {
   const pages = useMemo(() => (book.summary_pages ?? []).filter(Boolean), [book.summary_pages]);
+  const titles = useMemo(() => book.summary_page_titles ?? [], [book.summary_page_titles]);
   const total = pages.length;
   const [p, setP] = useState(0);
   const [size, setSize] = useState<0 | 1 | 2>(1);
   const atEnd = p >= total;
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
-  const fontCls = size === 0 ? "text-[15px] leading-[1.7]" : size === 1 ? "text-[17px] leading-[1.75]" : "text-[19px] leading-[1.8]";
+  const fontCls = size === 0 ? "text-[17px] leading-[1.75]" : size === 1 ? "text-[19px] leading-[1.8]" : "text-[22px] leading-[1.85]";
+
+  const goPrev = () => setP((v) => Math.max(0, v - 1));
+  const goNext = () => setP((v) => Math.min(total, v + 1));
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null; touchStartY.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) goNext(); else goPrev();
+  };
 
   if (total === 0) {
     return (
@@ -298,31 +317,40 @@ const SummaryReader = ({ book, onBuy }: { book: Book; onBuy: () => void }) => {
     );
   }
 
+  const currentTitle = !atEnd ? (titles[p]?.trim() || `Page ${p + 1}`) : "Complete";
+
   return (
     <div className="h-full flex flex-col">
-      <div className="px-6 pt-14 pb-3 flex items-center justify-between">
-        <p className="text-muted-foreground text-[11px] uppercase tracking-[0.2em] font-semibold">
-          {atEnd ? "Complete" : `Page ${p + 1} of ${total}`}
-        </p>
-        <div className="flex items-center gap-1">
+      <div className="px-6 pt-12 pb-2 flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-muted-foreground text-[10px] uppercase tracking-[0.22em] font-semibold">
+            {atEnd ? "Complete" : `${p + 1} / ${total}`}
+          </p>
+          <h1 className="text-foreground text-[22px] font-extrabold leading-tight mt-1 truncate">{currentTitle}</h1>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
           <TypeIcon size={14} className="text-muted-foreground" />
           {[0, 1, 2].map((s) => (
             <button key={s} onClick={() => setSize(s as 0 | 1 | 2)}
               className={`w-7 h-7 rounded-full text-xs font-bold ${size === s ? "bg-foreground text-background" : "bg-secondary text-muted-foreground"}`}>
-              {s === 0 ? "A" : s === 1 ? "A" : "A"}
-              <span className="sr-only">size {s}</span>
+              A<span className="sr-only">size {s}</span>
             </button>
           ))}
         </div>
       </div>
 
-      <div className="px-6">
+      <div className="px-6 pb-3">
         <div className="h-1 rounded-full bg-secondary overflow-hidden">
           <div className="h-full bg-foreground transition-all" style={{ width: `${Math.min(100, ((p + (atEnd ? 0 : 1)) / total) * 100)}%` }} />
         </div>
       </div>
 
-      <div key={p} className="flex-1 overflow-y-auto px-7 py-8 animate-fade-in">
+      <div
+        key={p}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        className="flex-1 overflow-y-auto px-7 pt-4 pb-8 animate-fade-in select-none"
+      >
         {!atEnd ? (
           <p className={`text-foreground ${fontCls} whitespace-pre-line font-[400]`} style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
             {pages[p]}
@@ -347,11 +375,11 @@ const SummaryReader = ({ book, onBuy }: { book: Book; onBuy: () => void }) => {
           </button>
         ) : (
           <>
-            <button onClick={() => setP(Math.max(0, p - 1))} disabled={p === 0}
+            <button onClick={goPrev} disabled={p === 0}
               className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center disabled:opacity-30">
               <ChevronLeft size={20} className="text-foreground" />
             </button>
-            <button onClick={() => setP(p + 1)}
+            <button onClick={goNext}
               className="flex-1 h-12 rounded-full bg-foreground text-background font-semibold flex items-center justify-center gap-2">
               {p + 1 === total ? "Finish" : "Next"} <ChevronRight size={18} />
             </button>
