@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Plus, Pencil, Trash2, Upload, Music, Sparkles } from "lucide-react";
+import { X, Plus, Pencil, Trash2, Upload, Music, Sparkles, FileJson } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book, type QuizQuestion } from "@/lib/bookCategories";
 
