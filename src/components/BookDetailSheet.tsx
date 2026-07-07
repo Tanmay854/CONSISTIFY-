@@ -64,8 +64,7 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
 
 /* ---------------- Overview ---------------- */
 
-const Overview = ({ book, similar, onQuiz, onListen }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void }) => {
-  const [expandedPage, setExpandedPage] = useState<number | null>(null);
+const Overview = ({ book, similar, onQuiz, onListen, onOpenPage }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void }) => {
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   return (
     <div className="h-full overflow-y-auto pb-24">
