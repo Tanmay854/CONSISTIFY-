@@ -1,0 +1,1 @@
+ALTER TABLE public.books ADD COLUMN IF NOT EXISTS summary_page_titles text[] NOT NULL DEFAULT '{}'::text[];

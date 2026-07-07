@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { X, Plus, Pencil, Trash2, Upload, Music, Sparkles } from "lucide-react";
+import { X, Plus, Pencil, Trash2, Upload, Music } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book, type QuizQuestion } from "@/lib/bookCategories";
 
 const emptyQuestion = (): QuizQuestion => ({ q: "", options: ["", "", "", ""], correct: 0, explanation: "", option_explanations: ["", "", "", ""] });
 const emptyPages = (): string[] => Array.from({ length: 10 }, () => "");
+const emptyTitles = (): string[] => Array.from({ length: 10 }, () => "");
 const emptyQuiz = (): QuizQuestion[] => Array.from({ length: 15 }, emptyQuestion);
 
 
@@ -25,6 +26,7 @@ type Form = {
   listening_time_minutes: string;
   audio_url: string;
   summary_pages: string[];
+  summary_page_titles: string[];
   quiz_questions: QuizQuestion[];
   is_published: boolean;
   is_featured: boolean;
@@ -38,7 +40,7 @@ const empty = (): Form => ({
   key_takeaways: "", why_read: "", cover_url: "", cover_url_2: "", amazon_url: "",
   price: "", rating: "",
   reading_time_minutes: "", listening_time_minutes: "", audio_url: "",
-  summary_pages: emptyPages(), quiz_questions: emptyQuiz(),
+  summary_pages: emptyPages(), summary_page_titles: emptyTitles(), quiz_questions: emptyQuiz(),
   is_published: true,
   is_featured: false, is_trending: false, is_best_seller: false, is_new_release: false,
 });
@@ -50,7 +52,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [drafting, setDrafting] = useState(false);
+  
 
   const load = async () => {
     const { data } = await supabase.from("books").select("*").order("created_at", { ascending: false });
@@ -66,6 +68,8 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     setError(null);
     const pages = Array.isArray(b.summary_pages) ? [...b.summary_pages] : [];
     while (pages.length < 10) pages.push("");
+    const titles = Array.isArray(b.summary_page_titles) ? [...b.summary_page_titles] : [];
+    while (titles.length < 10) titles.push("");
     const quiz = Array.isArray(b.quiz_questions) ? [...b.quiz_questions] : [];
     while (quiz.length < 15) quiz.push(emptyQuestion());
     setEditing({
@@ -78,6 +82,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       listening_time_minutes: b.listening_time_minutes?.toString() ?? "",
       audio_url: b.audio_url ?? "",
       summary_pages: pages.slice(0, 10),
+      summary_page_titles: titles.slice(0, 10),
       quiz_questions: quiz.slice(0, 15),
       is_published: b.is_published ?? true,
       is_featured: b.is_featured, is_trending: b.is_trending,
@@ -108,6 +113,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       listening_time_minutes: editing.listening_time_minutes ? Number(editing.listening_time_minutes) : null,
       audio_url: editing.audio_url.trim() || null,
       summary_pages: editing.summary_pages.map((p) => p.trim()),
+      summary_page_titles: editing.summary_page_titles.map((t) => t.trim()),
       quiz_questions: editing.quiz_questions.filter((q) => q.q.trim() && q.options.every((o) => o.trim())),
       is_published: editing.is_published,
       is_featured: editing.is_featured,
@@ -153,53 +159,13 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     setEditing((f) => f ? { ...f, audio_url: data.publicUrl } : f);
     setUploading(false);
   };
-  const aiDraft = async () => {
-    if (!editing) return;
-    if (!editing.title.trim() || !editing.author.trim()) {
-      setError("Enter title and author first, then tap AI Draft."); return;
-    }
-    setError(null); setDrafting(true);
-    const { data, error: fnErr } = await supabase.functions.invoke("ai-draft-book", {
-      body: { title: editing.title.trim(), author: editing.author.trim(), category: editing.category },
-    });
-    setDrafting(false);
-    if (fnErr) { setError(fnErr.message); return; }
-    const d = (data as { draft?: Record<string, unknown>; error?: string })?.draft;
-    if ((data as { error?: string })?.error) { setError((data as { error: string }).error); return; }
-    if (!d) { setError("AI returned no draft. Try again."); return; }
-
-    const pages = Array.isArray(d.summary_pages) ? (d.summary_pages as string[]).slice(0, 10) : [];
-    while (pages.length < 10) pages.push("");
-
-    const rawQ = Array.isArray(d.quiz_questions) ? (d.quiz_questions as Array<Record<string, unknown>>) : [];
-    const quiz: QuizQuestion[] = rawQ.slice(0, 15).map((q) => {
-      const opts = Array.isArray(q.options) ? (q.options as string[]) : ["","","",""];
-      const oe = Array.isArray(q.option_explanations) ? (q.option_explanations as string[]) : ["","","",""];
-      const correctRaw = Number(q.correct);
-      const correct = (correctRaw === 0 || correctRaw === 1 || correctRaw === 2 || correctRaw === 3) ? correctRaw : 0;
-      return {
-        q: String(q.q ?? ""),
-        options: [opts[0] ?? "", opts[1] ?? "", opts[2] ?? "", opts[3] ?? ""] as [string,string,string,string],
-        correct: correct as 0|1|2|3,
-        explanation: String(q.explanation ?? ""),
-        option_explanations: [oe[0] ?? "", oe[1] ?? "", oe[2] ?? "", oe[3] ?? ""] as [string,string,string,string],
-      };
-    });
-    while (quiz.length < 15) quiz.push(emptyQuestion());
-
-    setEditing((f) => f ? {
-      ...f,
-      description: String(d.description ?? f.description),
-      key_takeaways: String(d.key_takeaways ?? f.key_takeaways),
-      why_read: String(d.why_read ?? f.why_read),
-      summary_pages: pages,
-      quiz_questions: quiz,
-    } : f);
-  };
 
 
   const setPage = (i: number, v: string) =>
     setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => idx === i ? v : p) } : f);
+
+  const setPageTitle = (i: number, v: string) =>
+    setEditing((f) => f ? { ...f, summary_page_titles: f.summary_page_titles.map((t, idx) => idx === i ? v : t) } : f);
 
   const setQ = (i: number, patch: Partial<QuizQuestion>) =>
     setEditing((f) => f ? { ...f, quiz_questions: f.quiz_questions.map((q, idx) => idx === i ? { ...q, ...patch } : q) } : f);
@@ -244,19 +210,6 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
               {BOOK_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </Row>
-
-          <button
-            type="button"
-            onClick={aiDraft}
-            disabled={drafting}
-            className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-          >
-            <Sparkles size={16} />
-            {drafting ? "Drafting with AI…" : "AI Draft (description, summary, quiz)"}
-          </button>
-          <p className="text-muted-foreground text-[11px] leading-relaxed -mt-1">
-            Fills description, key takeaways, why-read, all 10 summary pages, and 15 quiz questions with per-option feedback. You still add cover, Amazon URL, price, rating, times, and audio.
-          </p>
 
           <Row label="Cover image">
             {editing.cover_url && (
@@ -319,9 +272,15 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
             <p className="text-foreground text-sm font-bold uppercase tracking-wider mb-2">Summary pages (10)</p>
             <div className="space-y-2">
               {editing.summary_pages.map((p, i) => (
-                <div key={i}>
-                  <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block mb-1">Page {i + 1}</label>
-                  <textarea rows={4} value={p} onChange={(e) => setPage(i, e.target.value)} className={inputCls} placeholder="100–150 words…" />
+                <div key={i} className="p-3 rounded-xl bg-secondary/40 border border-border/50 space-y-2">
+                  <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block">Page {i + 1} title</label>
+                  <input
+                    value={editing.summary_page_titles[i] ?? ""}
+                    onChange={(e) => setPageTitle(i, e.target.value)}
+                    className={inputCls}
+                    placeholder="e.g. The One Habit That Changes Everything"
+                  />
+                  <textarea rows={8} value={p} onChange={(e) => setPage(i, e.target.value)} className={inputCls} placeholder="~320 words for this page…" />
                 </div>
               ))}
             </div>

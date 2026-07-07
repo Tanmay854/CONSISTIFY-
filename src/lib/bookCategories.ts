@@ -48,6 +48,7 @@ export type Book = {
   reading_time_minutes: number | null;
   listening_time_minutes: number | null;
   summary_pages: string[];
+  summary_page_titles: string[];
   quiz_questions: QuizQuestion[];
   audio_url: string | null;
   is_published: boolean;
