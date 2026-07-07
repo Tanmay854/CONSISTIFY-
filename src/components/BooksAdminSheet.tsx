@@ -164,6 +164,9 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const setPage = (i: number, v: string) =>
     setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => idx === i ? v : p) } : f);
 
+  const setPageTitle = (i: number, v: string) =>
+    setEditing((f) => f ? { ...f, summary_page_titles: f.summary_page_titles.map((t, idx) => idx === i ? v : t) } : f);
+
   const setQ = (i: number, patch: Partial<QuizQuestion>) =>
     setEditing((f) => f ? { ...f, quiz_questions: f.quiz_questions.map((q, idx) => idx === i ? { ...q, ...patch } : q) } : f);
 
