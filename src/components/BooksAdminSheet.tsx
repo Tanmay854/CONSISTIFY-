@@ -26,6 +26,7 @@ type Form = {
   listening_time_minutes: string;
   audio_url: string;
   summary_pages: string[];
+  summary_page_titles: string[];
   quiz_questions: QuizQuestion[];
   is_published: boolean;
   is_featured: boolean;
