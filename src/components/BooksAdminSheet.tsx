@@ -276,12 +276,20 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
                   <label className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold block">Question {i + 1}</label>
                   <textarea rows={2} value={q.q} onChange={(e) => setQ(i, { q: e.target.value })} className={inputCls} placeholder="Question…" />
                   {([0,1,2,3] as const).map((oi) => (
-                    <div key={oi} className="flex items-center gap-2">
-                      <input type="radio" name={`correct-${i}`} checked={q.correct === oi} onChange={() => setQ(i, { correct: oi })} />
-                      <input value={q.options[oi]} onChange={(e) => setOpt(i, oi, e.target.value)} className={inputCls} placeholder={`Option ${String.fromCharCode(65+oi)}`} />
+                    <div key={oi} className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <input type="radio" name={`correct-${i}`} checked={q.correct === oi} onChange={() => setQ(i, { correct: oi })} />
+                        <input value={q.options[oi]} onChange={(e) => setOpt(i, oi, e.target.value)} className={inputCls} placeholder={`Option ${String.fromCharCode(65+oi)}`} />
+                      </div>
+                      <input
+                        value={q.option_explanations?.[oi] ?? ""}
+                        onChange={(e) => setOptExp(i, oi, e.target.value)}
+                        className={inputCls}
+                        placeholder={`Why option ${String.fromCharCode(65+oi)} — feedback shown when picked`}
+                      />
                     </div>
                   ))}
-                  <input value={q.explanation ?? ""} onChange={(e) => setQ(i, { explanation: e.target.value })} className={inputCls} placeholder="Explanation (optional)" />
+                  <input value={q.explanation ?? ""} onChange={(e) => setQ(i, { explanation: e.target.value })} className={inputCls} placeholder="General explanation (fallback, optional)" />
                 </div>
               ))}
             </div>
