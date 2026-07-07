@@ -40,7 +40,7 @@ const empty = (): Form => ({
   key_takeaways: "", why_read: "", cover_url: "", cover_url_2: "", amazon_url: "",
   price: "", rating: "",
   reading_time_minutes: "", listening_time_minutes: "", audio_url: "",
-  summary_pages: emptyPages(), quiz_questions: emptyQuiz(),
+  summary_pages: emptyPages(), summary_page_titles: emptyTitles(), quiz_questions: emptyQuiz(),
   is_published: true,
   is_featured: false, is_trending: false, is_best_seller: false, is_new_release: false,
 });
