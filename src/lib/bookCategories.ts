@@ -23,6 +23,7 @@ export type QuizQuestion = {
   options: [string, string, string, string];
   correct: 0 | 1 | 2 | 3;
   explanation?: string;
+  option_explanations?: [string, string, string, string];
 };
 
 export type Book = {
