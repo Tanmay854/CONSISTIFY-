@@ -50,6 +50,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drafting, setDrafting] = useState(false);
 
   const load = async () => {
     const { data } = await supabase.from("books").select("*").order("created_at", { ascending: false });
@@ -152,7 +153,6 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     setEditing((f) => f ? { ...f, audio_url: data.publicUrl } : f);
     setUploading(false);
   };
-  const [drafting, setDrafting] = useState(false);
   const aiDraft = async () => {
     if (!editing) return;
     if (!editing.title.trim() || !editing.author.trim()) {
