@@ -159,49 +159,6 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     setEditing((f) => f ? { ...f, audio_url: data.publicUrl } : f);
     setUploading(false);
   };
-  const aiDraft = async () => {
-    if (!editing) return;
-    if (!editing.title.trim() || !editing.author.trim()) {
-      setError("Enter title and author first, then tap AI Draft."); return;
-    }
-    setError(null); setDrafting(true);
-    const { data, error: fnErr } = await supabase.functions.invoke("ai-draft-book", {
-      body: { title: editing.title.trim(), author: editing.author.trim(), category: editing.category },
-    });
-    setDrafting(false);
-    if (fnErr) { setError(fnErr.message); return; }
-    const d = (data as { draft?: Record<string, unknown>; error?: string })?.draft;
-    if ((data as { error?: string })?.error) { setError((data as { error: string }).error); return; }
-    if (!d) { setError("AI returned no draft. Try again."); return; }
-
-    const pages = Array.isArray(d.summary_pages) ? (d.summary_pages as string[]).slice(0, 10) : [];
-    while (pages.length < 10) pages.push("");
-
-    const rawQ = Array.isArray(d.quiz_questions) ? (d.quiz_questions as Array<Record<string, unknown>>) : [];
-    const quiz: QuizQuestion[] = rawQ.slice(0, 15).map((q) => {
-      const opts = Array.isArray(q.options) ? (q.options as string[]) : ["","","",""];
-      const oe = Array.isArray(q.option_explanations) ? (q.option_explanations as string[]) : ["","","",""];
-      const correctRaw = Number(q.correct);
-      const correct = (correctRaw === 0 || correctRaw === 1 || correctRaw === 2 || correctRaw === 3) ? correctRaw : 0;
-      return {
-        q: String(q.q ?? ""),
-        options: [opts[0] ?? "", opts[1] ?? "", opts[2] ?? "", opts[3] ?? ""] as [string,string,string,string],
-        correct: correct as 0|1|2|3,
-        explanation: String(q.explanation ?? ""),
-        option_explanations: [oe[0] ?? "", oe[1] ?? "", oe[2] ?? "", oe[3] ?? ""] as [string,string,string,string],
-      };
-    });
-    while (quiz.length < 15) quiz.push(emptyQuestion());
-
-    setEditing((f) => f ? {
-      ...f,
-      description: String(d.description ?? f.description),
-      key_takeaways: String(d.key_takeaways ?? f.key_takeaways),
-      why_read: String(d.why_read ?? f.why_read),
-      summary_pages: pages,
-      quiz_questions: quiz,
-    } : f);
-  };
 
 
   const setPage = (i: number, v: string) =>
