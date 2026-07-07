@@ -115,28 +115,19 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage }: { book: Book;
       {(book.summary_pages ?? []).filter(Boolean).length > 0 && (
         <section className="px-6 py-5 border-t border-border/60 mt-2 space-y-2">
           <h3 className="text-foreground text-sm font-bold uppercase tracking-wider mb-3">Summary</h3>
-          {(book.summary_pages ?? []).filter(Boolean).map((page, idx) => {
-            const lines = page.split("\n").map((l) => l.trim()).filter(Boolean);
-            const hasTitle = lines.length > 1;
-            const title = hasTitle ? lines[0] : "";
-            const body = hasTitle ? lines.slice(1).join("\n") : page.trim();
-            const isOpen = expandedPage === idx;
+          {(book.summary_pages ?? []).filter(Boolean).map((_, idx) => {
+            const title = (book.summary_page_titles?.[idx] ?? "").trim();
             return (
               <button
                 key={idx}
-                onClick={() => setExpandedPage(isOpen ? null : idx)}
-                className="w-full text-left rounded-2xl bg-secondary/40 border border-border/40 p-4 transition-colors active:scale-[0.99]"
+                onClick={() => onOpenPage(idx)}
+                className="w-full text-left rounded-2xl bg-secondary/40 border border-border/40 p-4 flex items-center justify-between gap-3 active:scale-[0.99] transition-transform"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold">Page {idx + 1}</p>
-                    {title && <p className="text-foreground text-sm font-bold mt-1 truncate">{title}</p>}
-                  </div>
-                  <span className="text-muted-foreground text-lg leading-none shrink-0">{isOpen ? "−" : "+"}</span>
+                <div className="min-w-0">
+                  <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold">Page {idx + 1}</p>
+                  <p className="text-foreground text-[15px] font-bold mt-1 truncate">{title || `Page ${idx + 1}`}</p>
                 </div>
-                {isOpen && body && (
-                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mt-3">{body}</p>
-                )}
+                <ChevronRight size={18} className="text-muted-foreground shrink-0" />
               </button>
             );
           })}
