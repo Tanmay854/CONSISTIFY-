@@ -153,7 +153,6 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     setEditing((f) => f ? { ...f, audio_url: data.publicUrl } : f);
     setUploading(false);
   };
-  const [drafting, setDrafting] = useState(false);
   const aiDraft = async () => {
     if (!editing) return;
     if (!editing.title.trim() || !editing.author.trim()) {
