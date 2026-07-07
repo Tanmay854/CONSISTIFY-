@@ -222,15 +222,12 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
         <div className="space-y-3">
           {q.options.map((opt, idx) => {
             const isPicked = picked === idx;
-            const isCorrect = idx === q.correct;
             const revealed = picked !== null;
             const cls = !revealed
               ? "border-border bg-secondary/40"
-              : isCorrect
-                ? "border-emerald-500 bg-emerald-500/10"
-                : isPicked
-                  ? "border-red-500 bg-red-500/10"
-                  : "border-border bg-secondary/20 opacity-60";
+              : isPicked
+                ? "border-foreground bg-foreground/10"
+                : "border-border bg-secondary/20 opacity-60";
             return (
               <button
                 key={idx}
@@ -242,16 +239,26 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
                   {String.fromCharCode(65 + idx)}
                 </span>
                 <span className="text-foreground text-sm font-medium flex-1">{opt}</span>
-                {revealed && isCorrect && <Check size={18} className="text-emerald-500 shrink-0" />}
               </button>
             );
           })}
         </div>
-        {picked !== null && q.explanation && (
-          <div className="mt-5 p-4 rounded-xl bg-secondary/60 border border-border/40">
-            <p className="text-muted-foreground text-sm leading-relaxed">{q.explanation}</p>
-          </div>
-        )}
+        {picked !== null && (() => {
+          const diff = Math.abs(picked - q.correct);
+          const verdict =
+            diff === 0 ? { label: "Excellent", tone: "text-emerald-400", ring: "border-emerald-500/40 bg-emerald-500/10" }
+            : diff === 1 ? { label: "Good", tone: "text-sky-400", ring: "border-sky-500/40 bg-sky-500/10" }
+            : diff === 2 ? { label: "Not truly correct", tone: "text-amber-400", ring: "border-amber-500/40 bg-amber-500/10" }
+            : { label: "Wrong", tone: "text-red-400", ring: "border-red-500/40 bg-red-500/10" };
+          return (
+            <div className={`mt-5 p-4 rounded-xl border ${verdict.ring}`}>
+              <p className={`text-xs font-bold uppercase tracking-[0.18em] mb-1.5 ${verdict.tone}`}>{verdict.label}</p>
+              {q.explanation && (
+                <p className="text-muted-foreground text-sm leading-relaxed">{q.explanation}</p>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="p-6">
