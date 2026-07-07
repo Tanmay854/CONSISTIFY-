@@ -208,19 +208,6 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
             </select>
           </Row>
 
-          <button
-            type="button"
-            onClick={aiDraft}
-            disabled={drafting}
-            className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-          >
-            <Sparkles size={16} />
-            {drafting ? "Drafting with AI…" : "AI Draft (description, summary, quiz)"}
-          </button>
-          <p className="text-muted-foreground text-[11px] leading-relaxed -mt-1">
-            Fills description, key takeaways, why-read, all 10 summary pages, and 15 quiz questions with per-option feedback. You still add cover, Amazon URL, price, rating, times, and audio.
-          </p>
-
           <Row label="Cover image">
             {editing.cover_url && (
               <img src={editing.cover_url} alt="" className="w-24 aspect-[2/3] object-cover rounded-lg mb-2" />
