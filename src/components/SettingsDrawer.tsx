@@ -427,6 +427,7 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
       <AuthSheet open={showAuth} onClose={() => { setShowAuth(false); fetchPreferences(); }} />
       <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
       <BooksAdminSheet open={showBooksAdmin} onClose={() => setShowBooksAdmin(false)} />
+      <BooksBulkImportSheet open={showBooksBulk} onClose={() => setShowBooksBulk(false)} />
       <CoursesAdminSheet open={showCoursesAdmin} onClose={() => setShowCoursesAdmin(false)} />
       <ApplyUploaderSheet open={showApply} onClose={() => setShowApply(false)} />
     </>
