@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, BookOpen, GraduationCap, Camera } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, BookOpen, GraduationCap, Camera, FilePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
 import AdminPanel from "./AdminPanel";
 import ApplyUploaderSheet from "./ApplyUploaderSheet";
 import BooksAdminSheet from "./BooksAdminSheet";
+import BooksBulkImportSheet from "./BooksBulkImportSheet";
 import CoursesAdminSheet from "./CoursesAdminSheet";
 import { fetchProfile, updateProfileCache, type UploaderProfile } from "@/lib/uploaderProfiles";
 
@@ -17,6 +18,7 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
   const [showAuth, setShowAuth] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showBooksAdmin, setShowBooksAdmin] = useState(false);
+  const [showBooksBulk, setShowBooksBulk] = useState(false);
   const [showCoursesAdmin, setShowCoursesAdmin] = useState(false);
   const [showApply, setShowApply] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -348,6 +350,13 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
                 <span className="text-foreground text-sm font-medium">Manage Books</span>
               </button>
               <button
+                onClick={() => setShowBooksBulk(true)}
+                className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+              >
+                <FilePlus size={18} className="text-primary" />
+                <span className="text-foreground text-sm font-medium">Bulk Import Books (PDF)</span>
+              </button>
+              <button
                 onClick={() => setShowCoursesAdmin(true)}
                 className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
               >
@@ -418,6 +427,7 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
       <AuthSheet open={showAuth} onClose={() => { setShowAuth(false); fetchPreferences(); }} />
       <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
       <BooksAdminSheet open={showBooksAdmin} onClose={() => setShowBooksAdmin(false)} />
+      <BooksBulkImportSheet open={showBooksBulk} onClose={() => setShowBooksBulk(false)} />
       <CoursesAdminSheet open={showCoursesAdmin} onClose={() => setShowCoursesAdmin(false)} />
       <ApplyUploaderSheet open={showApply} onClose={() => setShowApply(false)} />
     </>
