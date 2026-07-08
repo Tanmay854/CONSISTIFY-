@@ -71,7 +71,7 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
         <X size={20} className="text-foreground" />
       </button>
 
-      {mode === "overview" && <Overview book={book} similar={similar} onQuiz={() => setMode("quiz")} onListen={() => setMode("audio")} onOpenPage={openSummaryAt} />}
+      {mode === "overview" && <Overview scrollRef={overviewScrollRef} book={book} similar={similar} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />}
       {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
       {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
       {mode === "audio" && <AudioPlayer book={book} />}
