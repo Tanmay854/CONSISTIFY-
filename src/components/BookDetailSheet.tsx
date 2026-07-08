@@ -31,6 +31,8 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
   const [similar, setSimilar] = useState<Book[]>([]);
+  const overviewScrollRef = useRef<HTMLDivElement | null>(null);
+  const savedScrollY = useRef(0);
 
   useEffect(() => {
     (async () => {
@@ -42,7 +44,22 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
     })();
   }, [book.id, book.category]);
 
-  const openSummaryAt = (idx: number) => { setSummaryStart(idx); setMode("summary"); };
+  // Restore overview scroll when returning from summary/quiz/audio
+  useEffect(() => {
+    if (mode === "overview" && overviewScrollRef.current) {
+      overviewScrollRef.current.scrollTop = savedScrollY.current;
+    }
+  }, [mode]);
+
+  const openSummaryAt = (idx: number) => {
+    if (overviewScrollRef.current) savedScrollY.current = overviewScrollRef.current.scrollTop;
+    setSummaryStart(idx);
+    setMode("summary");
+  };
+  const goMode = (m: Mode) => {
+    if (overviewScrollRef.current) savedScrollY.current = overviewScrollRef.current.scrollTop;
+    setMode(m);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-background overflow-hidden animate-float-up" style={{ animationDuration: "0.25s" }}>
