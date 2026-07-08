@@ -262,11 +262,8 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
           })}
         </div>
         {picked !== null && (() => {
-          const diff = Math.abs(picked - q.correct);
-          const verdict =
-            diff === 0 ? { label: "Excellent", tone: "text-emerald-400", ring: "border-emerald-500/40 bg-emerald-500/10" }
-            : diff === 1 ? { label: "Good", tone: "text-sky-400", ring: "border-sky-500/40 bg-sky-500/10" }
-            : diff === 2 ? { label: "Not truly correct", tone: "text-amber-400", ring: "border-amber-500/40 bg-amber-500/10" }
+          const verdict = picked === q.correct
+            ? { label: "Excellent", tone: "text-emerald-400", ring: "border-emerald-500/40 bg-emerald-500/10" }
             : { label: "Wrong", tone: "text-red-400", ring: "border-red-500/40 bg-red-500/10" };
           const optExp = q.option_explanations?.[picked]?.trim();
           const text = optExp || q.explanation;
