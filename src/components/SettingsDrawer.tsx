@@ -18,6 +18,7 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
   const [showAuth, setShowAuth] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showBooksAdmin, setShowBooksAdmin] = useState(false);
+  const [showBooksBulk, setShowBooksBulk] = useState(false);
   const [showCoursesAdmin, setShowCoursesAdmin] = useState(false);
   const [showApply, setShowApply] = useState(false);
   const [saving, setSaving] = useState(false);
