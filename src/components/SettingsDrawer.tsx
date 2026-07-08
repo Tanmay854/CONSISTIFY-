@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, BookOpen, GraduationCap, Camera } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, BookOpen, GraduationCap, Camera, FilePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
 import AdminPanel from "./AdminPanel";
 import ApplyUploaderSheet from "./ApplyUploaderSheet";
 import BooksAdminSheet from "./BooksAdminSheet";
+import BooksBulkImportSheet from "./BooksBulkImportSheet";
 import CoursesAdminSheet from "./CoursesAdminSheet";
 import { fetchProfile, updateProfileCache, type UploaderProfile } from "@/lib/uploaderProfiles";
 
