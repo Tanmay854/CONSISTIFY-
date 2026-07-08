@@ -350,6 +350,13 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
                 <span className="text-foreground text-sm font-medium">Manage Books</span>
               </button>
               <button
+                onClick={() => setShowBooksBulk(true)}
+                className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+              >
+                <FilePlus size={18} className="text-primary" />
+                <span className="text-foreground text-sm font-medium">Bulk Import Books (PDF)</span>
+              </button>
+              <button
                 onClick={() => setShowCoursesAdmin(true)}
                 className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
               >
