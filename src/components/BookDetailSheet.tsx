@@ -31,6 +31,8 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
   const [similar, setSimilar] = useState<Book[]>([]);
+  const overviewScrollRef = useRef<HTMLDivElement | null>(null);
+  const savedScrollY = useRef(0);
 
   useEffect(() => {
     (async () => {
@@ -42,7 +44,22 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
     })();
   }, [book.id, book.category]);
 
-  const openSummaryAt = (idx: number) => { setSummaryStart(idx); setMode("summary"); };
+  // Restore overview scroll when returning from summary/quiz/audio
+  useEffect(() => {
+    if (mode === "overview" && overviewScrollRef.current) {
+      overviewScrollRef.current.scrollTop = savedScrollY.current;
+    }
+  }, [mode]);
+
+  const openSummaryAt = (idx: number) => {
+    if (overviewScrollRef.current) savedScrollY.current = overviewScrollRef.current.scrollTop;
+    setSummaryStart(idx);
+    setMode("summary");
+  };
+  const goMode = (m: Mode) => {
+    if (overviewScrollRef.current) savedScrollY.current = overviewScrollRef.current.scrollTop;
+    setMode(m);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-background overflow-hidden animate-float-up" style={{ animationDuration: "0.25s" }}>
@@ -54,7 +71,7 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
         <X size={20} className="text-foreground" />
       </button>
 
-      {mode === "overview" && <Overview book={book} similar={similar} onQuiz={() => setMode("quiz")} onListen={() => setMode("audio")} onOpenPage={openSummaryAt} />}
+      {mode === "overview" && <Overview scrollRef={overviewScrollRef} book={book} similar={similar} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />}
       {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
       {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
       {mode === "audio" && <AudioPlayer book={book} />}
@@ -64,10 +81,10 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
 
 /* ---------------- Overview ---------------- */
 
-const Overview = ({ book, similar, onQuiz, onListen, onOpenPage }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void }) => {
+const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null> }) => {
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   return (
-    <div className="h-full overflow-y-auto pb-24">
+    <div ref={scrollRef} className="h-full overflow-y-auto pb-24">
       <div className="relative pt-14 pb-8 px-6 overflow-hidden">
         <div className="absolute inset-0 -z-10 opacity-40 blur-3xl"
           style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }} />
@@ -97,6 +114,14 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage }: { book: Book;
 
       <div className="px-6 space-y-3">
         <button
+          onClick={onBuy}
+          disabled={!book.amazon_url}
+          className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-10px_rgba(29,185,84,0.6)] active:scale-[0.98] transition-transform disabled:opacity-40"
+          style={{ backgroundColor: "#1DB954", color: "#000" }}
+        >
+          <ShoppingCart size={18} /> Buy on Amazon
+        </button>
+        <button
           onClick={onQuiz}
           disabled={!book.quiz_questions?.length}
           className="w-full h-14 rounded-2xl bg-foreground text-background font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-40"
@@ -123,9 +148,9 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage }: { book: Book;
                 onClick={() => onOpenPage(idx)}
                 className="w-full text-left rounded-2xl bg-secondary/40 border border-border/40 p-4 flex items-center justify-between gap-3 active:scale-[0.99] transition-transform"
               >
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold">Page {idx + 1}</p>
-                  <p className="text-foreground text-[15px] font-bold mt-1 truncate">{title || `Page ${idx + 1}`}</p>
+                  <p className="text-foreground text-[15px] font-bold mt-1 break-words">{title || `Page ${idx + 1}`}</p>
                 </div>
                 <ChevronRight size={18} className="text-muted-foreground shrink-0" />
               </button>
@@ -237,11 +262,8 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
           })}
         </div>
         {picked !== null && (() => {
-          const diff = Math.abs(picked - q.correct);
-          const verdict =
-            diff === 0 ? { label: "Excellent", tone: "text-emerald-400", ring: "border-emerald-500/40 bg-emerald-500/10" }
-            : diff === 1 ? { label: "Good", tone: "text-sky-400", ring: "border-sky-500/40 bg-sky-500/10" }
-            : diff === 2 ? { label: "Not truly correct", tone: "text-amber-400", ring: "border-amber-500/40 bg-amber-500/10" }
+          const verdict = picked === q.correct
+            ? { label: "Excellent", tone: "text-emerald-400", ring: "border-emerald-500/40 bg-emerald-500/10" }
             : { label: "Wrong", tone: "text-red-400", ring: "border-red-500/40 bg-red-500/10" };
           const optExp = q.option_explanations?.[picked]?.trim();
           const text = optExp || q.explanation;
