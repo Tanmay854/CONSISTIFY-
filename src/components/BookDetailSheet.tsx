@@ -81,10 +81,10 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
 
 /* ---------------- Overview ---------------- */
 
-const Overview = ({ book, similar, onQuiz, onListen, onOpenPage }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void }) => {
+const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null> }) => {
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   return (
-    <div className="h-full overflow-y-auto pb-24">
+    <div ref={scrollRef} className="h-full overflow-y-auto pb-24">
       <div className="relative pt-14 pb-8 px-6 overflow-hidden">
         <div className="absolute inset-0 -z-10 opacity-40 blur-3xl"
           style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }} />
