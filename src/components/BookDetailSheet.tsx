@@ -114,6 +114,14 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
 
       <div className="px-6 space-y-3">
         <button
+          onClick={onBuy}
+          disabled={!book.amazon_url}
+          className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2 shadow-[0_15px_40px_-10px_rgba(29,185,84,0.6)] active:scale-[0.98] transition-transform disabled:opacity-40"
+          style={{ backgroundColor: "#1DB954", color: "#000" }}
+        >
+          <ShoppingCart size={18} /> Buy on Amazon
+        </button>
+        <button
           onClick={onQuiz}
           disabled={!book.quiz_questions?.length}
           className="w-full h-14 rounded-2xl bg-foreground text-background font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-40"
