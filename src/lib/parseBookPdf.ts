@@ -7,11 +7,18 @@
 //         is prefixed "A. (Excellent|Good|Not Truly Correct|Wrong) — ..."
 
 import * as pdfjsLib from "pdfjs-dist";
-// Use the bundled worker via Vite's ?url loader — no CDN dependency.
+// Load worker via Vite's ?worker (real module Worker) with ?url fallback.
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-(pdfjsLib as unknown as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = workerSrc;
+import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+try {
+  (pdfjsLib as unknown as { GlobalWorkerOptions: { workerPort: Worker } }).GlobalWorkerOptions.workerPort = new PdfWorker();
+} catch {
+  (pdfjsLib as unknown as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = workerUrl;
+}
 
 import type { QuizQuestion } from "@/lib/bookCategories";
 
