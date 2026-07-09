@@ -35,7 +35,7 @@ export type ParsedBook = {
 };
 
 export async function extractPdfText(file: ArrayBuffer): Promise<string> {
-  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(file), isEvalSupported: false }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(file) }).promise;
   const chunks: string[] = [];
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
