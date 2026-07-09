@@ -77,7 +77,8 @@ const BooksBulkImportSheet = ({ open, onClose }: { open: boolean; onClose: () =>
       try {
         book = await parseBookPdf(parsed[i].data);
       } catch (e) {
-        updateJob(job.id, { status: "failed", message: e instanceof Error ? e.message : "Parse error" });
+        console.error("[BulkImport] parse failed for", parsed[i].name, e);
+        updateJob(job.id, { status: "failed", message: e instanceof Error ? `${e.name}: ${e.message}` : "Parse error" });
         continue;
       }
       if (!book.title || !book.author) {
