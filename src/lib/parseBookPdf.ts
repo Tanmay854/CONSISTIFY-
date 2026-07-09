@@ -25,6 +25,49 @@ try {
 
 import type { QuizQuestion } from "@/lib/bookCategories";
 
+function ensurePdfWebViewPolyfills() {
+  const w = globalThis as typeof globalThis & {
+    Promise: PromiseConstructor & { withResolvers?: <T>() => { promise: Promise<T>; resolve: (value: T | PromiseLike<T>) => void; reject: (reason?: unknown) => void } };
+    ReadableStream?: typeof ReadableStream;
+  };
+
+  if (typeof w.Promise.withResolvers !== "function") {
+    w.Promise.withResolvers = function withResolvers<T>() {
+      let resolve!: (value: T | PromiseLike<T>) => void;
+      let reject!: (reason?: unknown) => void;
+      const promise = new Promise<T>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return { promise, resolve, reject };
+    };
+  }
+
+  const proto = w.ReadableStream?.prototype as (ReadableStream<unknown> & {
+    values?: () => AsyncIterableIterator<unknown>;
+    [Symbol.asyncIterator]?: () => AsyncIterableIterator<unknown>;
+  }) | undefined;
+
+  if (proto && typeof proto.values !== "function") {
+    proto.values = async function* values(this: ReadableStream<unknown>) {
+      const reader = this.getReader();
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) return;
+          yield value;
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    };
+  }
+
+  if (proto && typeof proto[Symbol.asyncIterator] !== "function" && typeof proto.values === "function") {
+    proto[Symbol.asyncIterator] = proto.values;
+  }
+}
+
 export type ParsedBook = {
   title: string;
   author: string;
@@ -35,11 +78,12 @@ export type ParsedBook = {
 };
 
 export async function extractPdfText(file: ArrayBuffer): Promise<string> {
+  ensurePdfWebViewPolyfills();
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(file) }).promise;
   const chunks: string[] = [];
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
-    const tc = await page.getTextContent();
+    const tc = await readTextContentWithoutAsyncIterator(page);
     let lastY: number | null = null;
     let line = "";
     for (const item of tc.items as Array<{ str: string; transform: number[] }>) {
@@ -55,6 +99,31 @@ export async function extractPdfText(file: ArrayBuffer): Promise<string> {
     chunks.push("");
   }
   return chunks.join("\n");
+}
+
+async function readTextContentWithoutAsyncIterator(page: unknown): Promise<{ items: Array<{ str: string; transform: number[] }> }> {
+  const p = page as {
+    streamTextContent?: (params?: Record<string, unknown>) => ReadableStream<{ items?: Array<{ str: string; transform: number[] }> }>;
+    getTextContent: () => Promise<{ items: Array<{ str: string; transform: number[] }> }>;
+  };
+
+  if (typeof p.streamTextContent === "function") {
+    const stream = p.streamTextContent({ includeMarkedContent: false });
+    const reader = stream.getReader();
+    const items: Array<{ str: string; transform: number[] }> = [];
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value?.items?.length) items.push(...value.items);
+      }
+      return { items };
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  return p.getTextContent();
 }
 
 // Strip markdown emphasis/heading marks so regexes can match content directly.
