@@ -81,17 +81,20 @@ const BooksBulkImportSheet = ({ open, onClose }: { open: boolean; onClose: () =>
         updateJob(job.id, { status: "failed", message: e instanceof Error ? `${e.name}: ${e.message}` : "Parse error" });
         continue;
       }
-      if (!book.title || !book.author) {
-        updateJob(job.id, { status: "failed", message: `Missing ${!book.title ? "title" : "author"}`, warnings: book.warnings });
+      // Only title is required — author, cover, amazon URL are all optional and can be filled in later.
+      if (!book.title) {
+        // Fall back to the file name (without extension) if the parser couldn't find a title.
+        book.title = parsed[i].name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ").trim();
+      }
+      if (!book.title) {
+        updateJob(job.id, { status: "failed", message: "Missing title (could not derive from filename)", warnings: book.warnings });
         continue;
       }
-      // Dedupe on title + author (case-insensitive)
-      const { data: existing, error: dupErr } = await supabase
-        .from("books")
-        .select("id")
-        .ilike("title", book.title)
-        .ilike("author", book.author)
-        .limit(1);
+      const authorForDedupe = book.author || "";
+      // Dedupe on title (+author when we have one), case-insensitive
+      let dupQuery = supabase.from("books").select("id").ilike("title", book.title);
+      if (authorForDedupe) dupQuery = dupQuery.ilike("author", authorForDedupe);
+      const { data: existing, error: dupErr } = await dupQuery.limit(1);
       if (dupErr) {
         updateJob(job.id, { status: "failed", message: dupErr.message, title: book.title, author: book.author });
         continue;
@@ -104,7 +107,7 @@ const BooksBulkImportSheet = ({ open, onClose }: { open: boolean; onClose: () =>
       updateJob(job.id, { status: "inserting", title: book.title, author: book.author, warnings: book.warnings });
       const payload = {
         title: book.title,
-        author: book.author,
+        author: book.author || "",
         category,
         description: null,
         key_takeaways: null,

@@ -1,72 +1,20 @@
-// Parses the standardized book summary PDF format used for bulk import.
-// Accepts markdown-flavored PDFs such as:
-//   # <Title> — <subtitle>
-//   ### By <Author> (Summarized in 10 Pages)
-//   ## Page N: <Page Title>
-//   ...content...
-//   Multiple-Choice Questions: ...
-//   **1. Question ?**
-//   A. *(Excellent)* text  B. *(Good)* ...  C. *(Not Truly Correct)* ...  D. *(Wrong)* ...
+// Robust parser for varied book-summary PDFs used in bulk import.
+// Handles:
+//   - Titles with —, –, - separators (or on their own line, or wrapped across 2 lines)
+//   - Author lines starting with "By ", "By:", "— <Author>", or missing entirely
+//   - Page markers: "Page 1:", "Page 1 —", "Page 1 -", "Page 1." etc.
+//   - Emoji-prefixed quality labels (🟢🔵🟠🔴) or plain labels
+//   - Quality labels at start OR end of options, wrapped in *()*, () or bare
+//   - Missing metadata (author, cover, amazon) — never blocks import
 
-// Use the LEGACY build — the modern build breaks in iOS/Android WebViews
-// (ReadableStream async-iterator differences, DOMMatrix usage, etc.).
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import PdfWorker from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?worker";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import workerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
-try {
-  (pdfjsLib as unknown as { GlobalWorkerOptions: { workerPort: Worker } }).GlobalWorkerOptions.workerPort = new PdfWorker();
-} catch {
-  (pdfjsLib as unknown as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = workerUrl;
-}
+import workerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.js?url";
+
+(pdfjsLib as unknown as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = workerUrl;
 
 import type { QuizQuestion } from "@/lib/bookCategories";
-
-function ensurePdfWebViewPolyfills() {
-  const w = globalThis as typeof globalThis & {
-    Promise: PromiseConstructor & { withResolvers?: <T>() => { promise: Promise<T>; resolve: (value: T | PromiseLike<T>) => void; reject: (reason?: unknown) => void } };
-    ReadableStream?: typeof ReadableStream;
-  };
-
-  if (typeof w.Promise.withResolvers !== "function") {
-    w.Promise.withResolvers = function withResolvers<T>() {
-      let resolve!: (value: T | PromiseLike<T>) => void;
-      let reject!: (reason?: unknown) => void;
-      const promise = new Promise<T>((res, rej) => {
-        resolve = res;
-        reject = rej;
-      });
-      return { promise, resolve, reject };
-    };
-  }
-
-  const proto = w.ReadableStream?.prototype as (ReadableStream<unknown> & {
-    values?: () => AsyncIterableIterator<unknown>;
-    [Symbol.asyncIterator]?: () => AsyncIterableIterator<unknown>;
-  }) | undefined;
-
-  if (proto && typeof proto.values !== "function") {
-    proto.values = async function* values(this: ReadableStream<unknown>) {
-      const reader = this.getReader();
-      try {
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) return;
-          yield value;
-        }
-      } finally {
-        reader.releaseLock();
-      }
-    };
-  }
-
-  if (proto && typeof proto[Symbol.asyncIterator] !== "function" && typeof proto.values === "function") {
-    proto[Symbol.asyncIterator] = proto.values;
-  }
-}
 
 export type ParsedBook = {
   title: string;
@@ -78,12 +26,20 @@ export type ParsedBook = {
 };
 
 export async function extractPdfText(file: ArrayBuffer): Promise<string> {
-  ensurePdfWebViewPolyfills();
-  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(file) }).promise;
+  // Use isEvalSupported:false and disableStream/Range for maximum WebView compatibility.
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(file),
+    disableStream: true,
+    disableAutoFetch: true,
+    isEvalSupported: false,
+  });
+  const pdf = await loadingTask.promise;
   const chunks: string[] = [];
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
-    const tc = await readTextContentWithoutAsyncIterator(page);
+    // Always use getTextContent (returns a Promise) — avoids ReadableStream code paths
+    // that crash in older iOS/Android WebViews.
+    const tc = await page.getTextContent();
     let lastY: number | null = null;
     let line = "";
     for (const item of tc.items as Array<{ str: string; transform: number[] }>) {
@@ -101,73 +57,91 @@ export async function extractPdfText(file: ArrayBuffer): Promise<string> {
   return chunks.join("\n");
 }
 
-async function readTextContentWithoutAsyncIterator(page: unknown): Promise<{ items: Array<{ str: string; transform: number[] }> }> {
-  const p = page as {
-    streamTextContent?: (params?: Record<string, unknown>) => ReadableStream<{ items?: Array<{ str: string; transform: number[] }> }>;
-    getTextContent: () => Promise<{ items: Array<{ str: string; transform: number[] }> }>;
-  };
-
-  if (typeof p.streamTextContent === "function") {
-    const stream = p.streamTextContent({ includeMarkedContent: false });
-    const reader = stream.getReader();
-    const items: Array<{ str: string; transform: number[] }> = [];
-    try {
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (value?.items?.length) items.push(...value.items);
-      }
-      return { items };
-    } finally {
-      reader.releaseLock();
-    }
-  }
-
-  return p.getTextContent();
-}
-
-// Strip markdown emphasis/heading marks so regexes can match content directly.
-function stripMd(s: string): string {
+// Strip markdown/emoji/decorative marks so regex can match content directly.
+function normalize(s: string): string {
   return s
-    .replace(/\*+/g, " ")      // ** and *
-    .replace(/^#+\s*/gm, "")   // leading # ## ###
+    // Strip common quality emojis
+    .replace(/[🟢🔵🟠🔴🟡🟣⚫⚪🟤]/g, " ")
+    // Strip markdown emphasis and headings
+    .replace(/\*+/g, " ")
+    .replace(/^#+\s*/gm, "")
+    // Non-breaking spaces
+    .replace(/\u00A0/g, " ")
     .replace(/[ \t]+/g, " ")
     .trim();
+}
+
+// Detect quality label anywhere in a chunk of text.
+function detectQuality(text: string): "Excellent" | "Good" | "Not Truly Correct" | "Wrong" | null {
+  if (/\bexcellent\b/i.test(text)) return "Excellent";
+  if (/\bnot\s+truly\s+correct\b/i.test(text)) return "Not Truly Correct";
+  if (/\bgood\b/i.test(text)) return "Good";
+  if (/\bwrong\b/i.test(text)) return "Wrong";
+  return null;
 }
 
 export function parseBookText(raw: string): ParsedBook {
   const warnings: string[] = [];
   const norm = raw.replace(/\r/g, "").replace(/\u00A0/g, " ");
-  const cleaned = norm
+  const lines = norm
     .split("\n")
-    .map((l) => stripMd(l))
-    .filter((l) => l.length > 0)
-    .join("\n");
+    .map((l) => normalize(l))
+    .filter((l) => l.length > 0);
 
-  const lines = cleaned.split("\n");
-
-  // Title: first non-empty line (already stripped of #), take before " — "/" – "/" - "
+  // ---------- Title ----------
+  // Take first 1-3 non-decorative lines; join them if the first ends with a dash
+  // (title wrapped across lines) or is short. Then split on em/en/hyphen separator.
   let title = "";
-  const first = lines[0] || "";
-  title = (first.split(/\s[—–-]\s/)[0] || first).trim();
+  const skipRe = /^(a\s+story|storytelling|inspired|based on|summary|by\s+)/i;
+  const titleLines: string[] = [];
+  for (const l of lines.slice(0, 8)) {
+    if (skipRe.test(l)) break;
+    if (/^page\s+\d/i.test(l)) break;
+    titleLines.push(l);
+    if (titleLines.length >= 2) break;
+  }
+  if (titleLines.length) {
+    // If first line ends with dash, it's a wrapped title.
+    const joined = titleLines[0].match(/[—–-]\s*$/) && titleLines[1]
+      ? `${titleLines[0]} ${titleLines[1]}`
+      : titleLines[0];
+    title = (joined.split(/\s[—–-]\s/)[0] || joined).trim();
+  }
+  if (!title && lines[0]) title = lines[0];
+
+  // ---------- Author ----------
+  let author = "";
+  for (const l of lines.slice(0, 25)) {
+    // "By John Doe", "By: John Doe", "— John C. Maxwell"
+    const m1 = l.match(/^\s*(?:by[:\s]+|—\s*|–\s*|-\s*)([A-Z][A-Za-z .'’\-]{1,60})(?:\s*[\(,]|$)/);
+    if (m1) { author = m1[1].trim().replace(/[.,;:]+$/, ""); break; }
+    // In-line "By John Doe"
+    const m2 = l.match(/\bBy\s+([A-Z][A-Za-z .'’\-]{1,60}?)(?:\s*[\(,]|\s+—|$)/);
+    if (m2) { author = m2[1].trim().replace(/[.,;:]+$/, ""); break; }
+  }
+  // Only accept name-like strings (2+ capitalized words). Do NOT fall back to the
+  // title's trailing subtitle — subtitles like "A Storytelling Summary" aren't authors.
+  const looksLikeName = (s: string) => /^[A-Z][A-Za-z.'’\-]+(?:\s+[A-Z][A-Za-z.'’\-]*){1,4}$/.test(s.trim());
+  if (author && !looksLikeName(author)) author = "";
+  if (!author) warnings.push("Author not found");
   if (!title) warnings.push("Title not found");
 
-  // Author: any line containing "By <Name>" (case-insensitive), before parenthesis
-  let author = "";
-  for (const l of lines.slice(0, 20)) {
-    const m = l.match(/\bBy\s+([A-Z][^()\n]{1,80}?)(?:\s*\(|$)/);
-    if (m) { author = m[1].trim().replace(/[.,;:]+$/, ""); break; }
-  }
-  if (!author) warnings.push("Author not found");
+  // Rejoin cleaned text for downstream regex
+  const cleaned = lines.join("\n");
 
-  // Quiz boundary
-  const quizIdx = cleaned.search(/Multiple[-\s]Choice Questions/i);
+  // ---------- Quiz boundary ----------
+  // Require an explicit heading (Multiple-Choice / Quiz / Questions section) — this avoids
+  // matching a stray "1." inside story text.
+  const quizHeadingRe = /(?:^|\n)[^\n]{0,120}?(?:multiple[-\s]choice|daily[-\s]life\s+quiz|application\s+quiz|life[-\s]application\s+quiz|\bquiz\b|\bquestions\b)[^\n]{0,120}/i;
+  const quizMatch = cleaned.match(quizHeadingRe);
+  const quizIdx = quizMatch ? quizMatch.index! : -1;
   const body = quizIdx >= 0 ? cleaned.slice(0, quizIdx) : cleaned;
 
-  // Pages — accept optional leading "Page" markdown remnants
+  // ---------- Pages ----------
   const pageTitles = Array.from({ length: 10 }, () => "");
   const pageContents = Array.from({ length: 10 }, () => "");
-  const pageRe = /(?:^|\n)\s*Page\s+(\d{1,2})\s*[:\-–—]\s*([^\n]+)/gi;
+  // Accept ":", "—", "–", "-", "." after page number
+  const pageRe = /(?:^|\n)\s*Page\s+(\d{1,2})\s*[:\-–—.]\s*([^\n]+)/gi;
   const markers: Array<{ num: number; title: string; contentStart: number; rawStart: number }> = [];
   let m: RegExpExecArray | null;
   while ((m = pageRe.exec(body))) {
@@ -184,43 +158,72 @@ export function parseBookText(raw: string): ParsedBook {
   const missing = pageTitles.map((_, i) => i + 1).filter((n) => !pageContents[n - 1]);
   if (missing.length) warnings.push(`Missing pages: ${missing.join(", ")}`);
 
-  // Quiz
+  // ---------- Quiz questions ----------
   const quiz: QuizQuestion[] = [];
   if (quizIdx >= 0) {
     const qSection = cleaned.slice(quizIdx).replace(/\s+/g, " ");
-    // Question markers: " N. " where N is 1-3 digits, followed within ~1500 chars by an A. option
-    const qRe = /(?:^|\s)(\d{1,3})\.\s+/g;
+    // Question markers: " N. " or " N) " (1-3 digits) whose next ~2000 chars contain option A
+    const qRe = /(?:^|[\s])(\d{1,3})[\.\)]\s+/g;
     const qStarts: number[] = [];
     let qm: RegExpExecArray | null;
     while ((qm = qRe.exec(qSection))) {
-      const look = qSection.slice(qm.index, qm.index + 2000);
-      if (/\sA\.\s*\(?\s*(Excellent|Good|Not Truly Correct|Wrong)/i.test(look)) {
+      const n = parseInt(qm[1], 10);
+      if (n < 1 || n > 30) continue;
+      const look = qSection.slice(qm.index, qm.index + 2500);
+      if (/\s[Aa][\.\)]\s/.test(look)) {
         qStarts.push(qm.index + qm[0].length);
       }
     }
-    // Option marker allows optional "(" before label
-    const optRe = /\s([A-D])\.\s*\(?\s*(Excellent|Good|Not Truly Correct|Wrong)\s*\)?\s*[—\-–:]*\s*/gi;
+    // Option marker: " A. " or " A) " optionally followed by "(Excellent)"/"Excellent" label
+    const optRe = /\s([A-D])[\.\)]\s+/g;
     for (let i = 0; i < qStarts.length; i++) {
       const start = qStarts[i];
       const end = i + 1 < qStarts.length ? qStarts[i + 1] : qSection.length;
       const chunk = qSection.slice(start, end);
       optRe.lastIndex = 0;
-      const opts: Array<{ letter: string; label: string; start: number; end: number }> = [];
+      const opts: Array<{ letter: string; start: number; end: number }> = [];
       let om: RegExpExecArray | null;
       while ((om = optRe.exec(chunk))) {
-        opts.push({ letter: om[1].toUpperCase(), label: om[2], start: om.index, end: om.index + om[0].length });
+        opts.push({ letter: om[1].toUpperCase(), start: om.index, end: om.index + om[0].length });
       }
       if (opts.length < 4) continue;
-      const question = chunk.slice(0, opts[0].start).trim().replace(/\s+/g, " ").replace(/\?\s*$/, "?");
+      // Keep first ABCD occurrences in order
+      const seen = new Set<string>();
+      const four: typeof opts = [];
+      for (const o of opts) {
+        if (!seen.has(o.letter) && "ABCD".includes(o.letter)) {
+          seen.add(o.letter);
+          four.push(o);
+          if (four.length === 4) break;
+        }
+      }
+      if (four.length < 4) continue;
+
+      const question = chunk.slice(0, four[0].start).trim().replace(/\s+/g, " ").replace(/\?\s*$/, "?");
       const options: [string, string, string, string] = ["", "", "", ""];
       const labels: [string, string, string, string] = ["", "", "", ""];
       for (let k = 0; k < 4; k++) {
-        const oo = opts[k];
-        const eEnd = k + 1 < opts.length ? opts[k + 1].start : chunk.length;
+        const oo = four[k];
+        const eEnd = k + 1 < four.length ? four[k + 1].start : chunk.length;
         const idx = "ABCD".indexOf(oo.letter);
         if (idx < 0) continue;
-        options[idx] = chunk.slice(oo.end, eEnd).trim().replace(/\s+/g, " ");
-        labels[idx] = oo.label;
+        let optText = chunk.slice(oo.end, eEnd).trim().replace(/\s+/g, " ");
+        // Detect quality label first (may sit at start or end of option)
+        const q = detectQuality(optText);
+        // Strip leading "(Excellent) — ", "Excellent — ", "Excellent =", etc.
+        optText = optText.replace(
+          /^\(?\s*(Excellent|Good|Not\s+Truly\s+Correct|Wrong)\s*\)?\s*[—\-–:=]*\s*/i,
+          ""
+        ).trim();
+        // Strip trailing "(Excellent)" / " — Excellent"
+        optText = optText.replace(
+          /\s*[—\-–:=]?\s*\(?\s*(Excellent|Good|Not\s+Truly\s+Correct|Wrong)\s*\)?\s*$/i,
+          ""
+        ).trim();
+        // Strip trailing parenthetical justification: "... (dismisses ...)"
+        optText = optText.replace(/\s*\([^()]{0,300}\)\s*$/, "").trim();
+        options[idx] = optText;
+        labels[idx] = q || "";
       }
       if (options.some((o) => !o)) continue;
       const correctIdx = labels.findIndex((l) => /excellent/i.test(l));
@@ -230,6 +233,7 @@ export function parseBookText(raw: string): ParsedBook {
         correct: (correctIdx >= 0 ? correctIdx : 0) as 0 | 1 | 2 | 3,
         option_explanations: labels,
       });
+      if (quiz.length >= 15) break;
     }
   }
   if (quiz.length < 10) warnings.push(`Only ${quiz.length} quiz questions parsed`);
