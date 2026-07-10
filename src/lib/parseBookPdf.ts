@@ -119,14 +119,10 @@ export function parseBookText(raw: string): ParsedBook {
     const m2 = l.match(/\bBy\s+([A-Z][A-Za-z .'’\-]{1,60}?)(?:\s*[\(,]|\s+—|$)/);
     if (m2) { author = m2[1].trim().replace(/[.,;:]+$/, ""); break; }
   }
-  // Try to extract author from title if it contains " — " with a proper name after
-  if (!author && title) {
-    const first = lines[0] || "";
-    const parts = first.split(/\s[—–-]\s/);
-    if (parts.length >= 2 && /^[A-Z][A-Za-z .'’\-]+$/.test(parts[parts.length - 1].trim())) {
-      author = parts[parts.length - 1].trim();
-    }
-  }
+  // Only accept name-like strings (2+ capitalized words). Do NOT fall back to the
+  // title's trailing subtitle — subtitles like "A Storytelling Summary" aren't authors.
+  const looksLikeName = (s: string) => /^[A-Z][A-Za-z.'’\-]+(?:\s+[A-Z][A-Za-z.'’\-]*){1,4}$/.test(s.trim());
+  if (author && !looksLikeName(author)) author = "";
   if (!author) warnings.push("Author not found");
   if (!title) warnings.push("Title not found");
 
@@ -134,10 +130,11 @@ export function parseBookText(raw: string): ParsedBook {
   const cleaned = lines.join("\n");
 
   // ---------- Quiz boundary ----------
-  const quizMatch = cleaned.match(/(?:^|\n)[^\n]{0,80}?(?:multiple[-\s]choice|daily[-\s]life\s+quiz|quiz|questions?)[^\n]{0,80}/i);
-  // Find real quiz start = where first "1." followed by A) appears
-  const firstQAt = cleaned.search(/(?:^|\n)\s*1[\.\)]\s+[^\n]{0,300}\n?[^\n]{0,300}[AaＡ][\.\)]/);
-  const quizIdx = firstQAt >= 0 ? firstQAt : (quizMatch ? quizMatch.index! : -1);
+  // Require an explicit heading (Multiple-Choice / Quiz / Questions section) — this avoids
+  // matching a stray "1." inside story text.
+  const quizHeadingRe = /(?:^|\n)[^\n]{0,120}?(?:multiple[-\s]choice|daily[-\s]life\s+quiz|application\s+quiz|life[-\s]application\s+quiz|\bquiz\b|\bquestions\b)[^\n]{0,120}/i;
+  const quizMatch = cleaned.match(quizHeadingRe);
+  const quizIdx = quizMatch ? quizMatch.index! : -1;
   const body = quizIdx >= 0 ? cleaned.slice(0, quizIdx) : cleaned;
 
   // ---------- Pages ----------
