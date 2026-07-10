@@ -208,16 +208,20 @@ export function parseBookText(raw: string): ParsedBook {
         const idx = "ABCD".indexOf(oo.letter);
         if (idx < 0) continue;
         let optText = chunk.slice(oo.end, eEnd).trim().replace(/\s+/g, " ");
-        // Strip surrounding parens/dashes around a quality tag at either end
-        optText = optText.replace(/^\(?\s*(Excellent|Good|Not Truly Correct|Wrong)\s*\)?\s*[—\-–:]*\s*/i, (_m, tag) => {
-          return `__Q:${tag}__ `;
-        });
-        // Detect quality label in-place (start or end)
+        // Detect quality label first (may sit at start or end of option)
         const q = detectQuality(optText);
-        // Remove marker tag we injected
-        optText = optText.replace(/__Q:[^_]+__\s*/, "").trim();
-        // Trailing "(Excellent)" style
-        optText = optText.replace(/\s*\(?\s*(Excellent|Good|Not Truly Correct|Wrong)\s*\)?\s*$/i, "").trim();
+        // Strip leading "(Excellent) — ", "Excellent — ", "Excellent =", etc.
+        optText = optText.replace(
+          /^\(?\s*(Excellent|Good|Not\s+Truly\s+Correct|Wrong)\s*\)?\s*[—\-–:=]*\s*/i,
+          ""
+        ).trim();
+        // Strip trailing "(Excellent)" / " — Excellent"
+        optText = optText.replace(
+          /\s*[—\-–:=]?\s*\(?\s*(Excellent|Good|Not\s+Truly\s+Correct|Wrong)\s*\)?\s*$/i,
+          ""
+        ).trim();
+        // Strip trailing parenthetical justification: "... (dismisses ...)"
+        optText = optText.replace(/\s*\([^()]{0,300}\)\s*$/, "").trim();
         options[idx] = optText;
         labels[idx] = q || "";
       }
@@ -229,6 +233,7 @@ export function parseBookText(raw: string): ParsedBook {
         correct: (correctIdx >= 0 ? correctIdx : 0) as 0 | 1 | 2 | 3,
         option_explanations: labels,
       });
+      if (quiz.length >= 15) break;
     }
   }
   if (quiz.length < 10) warnings.push(`Only ${quiz.length} quiz questions parsed`);
