@@ -91,13 +91,10 @@ const BooksBulkImportSheet = ({ open, onClose }: { open: boolean; onClose: () =>
         continue;
       }
       const authorForDedupe = book.author || "";
-      // Dedupe on title + author (case-insensitive)
-      const { data: existing, error: dupErr } = await supabase
-        .from("books")
-        .select("id")
-        .ilike("title", book.title)
-        .ilike("author", book.author)
-        .limit(1);
+      // Dedupe on title (+author when we have one), case-insensitive
+      let dupQuery = supabase.from("books").select("id").ilike("title", book.title);
+      if (authorForDedupe) dupQuery = dupQuery.ilike("author", authorForDedupe);
+      const { data: existing, error: dupErr } = await dupQuery.limit(1);
       if (dupErr) {
         updateJob(job.id, { status: "failed", message: dupErr.message, title: book.title, author: book.author });
         continue;
@@ -110,7 +107,7 @@ const BooksBulkImportSheet = ({ open, onClose }: { open: boolean; onClose: () =>
       updateJob(job.id, { status: "inserting", title: book.title, author: book.author, warnings: book.warnings });
       const payload = {
         title: book.title,
-        author: book.author,
+        author: book.author || "",
         category,
         description: null,
         key_takeaways: null,
