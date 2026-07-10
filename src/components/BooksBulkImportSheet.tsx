@@ -81,10 +81,16 @@ const BooksBulkImportSheet = ({ open, onClose }: { open: boolean; onClose: () =>
         updateJob(job.id, { status: "failed", message: e instanceof Error ? `${e.name}: ${e.message}` : "Parse error" });
         continue;
       }
-      if (!book.title || !book.author) {
-        updateJob(job.id, { status: "failed", message: `Missing ${!book.title ? "title" : "author"}`, warnings: book.warnings });
+      // Only title is required — author, cover, amazon URL are all optional and can be filled in later.
+      if (!book.title) {
+        // Fall back to the file name (without extension) if the parser couldn't find a title.
+        book.title = parsed[i].name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ").trim();
+      }
+      if (!book.title) {
+        updateJob(job.id, { status: "failed", message: "Missing title (could not derive from filename)", warnings: book.warnings });
         continue;
       }
+      const authorForDedupe = book.author || "";
       // Dedupe on title + author (case-insensitive)
       const { data: existing, error: dupErr } = await supabase
         .from("books")
