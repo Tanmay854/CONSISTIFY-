@@ -89,8 +89,8 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const save = async () => {
     if (!editing) return;
     setError(null);
-    if (!editing.title.trim() || !editing.author.trim() || !editing.cover_url.trim() || !editing.amazon_url.trim()) {
-      setError("Title, author, cover, and Amazon URL are required."); return;
+    if (!editing.title.trim()) {
+      setError("Title is required."); return;
     }
     setBusy(true);
     const payload = {
