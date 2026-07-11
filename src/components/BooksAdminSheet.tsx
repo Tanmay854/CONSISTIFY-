@@ -155,8 +155,13 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   };
 
 
+  // Collapse runs of 3+ spaces/tabs down to a single space (keeps newlines intact)
+  // so pasted PDF text never has more than 2 spaces between characters.
+  const normalizePageText = (v: string) =>
+    v.replace(/\u00A0/g, " ").replace(/[ \t]{2,}/g, " ");
+
   const setPage = (i: number, v: string) =>
-    setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => idx === i ? v : p) } : f);
+    setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => idx === i ? normalizePageText(v) : p) } : f);
 
   const setPageTitle = (i: number, v: string) =>
     setEditing((f) => f ? { ...f, summary_page_titles: f.summary_page_titles.map((t, idx) => idx === i ? v : t) } : f);
