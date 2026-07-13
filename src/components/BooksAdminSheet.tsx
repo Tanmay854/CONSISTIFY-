@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X, Plus, Pencil, Trash2, Upload, Music } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book, type QuizQuestion } from "@/lib/bookCategories";
+import { normalizeSummaryText } from "@/lib/textNormalize";
 
 const emptyQuestion = (): QuizQuestion => ({ q: "", options: ["", "", "", ""], correct: 0, explanation: "", option_explanations: ["", "", "", ""] });
 const emptyPages = (): string[] => Array.from({ length: 10 }, () => "");
@@ -106,7 +107,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       rating: editing.rating ? Number(editing.rating) : null,
       listening_time_minutes: editing.listening_time_minutes ? Number(editing.listening_time_minutes) : null,
       audio_url: editing.audio_url.trim() || null,
-      summary_pages: editing.summary_pages.map((p) => p.trim()),
+      summary_pages: editing.summary_pages.map(normalizeSummaryText),
       summary_page_titles: editing.summary_page_titles.map((t) => t.trim()),
       quiz_questions: editing.quiz_questions.filter((q) => q.q.trim() && q.options.every((o) => o.trim())),
       is_published: editing.is_published,
@@ -155,13 +156,8 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   };
 
 
-  // Collapse runs of 3+ spaces/tabs down to a single space (keeps newlines intact)
-  // so pasted PDF text never has more than 2 spaces between characters.
-  const normalizePageText = (v: string) =>
-    v.replace(/\u00A0/g, " ").replace(/[ \t]{2,}/g, " ");
-
   const setPage = (i: number, v: string) =>
-    setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => idx === i ? normalizePageText(v) : p) } : f);
+    setEditing((f) => f ? { ...f, summary_pages: f.summary_pages.map((p, idx) => idx === i ? normalizeSummaryText(v) : p) } : f);
 
   const setPageTitle = (i: number, v: string) =>
     setEditing((f) => f ? { ...f, summary_page_titles: f.summary_page_titles.map((t, idx) => idx === i ? v : t) } : f);
