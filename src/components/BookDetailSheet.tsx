@@ -4,6 +4,7 @@ import {
   Play, Pause, Rewind, FastForward, Type as TypeIcon, Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import type { Book, QuizQuestion } from "@/lib/bookCategories";
 
 type Mode = "overview" | "quiz" | "summary" | "audio";
