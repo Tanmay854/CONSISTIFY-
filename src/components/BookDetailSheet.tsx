@@ -262,17 +262,23 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
           })}
         </div>
         {picked !== null && (() => {
-          const verdict = picked === q.correct
-            ? { label: "Excellent", tone: "text-emerald-400", ring: "border-emerald-500/40 bg-emerald-500/10" }
-            : { label: "Wrong", tone: "text-red-400", ring: "border-red-500/40 bg-red-500/10" };
-          const optExp = q.option_explanations?.[picked]?.trim();
-          const text = optExp || q.explanation;
+          const rawLabel = (q.option_explanations?.[picked] || "").trim();
+          const normalized = rawLabel.toLowerCase();
+          let label: "Excellent" | "Good" | "Not Truly Correct" | "Wrong";
+          if (/excellent/.test(normalized)) label = "Excellent";
+          else if (/not\s*truly/.test(normalized)) label = "Not Truly Correct";
+          else if (/good/.test(normalized)) label = "Good";
+          else if (/wrong/.test(normalized)) label = "Wrong";
+          else label = picked === q.correct ? "Excellent" : "Wrong";
+          const style =
+            label === "Excellent" || label === "Good"
+              ? { tone: "text-emerald-400", ring: "border-emerald-500/40 bg-emerald-500/10" }
+              : label === "Not Truly Correct"
+                ? { tone: "text-yellow-400", ring: "border-yellow-500/40 bg-yellow-500/10" }
+                : { tone: "text-red-400", ring: "border-red-500/40 bg-red-500/10" };
           return (
-            <div className={`mt-5 p-4 rounded-xl border ${verdict.ring}`}>
-              <p className={`text-xs font-bold uppercase tracking-[0.18em] mb-1.5 ${verdict.tone}`}>{verdict.label}</p>
-              {text && (
-                <p className="text-muted-foreground text-sm leading-relaxed">{text}</p>
-              )}
+            <div className={`mt-5 p-4 rounded-xl border ${style.ring}`}>
+              <p className={`text-xs font-bold uppercase tracking-[0.18em] ${style.tone}`}>{label}</p>
             </div>
           );
         })()}
