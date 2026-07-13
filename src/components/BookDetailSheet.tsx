@@ -83,6 +83,7 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
 /* ---------------- Overview ---------------- */
 
 const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null> }) => {
+  const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   return (
     <div ref={scrollRef} className="h-full overflow-y-auto pb-24">
