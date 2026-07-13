@@ -6,6 +6,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Book, QuizQuestion } from "@/lib/bookCategories";
+import { normalizeSummaryText } from "@/lib/textNormalize";
 
 type Mode = "overview" | "quiz" | "summary" | "audio";
 
@@ -302,7 +303,7 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
 /* ---------------- Summary Reader ---------------- */
 
 const SummaryReader = ({ book, onBuy, startPage = 0 }: { book: Book; onBuy: () => void; startPage?: number }) => {
-  const pages = useMemo(() => (book.summary_pages ?? []).filter(Boolean), [book.summary_pages]);
+  const pages = useMemo(() => (book.summary_pages ?? []).map(normalizeSummaryText).filter(Boolean), [book.summary_pages]);
   const titles = useMemo(() => book.summary_page_titles ?? [], [book.summary_page_titles]);
   const total = pages.length;
   const [p, setP] = useState(Math.min(Math.max(0, startPage), Math.max(0, total - 1)));
@@ -375,7 +376,10 @@ const SummaryReader = ({ book, onBuy, startPage = 0 }: { book: Book; onBuy: () =
         className="flex-1 overflow-y-auto px-7 pt-4 pb-8 animate-fade-in select-none"
       >
         {!atEnd ? (
-          <p className={`text-foreground ${fontCls} whitespace-pre-line font-[400]`} style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+          <p
+            className={`text-foreground ${fontCls} font-[400]`}
+            style={{ fontFamily: "Georgia, 'Times New Roman', serif", whiteSpace: "normal", wordSpacing: "normal", letterSpacing: 0, textAlign: "left" }}
+          >
             {pages[p]}
           </p>
         ) : (
