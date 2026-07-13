@@ -102,7 +102,7 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
             <p className="text-muted-foreground text-sm mt-1">by {book.author}</p>
             <div className="flex items-center justify-center gap-4 mt-3">
               <Rating value={book.rating} />
-              {book.public_id && <span className="text-muted-foreground text-[11px] font-mono">#{book.public_id}</span>}
+              {user && book.public_id && <span className="text-muted-foreground text-[11px] font-mono">#{book.public_id}</span>}
             </div>
           </div>
 
