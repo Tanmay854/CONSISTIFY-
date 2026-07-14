@@ -200,7 +200,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
   const trackRef = useRef<HTMLDivElement>(null);
   const slideWidthRef = useRef(0);
   const isSlidingRef = useRef(false);
-  const { user } = useAuth();
+  
 
   const stopAndSync = useCallback(() => {
     const el = scrollRef.current;
