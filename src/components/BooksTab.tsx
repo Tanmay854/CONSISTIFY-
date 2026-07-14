@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Search, X, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
-import { useAuth } from "@/hooks/useAuth";
+
 import BookDetailSheet from "./BookDetailSheet";
 
 const POPULAR = ["Discipline", "Atomic Habits", "Deep Work", "Stoicism", "Focus"];
@@ -200,7 +200,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
   const trackRef = useRef<HTMLDivElement>(null);
   const slideWidthRef = useRef(0);
   const isSlidingRef = useRef(false);
-  const { user } = useAuth();
+  
 
   const stopAndSync = useCallback(() => {
     const el = scrollRef.current;
@@ -297,19 +297,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
       >
         <div ref={trackRef} className="flex gap-4">
           {books.map((b) => (
-            <button
-              key={b.id}
-              onClick={() => onOpen(b)}
-              className="relative shrink-0 w-[78vw] max-w-[340px] h-56 rounded-3xl overflow-hidden text-left active:scale-[0.98] transition-transform"
-            >
-              <img src={b.cover_url} alt={b.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-4">
-                <p className="text-primary text-[10px] uppercase tracking-[0.2em] font-semibold mb-1">Featured</p>
-                <h3 className="text-foreground text-lg font-extrabold leading-tight line-clamp-2">{b.title}</h3>
-                <p className="text-muted-foreground text-xs mt-0.5">by {b.author}</p>
-              </div>
-            </button>
+            <BookCard key={b.id} book={b} onOpen={onOpen} />
           ))}
         </div>
       </div>
