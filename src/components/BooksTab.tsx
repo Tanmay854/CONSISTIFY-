@@ -295,7 +295,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
         onTouchStart={stopAndSync}
         className="overflow-x-auto scrollbar-hide px-5 pb-2"
       >
-        <div ref={trackRef} className="flex gap-4">
+        <div ref={trackRef} className="flex gap-4 items-stretch">
           {books.map((b) => (
             <BookCard key={b.id} book={b} onOpen={onOpen} />
           ))}
