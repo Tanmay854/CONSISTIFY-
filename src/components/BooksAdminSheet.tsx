@@ -50,6 +50,8 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
   
 
   const load = async () => {
