@@ -50,6 +50,8 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
   
 
   const load = async () => {
@@ -328,24 +330,38 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
         </div>
       ) : (
         <div className="p-5">
-          {books.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground text-sm">No books yet. Tap + to add your first book.</div>
-          ) : (
-            <div className="space-y-3">
-              {books.map((b) => (
-                <div key={b.id} className="flex gap-3 items-center bg-card rounded-2xl p-3">
-                  <img src={b.cover_url} alt="" className="w-14 aspect-[2/3] object-cover rounded-lg" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-foreground text-sm font-semibold truncate">{b.title}</p>
-                    <p className="text-muted-foreground text-xs truncate">{b.author} · {b.category}</p>
-                    {b.public_id && <p className="text-muted-foreground text-[10px] font-mono mt-0.5">#{b.public_id}</p>}
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search books by title…"
+            className={`${inputCls} mb-4`}
+          />
+          {(() => {
+            const q = search.trim().toLowerCase();
+            const filtered = q ? books.filter((b) => b.title.toLowerCase().includes(q)) : books;
+            if (books.length === 0) {
+              return <div className="text-center py-16 text-muted-foreground text-sm">No books yet. Tap + to add your first book.</div>;
+            }
+            if (filtered.length === 0) {
+              return <div className="text-center py-16 text-muted-foreground text-sm">No books match "{search}".</div>;
+            }
+            return (
+              <div className="space-y-3">
+                {filtered.map((b) => (
+                  <div key={b.id} className="flex gap-3 items-center bg-card rounded-2xl p-3">
+                    <img src={b.cover_url} alt="" className="w-14 aspect-[2/3] object-cover rounded-lg" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-foreground text-sm font-semibold truncate">{b.title}</p>
+                      <p className="text-muted-foreground text-xs truncate">{b.author} · {b.category}</p>
+                      {b.public_id && <p className="text-muted-foreground text-[10px] font-mono mt-0.5">#{b.public_id}</p>}
+                    </div>
+                    <button onClick={() => startEdit(b)} className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center"><Pencil size={14} className="text-foreground" /></button>
+                    <button onClick={() => remove(b)} className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center"><Trash2 size={14} className="text-destructive" /></button>
                   </div>
-                  <button onClick={() => startEdit(b)} className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center"><Pencil size={14} className="text-foreground" /></button>
-                  <button onClick={() => remove(b)} className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center"><Trash2 size={14} className="text-destructive" /></button>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

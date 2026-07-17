@@ -295,7 +295,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
         onTouchStart={stopAndSync}
         className="overflow-x-auto scrollbar-hide px-5 pb-2"
       >
-        <div ref={trackRef} className="flex gap-4">
+        <div ref={trackRef} className="flex gap-4 items-stretch">
           {books.map((b) => (
             <BookCard key={b.id} book={b} onOpen={onOpen} />
           ))}
@@ -315,7 +315,7 @@ const Row = ({
         <button onClick={onSeeAll} className="text-muted-foreground text-[11px] uppercase tracking-wider">See all</button>
       )}
     </div>
-    <div className="flex gap-3 overflow-x-auto scrollbar-hide px-5 pb-2 snap-x">
+    <div className="flex gap-3 overflow-x-auto scrollbar-hide px-5 pb-2 snap-x items-stretch">
       {books.map((b) => (
         <BookCard key={b.id} book={b} onOpen={onOpen} />
       ))}
@@ -326,14 +326,14 @@ const Row = ({
 const BookCard = ({ book, onOpen }: { book: Book; onOpen: (b: Book) => void }) => (
   <button
     onClick={() => onOpen(book)}
-    className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform"
+    className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
     <div className="w-36 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
       <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
     </div>
-    <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
-    <p className="text-muted-foreground text-[10px] mt-0.5 line-clamp-1">{book.author}</p>
-    <div className="flex items-center gap-2 mt-1">
+    <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug min-h-[2.2rem]">{book.title}</p>
+    <p className="text-muted-foreground text-[10px] mt-0.5 line-clamp-1 min-h-[0.9rem]">{book.author}</p>
+    <div className="flex items-center gap-2 mt-auto pt-1">
       {book.rating != null && (
         <span className="flex items-center gap-0.5 text-[10px] text-foreground">
           <Star size={10} className="fill-yellow-400 text-yellow-400" /> {book.rating.toFixed(1)}
