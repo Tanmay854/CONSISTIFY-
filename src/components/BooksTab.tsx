@@ -331,7 +331,7 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: (b: Book) => void }) =
     <div className="w-36 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
       <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
     </div>
-    <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug min-h-[2.2rem] flex flex-col justify-start">{book.title}</p>
+    <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
     <p className="text-muted-foreground text-[10px] mt-1 line-clamp-1 min-h-[0.9rem]">{book.author}</p>
     <div className="flex items-center gap-2 mt-auto pt-1">
       {book.rating != null && (
