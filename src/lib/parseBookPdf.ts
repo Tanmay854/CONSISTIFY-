@@ -37,6 +37,9 @@ import type { QuizQuestion } from "@/lib/bookCategories";
 export type ParsedBook = {
   title: string;
   author: string;
+  description: string;
+  key_takeaways: string;
+  why_read: string;
   summary_page_titles: string[];
   summary_pages: string[];
   quiz_questions: QuizQuestion[];
