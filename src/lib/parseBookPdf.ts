@@ -37,6 +37,9 @@ import type { QuizQuestion } from "@/lib/bookCategories";
 export type ParsedBook = {
   title: string;
   author: string;
+  description: string;
+  key_takeaways: string;
+  why_read: string;
   summary_page_titles: string[];
   summary_pages: string[];
   quiz_questions: QuizQuestion[];
@@ -126,6 +129,22 @@ export function parseBookText(raw: string): ParsedBook {
       .trim();
   }
 
+  // ---------- Meta fields: Description / Key Takeaway / Why Read ----------
+  const grabField = (labels: RegExp): string => {
+    const m = text.match(labels);
+    if (!m) return "";
+    const startIdx = m.index! + m[0].length;
+    const rest = text.slice(startIdx);
+    // Stop at next known label, page marker, decorative line, or Summary heading
+    const stopRe = /\n\s*(?:Description\s*:|Key\s*Takeaway[s]?\s*:|Why\s*Read[^\n]*:|Book\s*Title\s*:|Author\s*:|\[?\s*PAGE\s+\d|Summary\s*[-–—]\s*Part|Question\s+\d)/i;
+    const stop = rest.search(stopRe);
+    const body = (stop >= 0 ? rest.slice(0, stop) : rest);
+    return body.replace(/\s+/g, " ").trim();
+  };
+  const description = grabField(/\bDescription\s*:\s*/i);
+  const key_takeaways = grabField(/\bKey\s*Takeaway[s]?\s*:\s*/i);
+  const why_read = grabField(/\bWhy\s*Read[^\n:]*:\s*/i);
+
   // Fallback title (first non-decorative non-metadata line)
   if (!title) {
     const firstLines = text.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -200,10 +219,16 @@ export function parseBookText(raw: string): ParsedBook {
     // Skip a page whose entire body is Book Title / Author metadata
     const bare = content.replace(/\s+/g, " ").trim();
     const isMetaOnly =
-      /^\s*Book\s*Title\s*:/i.test(bare) &&
-      /Description\s*:|Key\s*Takeaway\s*:|Why\s*Read/i.test(bare);
+      /^\s*Book\s*Title\s*:/i.test(bare) ||
+      (/Description\s*:/i.test(bare) && /Key\s*Takeaway/i.test(bare) && /Why\s*Read/i.test(bare));
     if (isMetaOnly) continue;
-    content = content.replace(/\s+/g, " ").trim();
+    // Strip any leftover meta labels appearing inline (safety)
+    content = content
+      .replace(/\b(?:Book\s*Title|Author|Description|Key\s*Takeaway[s]?|Why\s*Read[^:]*)\s*:\s*/gi, " ")
+      // Strip decorative dividers rendered as bare *** or --- lines
+      .replace(/(^|\n)\s*[*_\-–—]{2,}\s*(?=\n|$)/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!content) continue;
     sections.push({ title: mk.title, content });
   }
@@ -211,8 +236,8 @@ export function parseBookText(raw: string): ParsedBook {
     pageTitles[i] = sections[i].title;
     pageContents[i] = sections[i].content;
   }
-  const missing = pageContents.map((c, i) => (c ? -1 : i + 1)).filter((n) => n > 0);
-  if (missing.length) warnings.push(`Missing pages: ${missing.join(", ")}`);
+  const missingCount = pageContents.filter((c) => !c).length;
+  if (missingCount > 0) warnings.push(`${10 - missingCount} of 10 summary pages parsed`);
 
   // ---------- Quiz questions ----------
   const quiz: QuizQuestion[] = [];
@@ -353,7 +378,7 @@ export function parseBookText(raw: string): ParsedBook {
 
   if (quiz.length < 10) warnings.push(`Only ${quiz.length} quiz questions parsed`);
 
-  return { title, author, summary_page_titles: pageTitles, summary_pages: pageContents, quiz_questions: quiz, warnings };
+  return { title, author, description, key_takeaways, why_read, summary_page_titles: pageTitles, summary_pages: pageContents, quiz_questions: quiz, warnings };
 }
 
 export async function parseBookPdf(file: ArrayBuffer): Promise<ParsedBook> {
