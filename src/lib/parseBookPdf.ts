@@ -129,6 +129,22 @@ export function parseBookText(raw: string): ParsedBook {
       .trim();
   }
 
+  // ---------- Meta fields: Description / Key Takeaway / Why Read ----------
+  const grabField = (labels: RegExp): string => {
+    const m = text.match(labels);
+    if (!m) return "";
+    const startIdx = m.index! + m[0].length;
+    const rest = text.slice(startIdx);
+    // Stop at next known label, page marker, decorative line, or Summary heading
+    const stopRe = /\n\s*(?:Description\s*:|Key\s*Takeaway[s]?\s*:|Why\s*Read[^\n]*:|Book\s*Title\s*:|Author\s*:|\[?\s*PAGE\s+\d|Summary\s*[-–—]\s*Part|Question\s+\d)/i;
+    const stop = rest.search(stopRe);
+    const body = (stop >= 0 ? rest.slice(0, stop) : rest);
+    return body.replace(/\s+/g, " ").trim();
+  };
+  const description = grabField(/\bDescription\s*:\s*/i);
+  const key_takeaways = grabField(/\bKey\s*Takeaway[s]?\s*:\s*/i);
+  const why_read = grabField(/\bWhy\s*Read[^\n:]*:\s*/i);
+
   // Fallback title (first non-decorative non-metadata line)
   if (!title) {
     const firstLines = text.split("\n").map((l) => l.trim()).filter(Boolean);
