@@ -372,7 +372,7 @@ export function parseBookText(raw: string): ParsedBook {
 
   if (quiz.length < 10) warnings.push(`Only ${quiz.length} quiz questions parsed`);
 
-  return { title, author, summary_page_titles: pageTitles, summary_pages: pageContents, quiz_questions: quiz, warnings };
+  return { title, author, description, key_takeaways, why_read, summary_page_titles: pageTitles, summary_pages: pageContents, quiz_questions: quiz, warnings };
 }
 
 export async function parseBookPdf(file: ArrayBuffer): Promise<ParsedBook> {
