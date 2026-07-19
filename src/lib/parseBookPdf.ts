@@ -219,10 +219,16 @@ export function parseBookText(raw: string): ParsedBook {
     // Skip a page whose entire body is Book Title / Author metadata
     const bare = content.replace(/\s+/g, " ").trim();
     const isMetaOnly =
-      /^\s*Book\s*Title\s*:/i.test(bare) &&
-      /Description\s*:|Key\s*Takeaway\s*:|Why\s*Read/i.test(bare);
+      /^\s*Book\s*Title\s*:/i.test(bare) ||
+      (/Description\s*:/i.test(bare) && /Key\s*Takeaway/i.test(bare) && /Why\s*Read/i.test(bare));
     if (isMetaOnly) continue;
-    content = content.replace(/\s+/g, " ").trim();
+    // Strip any leftover meta labels appearing inline (safety)
+    content = content
+      .replace(/\b(?:Book\s*Title|Author|Description|Key\s*Takeaway[s]?|Why\s*Read[^:]*)\s*:\s*/gi, " ")
+      // Strip decorative dividers rendered as bare *** or --- lines
+      .replace(/(^|\n)\s*[*_\-–—]{2,}\s*(?=\n|$)/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!content) continue;
     sections.push({ title: mk.title, content });
   }
@@ -230,8 +236,8 @@ export function parseBookText(raw: string): ParsedBook {
     pageTitles[i] = sections[i].title;
     pageContents[i] = sections[i].content;
   }
-  const missing = pageContents.map((c, i) => (c ? -1 : i + 1)).filter((n) => n > 0);
-  if (missing.length) warnings.push(`Missing pages: ${missing.join(", ")}`);
+  const missingCount = pageContents.filter((c) => !c).length;
+  if (missingCount > 0) warnings.push(`${10 - missingCount} of 10 summary pages parsed`);
 
   // ---------- Quiz questions ----------
   const quiz: QuizQuestion[] = [];
