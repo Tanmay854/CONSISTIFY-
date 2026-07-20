@@ -257,11 +257,12 @@ export function parseBookText(raw: string): ParsedBook {
       const qEnd = optionsIdx >= 0 && optionsIdx < excellentIdx ? optionsIdx : excellentIdx;
 
       // Question text: drop the "topic-title" line, the "(Testing …)" subtitle line,
-      // and any leftover parenthetical "(Testing …)" fragments.
+      // and any leftover parenthetical "(Testing …)" fragments. Also strip stray [PAGE N] markers.
       let qBlock = chunk.slice(0, qEnd);
       qBlock = qBlock.replace(/^[^\n]*\n/, "");             // first line = topic title
       qBlock = qBlock.replace(/^\s*\([^\n)]*\)\s*\n/, "");  // subtitle line
       qBlock = qBlock.replace(/\([^)]{0,200}\)/g, (s) => (/testing/i.test(s) ? "" : s));
+      qBlock = qBlock.replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ");
       const questionText = qBlock.replace(/\s+/g, " ").trim();
       if (!questionText || questionText.length < 6) continue;
 
@@ -293,6 +294,7 @@ export function parseBookText(raw: string): ParsedBook {
         let optText = optChunk.slice(cur.end, nx ? nx.start : optChunk.length);
         const expIdx = optText.search(/\bExplanation\s*:/i);
         if (expIdx >= 0) optText = optText.slice(0, expIdx);
+        optText = optText.replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ");
         optText = optText.replace(/\s+/g, " ").trim().replace(/[*_]+/g, "").trim();
         // Trim trailing punctuation-only tokens
         optText = optText.replace(/[\s*_]+$/g, "").trim();
