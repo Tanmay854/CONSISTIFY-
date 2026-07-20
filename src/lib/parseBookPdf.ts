@@ -227,6 +227,8 @@ export function parseBookText(raw: string): ParsedBook {
       .replace(/\b(?:Book\s*Title|Author|Description|Key\s*Takeaway[s]?|Why\s*Read[^:]*)\s*:\s*/gi, " ")
       // Strip decorative dividers rendered as bare *** or --- lines
       .replace(/(^|\n)\s*[*_\-–—]{2,}\s*(?=\n|$)/g, "$1")
+      // Strip any leftover page markers like [PAGE 9] or "Page 9:" inside content
+      .replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ")
       .replace(/\s+/g, " ")
       .trim();
     if (!content) continue;
