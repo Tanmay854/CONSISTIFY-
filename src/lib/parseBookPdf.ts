@@ -348,7 +348,9 @@ export function parseBookText(raw: string): ParsedBook {
         if (four.length === 4) break;
       }
       if (four.length < 4) continue;
-      const question = chunk.slice(0, four[0].start).trim().replace(/\s+/g, " ").replace(/\?\s*$/, "?");
+      const question = chunk.slice(0, four[0].start).trim()
+        .replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ")
+        .replace(/\s+/g, " ").replace(/\?\s*$/, "?");
       const options: [string, string, string, string] = ["", "", "", ""];
       const labels: [string, string, string, string] = ["", "", "", ""];
       for (let k = 0; k < 4; k++) {
@@ -356,7 +358,9 @@ export function parseBookText(raw: string): ParsedBook {
         const eEnd = k + 1 < four.length ? four[k + 1].start : chunk.length;
         const idx = "ABCD".indexOf(oo.letter);
         if (idx < 0) continue;
-        let optText = chunk.slice(oo.end, eEnd).trim().replace(/\s+/g, " ");
+        let optText = chunk.slice(oo.end, eEnd).trim()
+          .replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ")
+          .replace(/\s+/g, " ");
         const detected = /\bexcellent\b/i.test(optText) ? "Excellent"
           : /\bnot\s+truly\s+correct\b/i.test(optText) ? "Not Truly Correct"
           : /\bgood\b/i.test(optText) ? "Good"
