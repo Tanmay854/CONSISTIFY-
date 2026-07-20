@@ -127,10 +127,10 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
                   style={{ ["--i" as unknown as string]: i } as React.CSSProperties}
                 >
                   {isI ? (
-                    <span className="i-stem">
+                    <>
                       <span className="i-dot" style={{ animationDelay: `${dotDelay}s` }} />
-                      ı
-                    </span>
+                      <span className="i-stem">ı</span>
+                    </>
                   ) : (
                     ch
                   )}
