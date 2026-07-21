@@ -102,19 +102,20 @@
 }
 @keyframes splash-rise { to { opacity: 1; transform: translateY(0); } }
 
-.splash-root .i-letter { padding: 0 1px; }
-.splash-root .i-stem { display: inline-block; }
+.splash-root .i-letter { padding: 0; }
+.splash-root .i-stem { display: inline-block; position: relative; }
 .splash-root .i-dot {
   position: absolute;
   left: 50%;
-  top: -0.1em;
+  top: -0.18em;
   width: 4px;
   height: 4px;
-  margin-left: -2px;
+  transform: translateX(-50%);
   border-radius: 50%;
   background: #FFFFFF;
   animation: splash-dot-bounce 1.4s cubic-bezier(.28,.84,.42,1) forwards;
   animation-play-state: paused;
+  will-change: transform;
 }
 @keyframes splash-dot-bounce {
   0% { transform: translateY(0); }
