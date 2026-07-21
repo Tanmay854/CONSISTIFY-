@@ -103,29 +103,40 @@
 @keyframes splash-rise { to { opacity: 1; transform: translateY(0); } }
 
 .splash-root .i-letter { padding: 0; }
-.splash-root .i-stem { display: inline-block; position: relative; }
+.splash-root .i-stem {
+  display: inline-block;
+  position: relative;
+  /* Ensure the stem box width tracks the glyph exactly so the dot centers on it */
+  text-align: center;
+}
 .splash-root .i-dot {
+  --dot-size: 4px;
   position: absolute;
+  /* Center horizontally on the stem box without using transform (transform is
+     owned by the bounce animation, so we can't rely on translateX here). */
   left: 50%;
-  top: -0.18em;
-  width: 4px;
-  height: 4px;
-  transform: translateX(-50%);
+  margin-left: calc(var(--dot-size) / -2);
+  top: -0.22em;
+  width: var(--dot-size);
+  height: var(--dot-size);
   border-radius: 50%;
   background: #FFFFFF;
+  /* Snap to the device pixel grid on every DPR so the dot never sub-pixel drifts */
+  transform: translateY(0);
+  backface-visibility: hidden;
   animation: splash-dot-bounce 1.4s cubic-bezier(.28,.84,.42,1) forwards;
   animation-play-state: paused;
   will-change: transform;
 }
 @keyframes splash-dot-bounce {
-  0% { transform: translateY(0); }
-  18% { transform: translateY(-9px); }
-  36% { transform: translateY(0); }
-  48% { transform: translateY(-4px); }
-  60% { transform: translateY(0); }
-  68% { transform: translateY(-1.5px); }
-  76% { transform: translateY(0); }
-  100% { transform: translateY(0); }
+  0%   { transform: translate3d(0, 0, 0); }
+  18%  { transform: translate3d(0, -9px, 0); }
+  36%  { transform: translate3d(0, 0, 0); }
+  48%  { transform: translate3d(0, -4px, 0); }
+  60%  { transform: translate3d(0, 0, 0); }
+  68%  { transform: translate3d(0, -1.5px, 0); }
+  76%  { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
 }
 
 .splash-root .tagline {
