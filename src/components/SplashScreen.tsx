@@ -129,7 +129,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
                   {isI ? (
                     <>
                       <span className="i-dot" style={{ animationDelay: `${dotDelay}s` }} />
-                      <span className="i-stem">ı</span>
+                      <span className="i-stem">I</span>
                     </>
                   ) : (
                     ch
