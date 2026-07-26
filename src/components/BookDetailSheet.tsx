@@ -282,6 +282,9 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
           return (
             <div className={`mt-5 p-4 rounded-xl border ${style.ring}`}>
               <p className={`text-xs font-bold uppercase tracking-[0.18em] ${style.tone}`}>{label}</p>
+              {q.explanation && (
+                <p className="mt-2 text-sm text-foreground/85 leading-relaxed">{q.explanation}</p>
+              )}
             </div>
           );
         })()}

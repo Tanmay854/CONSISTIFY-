@@ -111,17 +111,21 @@ export function parseBookText(raw: string): ParsedBook {
     .replace(/\*+/g, " ")               // ** ***
     .replace(/^#+\s*/gm, "")            // # headings
     .replace(/_{2,}/g, " ")             // __bold__
+    .replace(/[⸻⎯―─━]{1,}/g, " ")       // long-dash separator glyphs
     .replace(/^[\s]*[-–—]{3,}[\s]*$/gm, "") // --- separator lines
+    .replace(/\b(?:MAIN\s+STORY|REAL[\-\s]LIFE\s+QUESTIONS)\b/gi, " ")
     .replace(/[ \t]+/g, " ");
   // Trim per-line, collapse runs of blank lines to 1
   text = text.split("\n").map((l) => l.trim()).join("\n").replace(/\n{2,}/g, "\n\n");
 
-  // ---------- Title & Author (label form) ----------
+  // ---------- Title & Author (label form + numbered form) ----------
   let title = "";
   let author = "";
-  const bt = text.match(/Book\s*Title\s*:\s*([^\n]+?)(?=\s+Author\s*:|\n|$)/i);
+  const bt = text.match(/Book\s*Title\s*:\s*([^\n]+?)(?=\s+Author\s*:|\n|$)/i)
+    || text.match(/(?:^|\n)\s*\d+\.\s*Book\s*Title\s*\n\s*([^\n]+)/i);
   if (bt) title = bt[1].trim();
-  const at = text.match(/\bAuthor\s*:\s*([^\n]+)/i);
+  const at = text.match(/\bAuthor\s*:\s*([^\n]+)/i)
+    || text.match(/(?:^|\n)\s*\d+\.\s*Author\s*\n\s*([^\n]+)/i);
   if (at) {
     author = at[1].trim()
       .replace(/^By\s+/i, "")
@@ -130,20 +134,26 @@ export function parseBookText(raw: string): ParsedBook {
   }
 
   // ---------- Meta fields: Description / Key Takeaway / Why Read ----------
+  // Accepts both "Description: ..." and numbered "3. Description\n..." forms.
   const grabField = (labels: RegExp): string => {
     const m = text.match(labels);
     if (!m) return "";
     const startIdx = m.index! + m[0].length;
     const rest = text.slice(startIdx);
-    // Stop at next known label, page marker, decorative line, or Summary heading
-    const stopRe = /\n\s*(?:Description\s*:|Key\s*Takeaway[s]?\s*:|Why\s*Read[^\n]*:|Book\s*Title\s*:|Author\s*:|\[?\s*PAGE\s+\d|Summary\s*[-–—]\s*Part|Question\s+\d)/i;
+    const stopRe = /\n\s*(?:(?:\d+\.\s*)?(?:Description|Key\s*Takeaway[s]?|Why\s*Read[^\n]*|Book\s*Title|Author)\s*(?::|\n)|\[?\s*PAGE\s+\d|Summary\s*[-–—]\s*Part|Question\s+\d|MAIN\s+STORY|REAL[\-\s]LIFE|Page\s+\d+\s*:)/i;
     const stop = rest.search(stopRe);
-    const body = (stop >= 0 ? rest.slice(0, stop) : rest);
-    return body.replace(/\s+/g, " ").trim();
+    let body = (stop >= 0 ? rest.slice(0, stop) : rest);
+    body = body.replace(/\s+/g, " ").trim();
+    // Strip trailing bracketed word-counts / notes like "(38 words)" or "(approx 40 words)".
+    body = body.replace(/\s*\([^()]{0,60}\)\s*$/g, "").trim();
+    return body;
   };
-  const description = grabField(/\bDescription\s*:\s*/i);
-  const key_takeaways = grabField(/\bKey\s*Takeaway[s]?\s*:\s*/i);
-  const why_read = grabField(/\bWhy\s*Read[^\n:]*:\s*/i);
+  const descRe = /(?:\bDescription\s*:\s*|(?:^|\n)\s*\d+\.\s*Description\s*\n\s*)/i;
+  const ktRe = /(?:\bKey\s*Takeaway[s]?\s*:\s*|(?:^|\n)\s*\d+\.\s*Key\s*Takeaway[s]?\s*\n\s*)/i;
+  const wrRe = /(?:\bWhy\s*Read[^\n:]*:\s*|(?:^|\n)\s*\d+\.\s*Why\s*Read[^\n]*\n\s*)/i;
+  const description = grabField(descRe);
+  const key_takeaways = grabField(ktRe);
+  const why_read = grabField(wrRe);
 
   // Fallback title (first non-decorative non-metadata line)
   if (!title) {
@@ -196,9 +206,23 @@ export function parseBookText(raw: string): ParsedBook {
     questionMatches.push({ num: parseInt(qm[1], 10), idx: qm.index, headerEnd: qm.index + qm[0].length });
   }
   let quizStart = questionMatches.length ? questionMatches[0].idx : -1;
+  // Also detect numbered questions ("1. ..." followed shortly by Excellent:/Good: labels).
+  if (questionMatches.length === 0) {
+    const altRe = /(?:^|\n)\s*(\d{1,3})\.\s+/g;
+    let am: RegExpExecArray | null;
+    while ((am = altRe.exec(text))) {
+      const num = parseInt(am[1], 10);
+      if (num < 1 || num > 30) continue;
+      const look = text.slice(am.index, am.index + 2000);
+      if (/\bExcellent\s*:/i.test(look) && /\bGood\s*:/i.test(look) && /\bWrong\s*:/i.test(look)) {
+        questionMatches.push({ num, idx: am.index, headerEnd: am.index + am[0].length });
+      }
+    }
+    quizStart = questionMatches.length ? questionMatches[0].idx : quizStart;
+  }
   // Legacy fallback: explicit "Quiz" / "Multiple-Choice" heading
   if (quizStart < 0) {
-    const legacyRe = /(?:^|\n)[^\n]{0,120}?(?:multiple[-\s]choice|application\s+quiz|\bquiz\b|\bquestions\b)[^\n]{0,120}/i;
+    const legacyRe = /(?:^|\n)[^\n]{0,120}?(?:multiple[-\s]choice|application\s+quiz|\bquiz\b|real[\-\s]life\s+questions|\bquestions\b)[^\n]{0,120}/i;
     const lm = text.match(legacyRe);
     if (lm) quizStart = lm.index!;
   }
@@ -256,13 +280,22 @@ export function parseBookText(raw: string): ParsedBook {
       const optionsIdx = chunk.search(/\bOptions\s*:/i);
       const qEnd = optionsIdx >= 0 && optionsIdx < excellentIdx ? optionsIdx : excellentIdx;
 
-      // Question text: drop the "topic-title" line, the "(Testing …)" subtitle line,
+      // Question text: drop optional "topic-title" line, optional "(Testing …)" subtitle,
       // and any leftover parenthetical "(Testing …)" fragments. Also strip stray [PAGE N] markers.
       let qBlock = chunk.slice(0, qEnd);
-      qBlock = qBlock.replace(/^[^\n]*\n/, "");             // first line = topic title
+      // Only strip the first line as a topic-title when it looks like a short label
+      // (numbered questions have their real question on line 1 — keep it).
+      const firstLineMatch = qBlock.match(/^([^\n]*)\n/);
+      if (firstLineMatch) {
+        const firstLine = firstLineMatch[1].trim();
+        const looksLikeTopic = firstLine.length > 0 && firstLine.length < 60 && !/[.?]$/.test(firstLine) && !/^\d+\./.test(firstLine);
+        if (looksLikeTopic) qBlock = qBlock.slice(firstLineMatch[0].length);
+      }
       qBlock = qBlock.replace(/^\s*\([^\n)]*\)\s*\n/, "");  // subtitle line
       qBlock = qBlock.replace(/\([^)]{0,200}\)/g, (s) => (/testing/i.test(s) ? "" : s));
       qBlock = qBlock.replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ");
+      // Drop a leading numeric prefix ("1. ", "12) ") since the question is already anchored.
+      qBlock = qBlock.replace(/^\s*\d+[\.\)]\s*/, "");
       const questionText = qBlock.replace(/\s+/g, " ").trim();
       if (!questionText || questionText.length < 6) continue;
 
@@ -286,17 +319,36 @@ export function parseBookText(raw: string): ParsedBook {
       }
       if (picked.length < 4) continue;
 
+      // Look for a per-question explanation line: `Why "Excellent" is best: <text>`.
+      // Also matches Why Excellent is best / Why 'Excellent' is best (curly/straight quotes optional).
+      const whyRe = /Why\s+["“”'‘’]?\s*Excellent\s*["“”'‘’]?\s+is\s+best\s*:\s*/i;
+      const whyMatch = optChunk.match(whyRe);
+      let explanation = "";
+      let whyStartInOpt = -1;
+      if (whyMatch && typeof whyMatch.index === "number") {
+        whyStartInOpt = whyMatch.index;
+        explanation = optChunk
+          .slice(whyMatch.index + whyMatch[0].length)
+          .replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
       const ordered = [...picked].sort((a, b) => a.start - b.start);
       const map: Record<string, string> = {};
       for (let k = 0; k < ordered.length; k++) {
         const cur = ordered[k];
         const nx = ordered[k + 1];
-        let optText = optChunk.slice(cur.end, nx ? nx.start : optChunk.length);
+        // Never let an option run past the "Why 'Excellent' is best:" line.
+        const hardEnd = nx ? nx.start : (whyStartInOpt >= 0 ? whyStartInOpt : optChunk.length);
+        let optText = optChunk.slice(cur.end, hardEnd);
         const expIdx = optText.search(/\bExplanation\s*:/i);
         if (expIdx >= 0) optText = optText.slice(0, expIdx);
+        // Also cut if a stray "Why ... is best:" appears inside the last option.
+        const whyInside = optText.search(whyRe);
+        if (whyInside >= 0) optText = optText.slice(0, whyInside);
         optText = optText.replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ");
         optText = optText.replace(/\s+/g, " ").trim().replace(/[*_]+/g, "").trim();
-        // Trim trailing punctuation-only tokens
         optText = optText.replace(/[\s*_]+$/g, "").trim();
         map[cur.label] = optText;
       }
@@ -312,6 +364,7 @@ export function parseBookText(raw: string): ParsedBook {
         q: questionText,
         options,
         correct: 0,
+        explanation,
         option_explanations: ["Excellent", "Good", "Not Truly Correct", "Wrong"],
       });
     }
