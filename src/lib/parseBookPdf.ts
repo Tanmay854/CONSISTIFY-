@@ -203,6 +203,7 @@ export function parseBookText(raw: string): ParsedBook {
   while ((qm = questionRe.exec(text))) {
     questionMatches.push({ num: parseInt(qm[1], 10), idx: qm.index, headerEnd: qm.index + qm[0].length });
   }
+  let quizStart = questionMatches.length ? questionMatches[0].idx : -1;
   // Also detect numbered questions ("1. ..." followed shortly by Excellent:/Good: labels).
   if (questionMatches.length === 0) {
     const altRe = /(?:^|\n)\s*(\d{1,3})\.\s+/g;
