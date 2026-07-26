@@ -203,10 +203,23 @@ export function parseBookText(raw: string): ParsedBook {
   while ((qm = questionRe.exec(text))) {
     questionMatches.push({ num: parseInt(qm[1], 10), idx: qm.index, headerEnd: qm.index + qm[0].length });
   }
-  let quizStart = questionMatches.length ? questionMatches[0].idx : -1;
+  // Also detect numbered questions ("1. ..." followed shortly by Excellent:/Good: labels).
+  if (questionMatches.length === 0) {
+    const altRe = /(?:^|\n)\s*(\d{1,3})\.\s+/g;
+    let am: RegExpExecArray | null;
+    while ((am = altRe.exec(text))) {
+      const num = parseInt(am[1], 10);
+      if (num < 1 || num > 30) continue;
+      const look = text.slice(am.index, am.index + 2000);
+      if (/\bExcellent\s*:/i.test(look) && /\bGood\s*:/i.test(look) && /\bWrong\s*:/i.test(look)) {
+        questionMatches.push({ num, idx: am.index, headerEnd: am.index + am[0].length });
+      }
+    }
+    quizStart = questionMatches.length ? questionMatches[0].idx : quizStart;
+  }
   // Legacy fallback: explicit "Quiz" / "Multiple-Choice" heading
   if (quizStart < 0) {
-    const legacyRe = /(?:^|\n)[^\n]{0,120}?(?:multiple[-\s]choice|application\s+quiz|\bquiz\b|\bquestions\b)[^\n]{0,120}/i;
+    const legacyRe = /(?:^|\n)[^\n]{0,120}?(?:multiple[-\s]choice|application\s+quiz|\bquiz\b|real[\-\s]life\s+questions|\bquestions\b)[^\n]{0,120}/i;
     const lm = text.match(legacyRe);
     if (lm) quizStart = lm.index!;
   }
