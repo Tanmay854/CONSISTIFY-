@@ -111,7 +111,9 @@ export function parseBookText(raw: string): ParsedBook {
     .replace(/\*+/g, " ")               // ** ***
     .replace(/^#+\s*/gm, "")            // # headings
     .replace(/_{2,}/g, " ")             // __bold__
+    .replace(/[⸻⎯―─━]{1,}/g, " ")       // long-dash separator glyphs
     .replace(/^[\s]*[-–—]{3,}[\s]*$/gm, "") // --- separator lines
+    .replace(/\b(?:MAIN\s+STORY|REAL[\-\s]LIFE\s+QUESTIONS)\b/gi, " ")
     .replace(/[ \t]+/g, " ");
   // Trim per-line, collapse runs of blank lines to 1
   text = text.split("\n").map((l) => l.trim()).join("\n").replace(/\n{2,}/g, "\n\n");
