@@ -278,13 +278,22 @@ export function parseBookText(raw: string): ParsedBook {
       const optionsIdx = chunk.search(/\bOptions\s*:/i);
       const qEnd = optionsIdx >= 0 && optionsIdx < excellentIdx ? optionsIdx : excellentIdx;
 
-      // Question text: drop the "topic-title" line, the "(Testing …)" subtitle line,
+      // Question text: drop optional "topic-title" line, optional "(Testing …)" subtitle,
       // and any leftover parenthetical "(Testing …)" fragments. Also strip stray [PAGE N] markers.
       let qBlock = chunk.slice(0, qEnd);
-      qBlock = qBlock.replace(/^[^\n]*\n/, "");             // first line = topic title
+      // Only strip the first line as a topic-title when it looks like a short label
+      // (numbered questions have their real question on line 1 — keep it).
+      const firstLineMatch = qBlock.match(/^([^\n]*)\n/);
+      if (firstLineMatch) {
+        const firstLine = firstLineMatch[1].trim();
+        const looksLikeTopic = firstLine.length > 0 && firstLine.length < 60 && !/[.?]$/.test(firstLine) && !/^\d+\./.test(firstLine);
+        if (looksLikeTopic) qBlock = qBlock.slice(firstLineMatch[0].length);
+      }
       qBlock = qBlock.replace(/^\s*\([^\n)]*\)\s*\n/, "");  // subtitle line
       qBlock = qBlock.replace(/\([^)]{0,200}\)/g, (s) => (/testing/i.test(s) ? "" : s));
       qBlock = qBlock.replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ");
+      // Drop a leading numeric prefix ("1. ", "12) ") since the question is already anchored.
+      qBlock = qBlock.replace(/^\s*\d+[\.\)]\s*/, "");
       const questionText = qBlock.replace(/\s+/g, " ").trim();
       if (!questionText || questionText.length < 6) continue;
 
@@ -308,17 +317,36 @@ export function parseBookText(raw: string): ParsedBook {
       }
       if (picked.length < 4) continue;
 
+      // Look for a per-question explanation line: `Why "Excellent" is best: <text>`.
+      // Also matches Why Excellent is best / Why 'Excellent' is best (curly/straight quotes optional).
+      const whyRe = /Why\s+["“”'‘’]?\s*Excellent\s*["“”'‘’]?\s+is\s+best\s*:\s*/i;
+      const whyMatch = optChunk.match(whyRe);
+      let explanation = "";
+      let whyStartInOpt = -1;
+      if (whyMatch && typeof whyMatch.index === "number") {
+        whyStartInOpt = whyMatch.index;
+        explanation = optChunk
+          .slice(whyMatch.index + whyMatch[0].length)
+          .replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
       const ordered = [...picked].sort((a, b) => a.start - b.start);
       const map: Record<string, string> = {};
       for (let k = 0; k < ordered.length; k++) {
         const cur = ordered[k];
         const nx = ordered[k + 1];
-        let optText = optChunk.slice(cur.end, nx ? nx.start : optChunk.length);
+        // Never let an option run past the "Why 'Excellent' is best:" line.
+        const hardEnd = nx ? nx.start : (whyStartInOpt >= 0 ? whyStartInOpt : optChunk.length);
+        let optText = optChunk.slice(cur.end, hardEnd);
         const expIdx = optText.search(/\bExplanation\s*:/i);
         if (expIdx >= 0) optText = optText.slice(0, expIdx);
+        // Also cut if a stray "Why ... is best:" appears inside the last option.
+        const whyInside = optText.search(whyRe);
+        if (whyInside >= 0) optText = optText.slice(0, whyInside);
         optText = optText.replace(/\[?\s*PAGE\s+\d{1,3}\s*\]?\s*[:\-–—.]?/gi, " ");
         optText = optText.replace(/\s+/g, " ").trim().replace(/[*_]+/g, "").trim();
-        // Trim trailing punctuation-only tokens
         optText = optText.replace(/[\s*_]+$/g, "").trim();
         map[cur.label] = optText;
       }
@@ -334,6 +362,7 @@ export function parseBookText(raw: string): ParsedBook {
         q: questionText,
         options,
         correct: 0,
+        explanation,
         option_explanations: ["Excellent", "Good", "Not Truly Correct", "Wrong"],
       });
     }
