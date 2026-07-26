@@ -16,7 +16,7 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
     const stage = stageRef.current;
     if (!arcPath || !markWrap || !stage) return;
 
-    // Build the C-shaped arc path
+    // Build the C-shaped arc path (radius 88, 64° gap)
     const cx = 120, cy = 120, r = 88;
     const gapDeg = 64;
     const startDeg = gapDeg / 2;
@@ -36,52 +36,57 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
     arcPath.style.strokeDashoffset = "0";
 
     const timeouts: number[] = [];
+    let rafId1 = 0, rafId2 = 0;
 
-    const spin = arcPath.animate(
-      [{ strokeDashoffset: 0 }, { strokeDashoffset: -len }],
-      { duration: 650, iterations: 2, easing: "linear", fill: "forwards" }
-    );
-
-    spin.onfinish = () => {
-      spin.cancel();
-      arcPath.style.strokeDashoffset = "0";
-
-      const grow = arcPath.animate(
-        [
-          { strokeDasharray: `${segment} ${len - segment}` },
-          { strokeDasharray: `${len} ${len}` },
-        ],
-        { duration: 480, easing: "cubic-bezier(.3,.6,.3,1)", fill: "forwards" }
-      );
-
-      grow.onfinish = () => {
-        try { grow.commitStyles(); } catch { /* empty */ }
-        grow.cancel();
-        arcPath.style.strokeDasharray = `${len} ${len}`;
-        arcPath.style.strokeDashoffset = "0";
-
-        markWrap.animate(
-          [
-            { transform: "scale(1)", filter: "drop-shadow(0 0 0px rgba(255,255,255,0))" },
-            { transform: "scale(1.07)", filter: "drop-shadow(0 0 18px rgba(255,255,255,0.7))" },
-            { transform: "scale(1)", filter: "drop-shadow(0 0 0px rgba(255,255,255,0))" },
-          ],
-          { duration: 480, easing: "ease-out" }
+    // Double-rAF so the compositor layers are warmed before the first animated frame
+    rafId1 = requestAnimationFrame(() => {
+      rafId2 = requestAnimationFrame(() => {
+        const spin = arcPath.animate(
+          [{ strokeDashoffset: 0 }, { strokeDashoffset: -len }],
+          { duration: 650, iterations: 2, easing: "linear", fill: "forwards" }
         );
 
-        stage.classList.add("ready");
+        spin.onfinish = () => {
+          spin.cancel();
+          arcPath.style.strokeDashoffset = "0";
 
-        // Trigger fade-out after wordmark + tagline settle
-        const t1 = window.setTimeout(() => setFadeOut(true), 2000);
-        const t2 = window.setTimeout(() => {
-          if (!finishedRef.current) {
-            finishedRef.current = true;
-            onFinish();
-          }
-        }, 2700);
-        timeouts.push(t1, t2);
-      };
-    };
+          const grow = arcPath.animate(
+            [
+              { strokeDasharray: `${segment} ${len - segment}` },
+              { strokeDasharray: `${len} ${len}` },
+            ],
+            { duration: 480, easing: "cubic-bezier(.3,.6,.3,1)", fill: "forwards" }
+          );
+
+          grow.onfinish = () => {
+            try { grow.commitStyles(); } catch { /* empty */ }
+            grow.cancel();
+            arcPath.style.strokeDasharray = `${len} ${len}`;
+            arcPath.style.strokeDashoffset = "0";
+
+            markWrap.animate(
+              [
+                { transform: "scale(1)", filter: "drop-shadow(0 0 0px rgba(255,255,255,0))" },
+                { transform: "scale(1.07)", filter: "drop-shadow(0 0 18px rgba(255,255,255,0.7))" },
+                { transform: "scale(1)", filter: "drop-shadow(0 0 0px rgba(255,255,255,0))" },
+              ],
+              { duration: 480, easing: "ease-out" }
+            );
+
+            stage.classList.add("ready");
+
+            const t1 = window.setTimeout(() => setFadeOut(true), 2000);
+            const t2 = window.setTimeout(() => {
+              if (!finishedRef.current) {
+                finishedRef.current = true;
+                onFinish();
+              }
+            }, 2700);
+            timeouts.push(t1, t2);
+          };
+        };
+      });
+    });
 
     // Safety fallback so we never wedge the app on this screen
     const safety = window.setTimeout(() => {
@@ -94,6 +99,8 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
     timeouts.push(safety);
 
     return () => {
+      cancelAnimationFrame(rafId1);
+      cancelAnimationFrame(rafId2);
       timeouts.forEach((t) => window.clearTimeout(t));
     };
   }, [onFinish]);
@@ -119,30 +126,20 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
 
           <div className="wordmark" aria-label={WORD}>
             {[...WORD].map((ch, i) => {
-              const isI = ch.toLowerCase() === "i";
+              const isI = ch.toUpperCase() === "I";
               return (
                 <span
                   key={i}
-                  className={`letter${isI ? " i-letter" : ""}`}
+                  className="letter"
                   style={{ ["--i" as unknown as string]: i } as React.CSSProperties}
                 >
-                  {isI ? (
-                    <>
-                      <span className="i-dot" style={{ animationDelay: `${dotDelay}s` }} />
-                      <span className="i-stem" />
-                    </>
-                  ) : (
-                    ch
-                  )}
+                  {ch}
+                  {isI && <span className="i-dot" style={{ animationDelay: `${dotDelay}s` }} />}
                 </span>
               );
             })}
           </div>
           <div className="tagline">get inspired, get motivated</div>
-        </div>
-
-        <div className="loading" aria-hidden="true">
-          <span /><span /><span />
         </div>
       </div>
     </div>
