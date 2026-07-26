@@ -116,12 +116,14 @@ export function parseBookText(raw: string): ParsedBook {
   // Trim per-line, collapse runs of blank lines to 1
   text = text.split("\n").map((l) => l.trim()).join("\n").replace(/\n{2,}/g, "\n\n");
 
-  // ---------- Title & Author (label form) ----------
+  // ---------- Title & Author (label form + numbered form) ----------
   let title = "";
   let author = "";
-  const bt = text.match(/Book\s*Title\s*:\s*([^\n]+?)(?=\s+Author\s*:|\n|$)/i);
+  const bt = text.match(/Book\s*Title\s*:\s*([^\n]+?)(?=\s+Author\s*:|\n|$)/i)
+    || text.match(/(?:^|\n)\s*\d+\.\s*Book\s*Title\s*\n\s*([^\n]+)/i);
   if (bt) title = bt[1].trim();
-  const at = text.match(/\bAuthor\s*:\s*([^\n]+)/i);
+  const at = text.match(/\bAuthor\s*:\s*([^\n]+)/i)
+    || text.match(/(?:^|\n)\s*\d+\.\s*Author\s*\n\s*([^\n]+)/i);
   if (at) {
     author = at[1].trim()
       .replace(/^By\s+/i, "")
@@ -130,20 +132,26 @@ export function parseBookText(raw: string): ParsedBook {
   }
 
   // ---------- Meta fields: Description / Key Takeaway / Why Read ----------
+  // Accepts both "Description: ..." and numbered "3. Description\n..." forms.
   const grabField = (labels: RegExp): string => {
     const m = text.match(labels);
     if (!m) return "";
     const startIdx = m.index! + m[0].length;
     const rest = text.slice(startIdx);
-    // Stop at next known label, page marker, decorative line, or Summary heading
-    const stopRe = /\n\s*(?:Description\s*:|Key\s*Takeaway[s]?\s*:|Why\s*Read[^\n]*:|Book\s*Title\s*:|Author\s*:|\[?\s*PAGE\s+\d|Summary\s*[-–—]\s*Part|Question\s+\d)/i;
+    const stopRe = /\n\s*(?:(?:\d+\.\s*)?(?:Description|Key\s*Takeaway[s]?|Why\s*Read[^\n]*|Book\s*Title|Author)\s*(?::|\n)|\[?\s*PAGE\s+\d|Summary\s*[-–—]\s*Part|Question\s+\d|MAIN\s+STORY|REAL[\-\s]LIFE|Page\s+\d+\s*:)/i;
     const stop = rest.search(stopRe);
-    const body = (stop >= 0 ? rest.slice(0, stop) : rest);
-    return body.replace(/\s+/g, " ").trim();
+    let body = (stop >= 0 ? rest.slice(0, stop) : rest);
+    body = body.replace(/\s+/g, " ").trim();
+    // Strip trailing bracketed word-counts / notes like "(38 words)" or "(approx 40 words)".
+    body = body.replace(/\s*\([^()]{0,60}\)\s*$/g, "").trim();
+    return body;
   };
-  const description = grabField(/\bDescription\s*:\s*/i);
-  const key_takeaways = grabField(/\bKey\s*Takeaway[s]?\s*:\s*/i);
-  const why_read = grabField(/\bWhy\s*Read[^\n:]*:\s*/i);
+  const descRe = /(?:\bDescription\s*:\s*|(?:^|\n)\s*\d+\.\s*Description\s*\n\s*)/i;
+  const ktRe = /(?:\bKey\s*Takeaway[s]?\s*:\s*|(?:^|\n)\s*\d+\.\s*Key\s*Takeaway[s]?\s*\n\s*)/i;
+  const wrRe = /(?:\bWhy\s*Read[^\n:]*:\s*|(?:^|\n)\s*\d+\.\s*Why\s*Read[^\n]*\n\s*)/i;
+  const description = grabField(descRe);
+  const key_takeaways = grabField(ktRe);
+  const why_read = grabField(wrRe);
 
   // Fallback title (first non-decorative non-metadata line)
   if (!title) {
