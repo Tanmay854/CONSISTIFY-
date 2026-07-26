@@ -149,21 +149,17 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const uploadAudio = async (file: File) => {
     setUploading(true); setError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setError("Sign in required"); setUploading(false); return; }
-      const form = new FormData();
-      form.append("file", file);
-      form.append("kind", "audio");
-      const res = await fetch(
-        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bunny-storage-upload`,
-        { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` }, body: form },
-      );
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json.url) {
-        setError(json.detail ? `${json.error || "Upload failed"}: ${json.detail}` : json.error || "Upload failed");
-        setUploading(false); return;
-      }
-      setEditing((f) => f ? { ...f, audio_url: json.url as string } : f);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError("Sign in required"); setUploading(false); return; }
+      const ext = (file.name.split(".").pop() || "mp3").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `books/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("audio").upload(path, file, {
+        upsert: false,
+        contentType: file.type || "audio/mpeg",
+      });
+      if (upErr) { setError(upErr.message); setUploading(false); return; }
+      const { data } = supabase.storage.from("audio").getPublicUrl(path);
+      setEditing((f) => f ? { ...f, audio_url: data.publicUrl } : f);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
