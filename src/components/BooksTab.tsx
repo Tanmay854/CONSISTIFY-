@@ -179,7 +179,7 @@ const BooksTab = () => {
         </div>
       )}
 
-      {selected && <BookDetailSheet book={selected} onClose={() => setSelected(null)} />}
+      {selected && <BookDetailSheet key={selected.id} book={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 };
