@@ -149,6 +149,18 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const uploadAudio = async (file: File) => {
     setUploading(true); setError(null);
     try {
+      // Enforce ≤ 30 min duration
+      const durSec = await new Promise<number>((resolve) => {
+        const a = document.createElement("audio");
+        a.preload = "metadata";
+        a.onloadedmetadata = () => resolve(a.duration || 0);
+        a.onerror = () => resolve(0);
+        a.src = URL.createObjectURL(file);
+      });
+      if (durSec && durSec > 30 * 60 + 2) {
+        setError(`Audio is ${Math.round(durSec / 60)} min. Maximum allowed is 30 min.`);
+        setUploading(false); return;
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setError("Sign in required"); setUploading(false); return; }
       const ext = (file.name.split(".").pop() || "mp3").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -165,6 +177,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     }
     setUploading(false);
   };
+
 
 
   const setPage = (i: number, v: string) =>

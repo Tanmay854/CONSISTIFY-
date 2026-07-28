@@ -427,23 +427,39 @@ const AudioPlayer = ({ book }: { book: Book }) => {
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(0);
   const [dur, setDur] = useState(0);
+  const [buffered, setBuffered] = useState(0);
   const [rate, setRate] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [scrubbing, setScrubbing] = useState(false);
 
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onTime = () => setCur(a.currentTime);
+    const onTime = () => { if (!scrubbing) setCur(a.currentTime); };
     const onMeta = () => setDur(a.duration || 0);
     const onEnd = () => setPlaying(false);
+    const onWait = () => setLoading(true);
+    const onCan = () => setLoading(false);
+    const onProg = () => { if (a.buffered.length) setBuffered(a.buffered.end(a.buffered.length - 1)); };
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onMeta);
+    a.addEventListener("durationchange", onMeta);
     a.addEventListener("ended", onEnd);
+    a.addEventListener("waiting", onWait);
+    a.addEventListener("canplay", onCan);
+    a.addEventListener("playing", onCan);
+    a.addEventListener("progress", onProg);
     return () => {
       a.removeEventListener("timeupdate", onTime);
       a.removeEventListener("loadedmetadata", onMeta);
+      a.removeEventListener("durationchange", onMeta);
       a.removeEventListener("ended", onEnd);
+      a.removeEventListener("waiting", onWait);
+      a.removeEventListener("canplay", onCan);
+      a.removeEventListener("playing", onCan);
+      a.removeEventListener("progress", onProg);
     };
-  }, []);
+  }, [scrubbing]);
 
   useEffect(() => {
     if (!("mediaSession" in navigator)) return;
@@ -456,52 +472,95 @@ const AudioPlayer = ({ book }: { book: Book }) => {
     navigator.mediaSession.setActionHandler("pause", () => a?.pause());
     navigator.mediaSession.setActionHandler("seekbackward", () => { if (a) a.currentTime = Math.max(0, a.currentTime - 15); });
     navigator.mediaSession.setActionHandler("seekforward", () => { if (a) a.currentTime = Math.min(a.duration || 0, a.currentTime + 15); });
+    try {
+      navigator.mediaSession.setActionHandler("seekto", (d: any) => { if (a && typeof d.seekTime === "number") a.currentTime = d.seekTime; });
+    } catch { /* empty */ }
   }, [book]);
 
   const toggle = async () => {
     const a = audioRef.current; if (!a) return;
-    if (a.paused) { await a.play(); setPlaying(true); } else { a.pause(); setPlaying(false); }
+    if (a.paused) { await a.play().catch(() => {}); setPlaying(true); } else { a.pause(); setPlaying(false); }
   };
   const skip = (s: number) => { const a = audioRef.current; if (!a) return; a.currentTime = Math.max(0, Math.min((a.duration || 0), a.currentTime + s)); };
   const setSpeed = (r: number) => { setRate(r); if (audioRef.current) audioRef.current.playbackRate = r; };
   const fmt = (t: number) => { if (!isFinite(t)) return "0:00"; const m = Math.floor(t / 60); const s = Math.floor(t % 60); return `${m}:${s.toString().padStart(2, "0")}`; };
 
+  const onBarPointer = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const t = pct * (dur || 0);
+    setCur(t);
+    if (audioRef.current) audioRef.current.currentTime = t;
+  };
+
   if (!book.audio_url) {
     return <div className="h-full flex items-center justify-center text-muted-foreground text-sm">No audio available yet.</div>;
   }
 
+  const pct = dur ? (cur / dur) * 100 : 0;
+  const bpct = dur ? (buffered / dur) * 100 : 0;
+
   return (
-    <div className="h-full flex flex-col items-center justify-between pt-16 pb-10 px-8">
+    <div className="h-full flex flex-col relative overflow-hidden">
+      {/* Ambient blurred cover backdrop */}
+      <div className="absolute inset-0 -z-10 opacity-40 blur-3xl"
+        style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+
       <audio ref={audioRef} src={book.audio_url} preload="metadata" />
-      <div className="flex flex-col items-center">
-        <p className="text-muted-foreground text-[11px] uppercase tracking-[0.2em] font-semibold">Audio Summary</p>
+
+      <div className="pt-16 pb-4 text-center">
+        <p className="text-muted-foreground text-[11px] uppercase tracking-[0.24em] font-semibold">Audio Summary</p>
       </div>
-      <div className="flex flex-col items-center gap-5 w-full">
-        <div className="w-52 aspect-square rounded-3xl overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]">
+
+      <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
+        <div className={`w-64 aspect-[2/3] rounded-3xl overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.95)] transition-transform duration-500 ${playing ? "scale-100" : "scale-[0.96]"}`}>
           <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
         </div>
-        <div className="text-center">
-          <h2 className="text-foreground text-xl font-extrabold">{book.title}</h2>
+        <div className="text-center max-w-xs">
+          <h2 className="text-foreground text-xl font-extrabold leading-tight">{book.title}</h2>
           <p className="text-muted-foreground text-sm mt-1">{book.author}</p>
         </div>
       </div>
 
-      <div className="w-full max-w-md">
-        <input type="range" min={0} max={dur || 0} step={0.1} value={cur}
-          onChange={(e) => { const v = Number(e.target.value); if (audioRef.current) audioRef.current.currentTime = v; setCur(v); }}
-          className="w-full accent-foreground" />
-        <div className="flex justify-between text-muted-foreground text-[11px] font-mono mt-1">
-          <span>{fmt(cur)}</span><span>{fmt(dur)}</span>
+      <div className="px-8 pb-10 w-full max-w-md mx-auto">
+        {/* Scrub bar */}
+        <div
+          className="relative h-6 flex items-center touch-none cursor-pointer"
+          onPointerDown={(e) => {
+            (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+            setScrubbing(true);
+            onBarPointer(e);
+          }}
+          onPointerMove={(e) => { if (scrubbing) onBarPointer(e); }}
+          onPointerUp={() => setScrubbing(false)}
+          onPointerCancel={() => setScrubbing(false)}
+        >
+          <div className="relative w-full h-1 rounded-full bg-foreground/20 overflow-hidden">
+            <div className="absolute inset-y-0 left-0 bg-foreground/35" style={{ width: `${bpct}%` }} />
+            <div className="absolute inset-y-0 left-0 bg-foreground" style={{ width: `${pct}%` }} />
+          </div>
+          <div className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-foreground shadow"
+            style={{ left: `calc(${pct}% - 7px)` }} />
+        </div>
+        <div className="flex justify-between text-muted-foreground text-[11px] font-mono mt-1.5 tabular-nums">
+          <span>{fmt(cur)}</span><span>-{fmt(Math.max(0, (dur || 0) - cur))}</span>
         </div>
 
-        <div className="flex items-center justify-center gap-6 mt-6">
-          <button onClick={() => skip(-15)} className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+        <div className="flex items-center justify-center gap-8 mt-6">
+          <button onClick={() => skip(-15)} aria-label="Back 15s"
+            className="w-12 h-12 rounded-full bg-secondary/70 backdrop-blur flex items-center justify-center active:scale-95 transition-transform">
             <Rewind size={20} className="text-foreground" />
           </button>
-          <button onClick={toggle} className="w-16 h-16 rounded-full bg-foreground text-background flex items-center justify-center active:scale-95 transition-transform">
-            {playing ? <Pause size={26} /> : <Play size={26} className="ml-1" />}
+          <button onClick={toggle} aria-label={playing ? "Pause" : "Play"}
+            className="w-16 h-16 rounded-full bg-foreground text-background flex items-center justify-center active:scale-95 transition-transform shadow-[0_15px_35px_-10px_rgba(255,255,255,0.35)]">
+            {loading ? (
+              <span className="h-6 w-6 rounded-full border-2 border-background/30 border-t-background animate-spin" />
+            ) : playing ? <Pause size={26} className="fill-background" /> : <Play size={26} className="fill-background ml-0.5" />}
           </button>
-          <button onClick={() => skip(15)} className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+          <button onClick={() => skip(15)} aria-label="Forward 15s"
+            className="w-12 h-12 rounded-full bg-secondary/70 backdrop-blur flex items-center justify-center active:scale-95 transition-transform">
             <FastForward size={20} className="text-foreground" />
           </button>
         </div>
@@ -509,7 +568,7 @@ const AudioPlayer = ({ book }: { book: Book }) => {
         <div className="flex items-center justify-center gap-2 mt-6">
           {[0.75, 1, 1.25, 1.5, 2].map((r) => (
             <button key={r} onClick={() => setSpeed(r)}
-              className={`px-3 h-8 rounded-full text-xs font-bold ${rate === r ? "bg-foreground text-background" : "bg-secondary text-muted-foreground"}`}>
+              className={`px-3 h-8 rounded-full text-xs font-bold transition-colors ${rate === r ? "bg-foreground text-background" : "bg-secondary/70 text-muted-foreground"}`}>
               {r}×
             </button>
           ))}
@@ -518,5 +577,6 @@ const AudioPlayer = ({ book }: { book: Book }) => {
     </div>
   );
 };
+
 
 export default BookDetailSheet;
