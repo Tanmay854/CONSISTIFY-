@@ -149,18 +149,23 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const uploadAudio = async (file: File) => {
     setUploading(true); setError(null);
     try {
-      // Enforce ≤ 30 min duration
+      // Enforce ≤ 30 min duration when it can be determined reliably.
+      // Some browsers report Infinity/NaN for streamed MP3s until fully buffered;
+      // in that case we skip the client-side check rather than block the upload.
       const durSec = await new Promise<number>((resolve) => {
         const a = document.createElement("audio");
         a.preload = "metadata";
-        a.onloadedmetadata = () => resolve(a.duration || 0);
-        a.onerror = () => resolve(0);
+        const done = (v: number) => { try { URL.revokeObjectURL(a.src); } catch { /* empty */ } resolve(v); };
+        a.onloadedmetadata = () => done(a.duration);
+        a.onerror = () => done(0);
+        setTimeout(() => done(0), 4000);
         a.src = URL.createObjectURL(file);
       });
-      if (durSec && durSec > 30 * 60 + 2) {
+      if (Number.isFinite(durSec) && durSec > 0 && durSec > 30 * 60 + 2) {
         setError(`Audio is ${Math.round(durSec / 60)} min. Maximum allowed is 30 min.`);
         setUploading(false); return;
       }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setError("Sign in required"); setUploading(false); return; }
       const ext = (file.name.split(".").pop() || "mp3").toLowerCase().replace(/[^a-z0-9]/g, "");
