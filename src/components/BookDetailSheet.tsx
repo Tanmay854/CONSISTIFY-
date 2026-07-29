@@ -134,7 +134,8 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
         <button
           onClick={onListen}
           disabled={!book.audio_url}
-          className="w-full h-14 rounded-2xl border border-border bg-secondary text-foreground font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-40"
+          className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-40 shadow-[0_15px_40px_-10px_rgba(250,204,21,0.55)]"
+          style={{ backgroundColor: "#facc15", color: "#000" }}
         >
           <Headphones size={18} /> Listen to Summary
         </button>
