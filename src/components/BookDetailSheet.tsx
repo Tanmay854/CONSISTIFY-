@@ -503,7 +503,7 @@ const AudioPlayer = ({ book }: { book: Book }) => {
   const bpct = dur ? (buffered / dur) * 100 : 0;
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden">
+    <div className="h-full flex flex-col relative overflow-y-auto">
       {/* Ambient blurred cover backdrop */}
       <div className="absolute inset-0 -z-10 opacity-40 blur-3xl"
         style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }} />
@@ -511,12 +511,12 @@ const AudioPlayer = ({ book }: { book: Book }) => {
 
       <audio ref={audioRef} src={book.audio_url} preload="metadata" />
 
-      <div className="pt-16 pb-4 text-center">
+      <div className="pt-16 pb-4 text-center shrink-0">
         <p className="text-muted-foreground text-[11px] uppercase tracking-[0.24em] font-semibold">Audio Summary</p>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
-        <div className={`w-64 aspect-[2/3] rounded-3xl overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.95)] transition-transform duration-500 ${playing ? "scale-100" : "scale-[0.96]"}`}>
+      <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6 py-4 shrink-0">
+        <div className={`w-56 sm:w-64 aspect-[2/3] rounded-3xl overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.95)] transition-transform duration-500 ${playing ? "scale-100" : "scale-[0.96]"}`}>
           <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
         </div>
         <div className="text-center max-w-xs">
@@ -525,7 +525,7 @@ const AudioPlayer = ({ book }: { book: Book }) => {
         </div>
       </div>
 
-      <div className="px-8 pb-10 w-full max-w-md mx-auto">
+      <div className="px-8 w-full max-w-md mx-auto shrink-0" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
         {/* Scrub bar */}
         <div
           className="relative h-6 flex items-center touch-none cursor-pointer"
