@@ -281,7 +281,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
               <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
                 <Music size={14} />
                 {uploading ? "…" : "Upload"}
-                <input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.mpeg,.mpga,.mp4" className="hidden" onChange={(e) => e.target.files?.[0] && uploadAudio(e.target.files[0])} />
+                <input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.mpeg,.mpga,.mp4" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setTrimFile(f); }} />
               </label>
             </div>
           </Row>
