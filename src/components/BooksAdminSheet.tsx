@@ -215,6 +215,13 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
 
   return (
     <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
+      {trimFile && (
+        <AudioTrimDialog
+          file={trimFile}
+          onCancel={() => setTrimFile(null)}
+          onDone={(f) => { setTrimFile(null); uploadAudio(f); }}
+        />
+      )}
       <header className="sticky top-0 z-10 bg-background/90 backdrop-blur px-5 py-3 flex items-center justify-between border-b border-border">
         <button onClick={onClose} aria-label="Close"><X size={20} className="text-foreground" /></button>
         <h2 className="text-foreground font-bold">Manage Books</h2>
