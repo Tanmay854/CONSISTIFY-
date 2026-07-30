@@ -502,29 +502,30 @@ const AudioPlayer = ({ book }: { book: Book }) => {
   const bpct = dur ? (buffered / dur) * 100 : 0;
 
   return (
-    <div className="h-full flex flex-col relative overflow-y-auto">
-      {/* Ambient blurred cover backdrop */}
-      <div className="absolute inset-0 -z-10 opacity-40 blur-3xl"
+    <div className="h-full flex flex-col relative overflow-y-auto bg-background">
+      {/* Subtle cover backdrop */}
+      <div className="absolute inset-x-0 top-0 h-2/3 -z-10 opacity-25 blur-3xl"
         style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/80 via-background/90 to-background" />
 
       <audio ref={audioRef} src={book.audio_url} preload="metadata" />
 
-      <div className="pt-16 pb-4 text-center shrink-0">
-        <p className="text-muted-foreground text-[11px] uppercase tracking-[0.24em] font-semibold">Audio Summary</p>
+      <div className="pt-5 pb-3 px-6 shrink-0">
+        <p className="text-muted-foreground text-[11px] uppercase tracking-[0.2em] font-semibold">Audio Summary</p>
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6 py-4 shrink-0">
-        <div className={`w-56 sm:w-64 aspect-[2/3] rounded-3xl overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.95)] transition-transform duration-500 ${playing ? "scale-100" : "scale-[0.96]"}`}>
+        <div className={`w-44 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)] transition-transform duration-500 ${playing ? "scale-100" : "scale-[0.97]"}`}>
           <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
         </div>
         <div className="text-center max-w-xs">
           <h2 className="text-foreground text-xl font-extrabold leading-tight">{book.title}</h2>
-          <p className="text-muted-foreground text-sm mt-1">{book.author}</p>
+          <p className="text-muted-foreground text-sm mt-1">by {book.author}</p>
         </div>
       </div>
 
-      <div className="px-8 w-full max-w-md mx-auto shrink-0" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
+      <div className="px-6 w-full max-w-md mx-auto shrink-0" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
+
         {/* Scrub bar */}
         <div
           className="relative h-6 flex items-center touch-none cursor-pointer"
