@@ -134,9 +134,10 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
         <button
           onClick={onListen}
           disabled={!book.audio_url}
-          className="w-full h-14 rounded-2xl bg-secondary/50 border border-border/60 text-foreground font-semibold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-40"
+          className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-40"
+          style={{ backgroundColor: "#facc15", color: "#000" }}
         >
-          <Headphones size={18} className="text-[#facc15]" /> Listen to Summary
+          <Headphones size={18} /> Listen to Summary
         </button>
       </div>
 
@@ -510,9 +511,10 @@ const AudioPlayer = ({ book }: { book: Book }) => {
 
       <audio ref={audioRef} src={book.audio_url} preload="metadata" />
 
-      <div className="pt-5 pb-3 px-6 shrink-0">
+      <div className="pt-5 pb-3 px-6 shrink-0 text-center">
         <p className="text-muted-foreground text-[11px] uppercase tracking-[0.2em] font-semibold">Audio Summary</p>
       </div>
+
 
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6 py-4 shrink-0">
         <div className={`w-44 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)] transition-transform duration-500 ${playing ? "scale-100" : "scale-[0.97]"}`}>

@@ -3,6 +3,7 @@ import { X, Plus, Pencil, Trash2, Upload, Music } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book, type QuizQuestion } from "@/lib/bookCategories";
 import { normalizeSummaryText } from "@/lib/textNormalize";
+import AudioTrimDialog from "@/components/AudioTrimDialog";
 
 const emptyQuestion = (): QuizQuestion => ({ q: "", options: ["", "", "", ""], correct: 0, explanation: "", option_explanations: ["", "", "", ""] });
 const emptyPages = (): string[] => Array.from({ length: 10 }, () => "");
@@ -51,6 +52,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [trimFile, setTrimFile] = useState<File | null>(null);
 
   
 
@@ -213,6 +215,13 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
 
   return (
     <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
+      {trimFile && (
+        <AudioTrimDialog
+          file={trimFile}
+          onCancel={() => setTrimFile(null)}
+          onDone={(f) => { setTrimFile(null); uploadAudio(f); }}
+        />
+      )}
       <header className="sticky top-0 z-10 bg-background/90 backdrop-blur px-5 py-3 flex items-center justify-between border-b border-border">
         <button onClick={onClose} aria-label="Close"><X size={20} className="text-foreground" /></button>
         <h2 className="text-foreground font-bold">Manage Books</h2>
@@ -281,7 +290,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
               <label className="shrink-0 flex items-center gap-1 px-3 h-10 rounded-lg bg-secondary text-foreground text-sm cursor-pointer">
                 <Music size={14} />
                 {uploading ? "…" : "Upload"}
-                <input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.mpeg,.mpga,.mp4" className="hidden" onChange={(e) => e.target.files?.[0] && uploadAudio(e.target.files[0])} />
+                <input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.mpeg,.mpga,.mp4" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setTrimFile(f); }} />
               </label>
             </div>
           </Row>
