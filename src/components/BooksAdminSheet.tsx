@@ -51,6 +51,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [trimFile, setTrimFile] = useState<File | null>(null);
 
   
 
