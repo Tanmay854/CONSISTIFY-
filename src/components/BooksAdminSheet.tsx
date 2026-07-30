@@ -3,6 +3,7 @@ import { X, Plus, Pencil, Trash2, Upload, Music } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book, type QuizQuestion } from "@/lib/bookCategories";
 import { normalizeSummaryText } from "@/lib/textNormalize";
+import AudioTrimDialog from "@/components/AudioTrimDialog";
 
 const emptyQuestion = (): QuizQuestion => ({ q: "", options: ["", "", "", ""], correct: 0, explanation: "", option_explanations: ["", "", "", ""] });
 const emptyPages = (): string[] => Array.from({ length: 10 }, () => "");
