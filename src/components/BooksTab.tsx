@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Search, X, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
+import { useAuth } from "@/hooks/useAuth";
 
 import BookDetailSheet from "./BookDetailSheet";
 
@@ -31,6 +32,8 @@ const BooksTab = () => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<Book | null>(null);
   const { recent, push, clear } = useRecent();
+  const { isAdmin, isSuperAdmin } = useAuth();
+  const canSearchById = isAdmin || isSuperAdmin;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,11 +64,11 @@ const BooksTab = () => {
           b.title.toLowerCase().includes(q) ||
           b.author.toLowerCase().includes(q) ||
           b.category.toLowerCase().includes(q) ||
-          (b.public_id?.toLowerCase() === q),
+          (canSearchById && b.public_id?.toLowerCase() === q),
       );
     }
     return list;
-  }, [books, query, activeCategory]);
+  }, [books, query, activeCategory, canSearchById]);
 
   const featured = books.filter((b) => b.is_featured).slice(0, 8);
   const trending = books.filter((b) => b.is_trending).slice(0, 20);
@@ -97,7 +100,7 @@ const BooksTab = () => {
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-            placeholder="Search books, authors, or #ID"
+            placeholder={canSearchById ? "Search books, authors, or #ID" : "Search books or authors"}
             className="w-full h-11 pl-11 pr-10 rounded-2xl bg-secondary/70 text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary/60"
           />
           {query && (
