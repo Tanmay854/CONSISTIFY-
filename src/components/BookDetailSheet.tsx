@@ -253,8 +253,9 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
       <div className="flex-1 overflow-y-auto px-6">
         <h2 className="text-foreground text-xl font-bold leading-snug mb-6">{q.q}</h2>
         <div className="space-y-3">
-          {q.options.map((opt, idx) => {
-            const isPicked = picked === idx;
+          {order.map((origIdx, pos) => {
+            const opt = q.options[origIdx];
+            const isPicked = picked === origIdx;
             const revealed = picked !== null;
             const cls = !revealed
               ? "border-border bg-secondary/40"
@@ -263,18 +264,19 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
                 : "border-border bg-secondary/20 opacity-60";
             return (
               <button
-                key={idx}
+                key={origIdx}
                 disabled={revealed}
-                onClick={() => setPicked(idx)}
+                onClick={() => setPicked(origIdx)}
                 className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-start gap-3 ${cls}`}
               >
                 <span className="w-6 h-6 shrink-0 rounded-full border border-border flex items-center justify-center text-xs font-bold">
-                  {String.fromCharCode(65 + idx)}
+                  {String.fromCharCode(65 + pos)}
                 </span>
                 <span className="text-foreground text-sm font-medium flex-1">{opt}</span>
               </button>
             );
           })}
+
         </div>
         {picked !== null && (() => {
           const rawLabel = (q.option_explanations?.[picked] || "").trim();
