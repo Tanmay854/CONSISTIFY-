@@ -8,6 +8,18 @@ import BookDetailSheet from "./BookDetailSheet";
 
 const POPULAR = ["Discipline", "Atomic Habits", "Deep Work", "Stoicism", "Focus"];
 const RECENT_KEY = "book_recent_searches";
+const HIDDEN_CATEGORIES = new Set(["Fitness", "Psychology"]);
+const VISIBLE_CATEGORIES = BOOK_CATEGORIES.filter((c) => !HIDDEN_CATEGORIES.has(c));
+
+const shuffle = <T,>(arr: T[]) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
 
 const useRecent = () => {
   const [recent, setRecent] = useState<string[]>(() => {
