@@ -82,16 +82,19 @@ const BooksTab = () => {
     return list;
   }, [books, query, activeCategory, canSearchById]);
 
-  const featured = books.filter((b) => b.is_featured).slice(0, 8);
-  const trending = books.filter((b) => b.is_trending).slice(0, 20);
-  const bestSellers = books.filter((b) => b.is_best_seller).slice(0, 20);
-  const newReleases = books.filter((b) => b.is_new_release).slice(0, 20);
-  const recommended = useMemo(() => {
-    // Simple heuristic: highest rated recent books
-    return [...books]
-      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-      .slice(0, 20);
-  }, [books]);
+  // Reshuffle the ordering of every row every 3 minutes
+  const [shuffleTick, setShuffleTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setShuffleTick((t) => t + 1), 3 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const featured = useMemo(() => shuffle(books.filter((b) => b.is_featured)).slice(0, 8), [books, shuffleTick]);
+  const trending = useMemo(() => shuffle(books.filter((b) => b.is_trending)).slice(0, 20), [books, shuffleTick]);
+  const bestSellers = useMemo(() => shuffle(books.filter((b) => b.is_best_seller)).slice(0, 20), [books, shuffleTick]);
+  const newReleases = useMemo(() => shuffle(books.filter((b) => b.is_new_release)).slice(0, 20), [books, shuffleTick]);
+  const recommended = useMemo(() => shuffle(books).slice(0, 20), [books, shuffleTick]);
+
 
   const isSearching = query.trim().length > 0 || activeCategory;
 
