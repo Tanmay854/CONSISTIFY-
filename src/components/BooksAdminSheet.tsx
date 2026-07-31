@@ -53,6 +53,9 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [trimFile, setTrimFile] = useState<File | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const savedScroll = useRef(0);
+  const restore = useRef(false);
 
   
 
@@ -62,6 +65,14 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   };
 
   useEffect(() => { if (open) load(); }, [open]);
+
+  useLayoutEffect(() => {
+    if (!editing && restore.current && scrollRef.current) {
+      scrollRef.current.scrollTop = savedScroll.current;
+      if (scrollRef.current.scrollTop === savedScroll.current) restore.current = false;
+    }
+  });
+
 
   if (!open) return null;
 
