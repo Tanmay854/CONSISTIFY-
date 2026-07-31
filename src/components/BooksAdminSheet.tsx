@@ -236,15 +236,25 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
         />
       )}
       <header className="sticky top-0 z-10 bg-background/90 backdrop-blur px-5 py-3 flex items-center justify-between border-b border-border">
-        <button onClick={onClose} aria-label="Close"><X size={20} className="text-foreground" /></button>
-        <h2 className="text-foreground font-bold">Manage Books</h2>
-        <button
-          onClick={startNew}
-          className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
-          aria-label="Add book"
-        >
-          <Plus size={18} />
-        </button>
+        <button onClick={() => { if (editing) { restore.current = true; setEditing(null); } else onClose(); }} aria-label={editing ? "Cancel" : "Close"}><X size={20} className="text-foreground" /></button>
+        <h2 className="text-foreground font-bold">{editing ? (editing.id ? "Edit Book" : "New Book") : "Manage Books"}</h2>
+        {editing ? (
+          <button
+            onClick={save}
+            disabled={busy}
+            className="px-4 h-9 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+          >
+            {busy ? "Saving…" : editing.id ? "Save" : "Add"}
+          </button>
+        ) : (
+          <button
+            onClick={startNew}
+            className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
+            aria-label="Add book"
+          >
+            <Plus size={18} />
+          </button>
+        )}
       </header>
 
       {editing ? (
@@ -370,12 +380,6 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
 
           {error && <p className="text-destructive text-sm">{error}</p>}
 
-          <div className="flex gap-2 pt-3">
-            <button onClick={() => { restore.current = true; setEditing(null); }} className="flex-1 h-11 rounded-xl bg-secondary text-foreground font-semibold">Cancel</button>
-            <button onClick={save} disabled={busy} className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-semibold disabled:opacity-50">
-              {busy ? "Saving…" : editing.id ? "Save" : "Add book"}
-            </button>
-          </div>
         </div>
       ) : (
         <div className="p-5">
