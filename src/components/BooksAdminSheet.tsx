@@ -389,8 +389,13 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
                     <div className="flex-1 min-w-0">
                       <p className="text-foreground text-sm font-semibold truncate">{b.title}</p>
                       <p className="text-muted-foreground text-xs truncate">{b.author} · {b.category}</p>
-                      {b.public_id && <p className="text-muted-foreground text-[10px] font-mono mt-0.5">#{b.public_id}</p>}
+                    {b.public_id && <p className="text-muted-foreground text-[10px] font-mono mt-0.5">#{b.public_id}</p>}
+                    <div className="flex gap-1.5 mt-1">
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${b.is_published ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{b.is_published ? "P" : "UP"}</span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${b.author?.trim() ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{b.author?.trim() ? "A" : "NA"}</span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${b.audio_url ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{b.audio_url ? "AS" : "NAS"}</span>
                     </div>
+                  </div>
                     <button onClick={() => startEdit(b)} className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center"><Pencil size={14} className="text-foreground" /></button>
                     <button onClick={() => remove(b)} className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center"><Trash2 size={14} className="text-destructive" /></button>
                   </div>
