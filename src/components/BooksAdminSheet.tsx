@@ -407,7 +407,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
                       <p className="text-foreground text-sm font-semibold truncate">{b.title}</p>
                       <p className="text-muted-foreground text-xs truncate">{b.author} · {b.category}</p>
                     {b.public_id && <p className="text-muted-foreground text-[10px] font-mono mt-0.5">#{b.public_id}</p>}
-                    <div className="flex gap-1.5 mt-1">
+                    <div className="flex gap-1.5 mt-1 font-mono tabular-nums tracking-tight">
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${b.is_published ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{b.is_published ? "P" : "UP"}</span>
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${b.author?.trim() ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{b.author?.trim() ? "A" : "NA"}</span>
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${b.audio_url ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{b.audio_url ? "AS" : "NAS"}</span>
