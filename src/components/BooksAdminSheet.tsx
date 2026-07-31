@@ -138,6 +138,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       : await supabase.from("books").insert({ ...payload, created_by: (await supabase.auth.getUser()).data.user?.id });
     setBusy(false);
     if (error) { setError(error.message); return; }
+    restore.current = true;
     setEditing(null);
     load();
   };
