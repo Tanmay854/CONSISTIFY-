@@ -227,7 +227,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     }) } : f);
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
+    <div ref={scrollRef} className="fixed inset-0 z-[60] bg-background overflow-y-auto">
       {trimFile && (
         <AudioTrimDialog
           file={trimFile}
