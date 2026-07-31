@@ -8,6 +8,18 @@ import BookDetailSheet from "./BookDetailSheet";
 
 const POPULAR = ["Discipline", "Atomic Habits", "Deep Work", "Stoicism", "Focus"];
 const RECENT_KEY = "book_recent_searches";
+const HIDDEN_CATEGORIES = new Set(["Fitness", "Psychology"]);
+const VISIBLE_CATEGORIES = BOOK_CATEGORIES.filter((c) => !HIDDEN_CATEGORIES.has(c));
+
+const shuffle = <T,>(arr: T[]) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
 
 const useRecent = () => {
   const [recent, setRecent] = useState<string[]>(() => {
@@ -70,16 +82,19 @@ const BooksTab = () => {
     return list;
   }, [books, query, activeCategory, canSearchById]);
 
-  const featured = books.filter((b) => b.is_featured).slice(0, 8);
-  const trending = books.filter((b) => b.is_trending).slice(0, 20);
-  const bestSellers = books.filter((b) => b.is_best_seller).slice(0, 20);
-  const newReleases = books.filter((b) => b.is_new_release).slice(0, 20);
-  const recommended = useMemo(() => {
-    // Simple heuristic: highest rated recent books
-    return [...books]
-      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-      .slice(0, 20);
-  }, [books]);
+  // Reshuffle the ordering of every row every 3 minutes
+  const [shuffleTick, setShuffleTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setShuffleTick((t) => t + 1), 3 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const featured = useMemo(() => shuffle(books.filter((b) => b.is_featured)).slice(0, 8), [books, shuffleTick]);
+  const trending = useMemo(() => shuffle(books.filter((b) => b.is_trending)).slice(0, 20), [books, shuffleTick]);
+  const bestSellers = useMemo(() => shuffle(books.filter((b) => b.is_best_seller)).slice(0, 20), [books, shuffleTick]);
+  const newReleases = useMemo(() => shuffle(books.filter((b) => b.is_new_release)).slice(0, 20), [books, shuffleTick]);
+  const recommended = useMemo(() => shuffle(books).slice(0, 20), [books, shuffleTick]);
+
 
   const isSearching = query.trim().length > 0 || activeCategory;
 
@@ -117,7 +132,7 @@ const BooksTab = () => {
         {/* Category chips */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 mt-3">
           <Chip active={!activeCategory} onClick={() => setActiveCategory(null)}>All</Chip>
-          {BOOK_CATEGORIES.map((c) => (
+          {VISIBLE_CATEGORIES.map((c) => (
             <Chip key={c} active={activeCategory === c} onClick={() => setActiveCategory(activeCategory === c ? null : c)}>
               {c}
             </Chip>
@@ -174,11 +189,12 @@ const BooksTab = () => {
           {bestSellers.length > 0 && <Row title="Best sellers" books={bestSellers} onOpen={setSelected} />}
           {newReleases.length > 0 && <Row title="New releases" books={newReleases} onOpen={setSelected} />}
 
-          {BOOK_CATEGORIES.map((cat) => {
-            const list = books.filter((b) => b.category === cat).slice(0, 20);
+          {VISIBLE_CATEGORIES.map((cat) => {
+            const list = shuffle(books.filter((b) => b.category === cat)).slice(0, 20);
             if (list.length === 0) return null;
-            return <Row key={cat} title={cat} books={list} onOpen={setSelected} onSeeAll={() => setActiveCategory(cat)} />;
+            return <Row key={`${cat}-${shuffleTick}`} title={cat} books={list} onOpen={setSelected} onSeeAll={() => setActiveCategory(cat)} />;
           })}
+
         </div>
       )}
 
