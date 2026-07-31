@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { X, Plus, Pencil, Trash2, Upload, Music } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book, type QuizQuestion } from "@/lib/bookCategories";
@@ -53,6 +53,9 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [trimFile, setTrimFile] = useState<File | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const savedScroll = useRef(0);
+  const restore = useRef(false);
 
   
 
@@ -63,11 +66,20 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
 
   useEffect(() => { if (open) load(); }, [open]);
 
+  useLayoutEffect(() => {
+    if (!editing && restore.current && scrollRef.current) {
+      scrollRef.current.scrollTop = savedScroll.current;
+      if (scrollRef.current.scrollTop === savedScroll.current) restore.current = false;
+    }
+  });
+
+
   if (!open) return null;
 
-  const startNew = () => { setError(null); setEditing(empty()); };
+  const startNew = () => { setError(null); savedScroll.current = scrollRef.current?.scrollTop ?? 0; setEditing(empty()); };
   const startEdit = (b: Book) => {
     setError(null);
+    savedScroll.current = scrollRef.current?.scrollTop ?? 0;
     const pages = Array.isArray(b.summary_pages) ? [...b.summary_pages] : [];
     while (pages.length < 10) pages.push("");
     const titles = Array.isArray(b.summary_page_titles) ? [...b.summary_page_titles] : [];
@@ -126,6 +138,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
       : await supabase.from("books").insert({ ...payload, created_by: (await supabase.auth.getUser()).data.user?.id });
     setBusy(false);
     if (error) { setError(error.message); return; }
+    restore.current = true;
     setEditing(null);
     load();
   };
@@ -214,7 +227,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
     }) } : f);
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
+    <div ref={scrollRef} className="fixed inset-0 z-[60] bg-background overflow-y-auto">
       {trimFile && (
         <AudioTrimDialog
           file={trimFile}
@@ -358,7 +371,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
           {error && <p className="text-destructive text-sm">{error}</p>}
 
           <div className="flex gap-2 pt-3">
-            <button onClick={() => setEditing(null)} className="flex-1 h-11 rounded-xl bg-secondary text-foreground font-semibold">Cancel</button>
+            <button onClick={() => { restore.current = true; setEditing(null); }} className="flex-1 h-11 rounded-xl bg-secondary text-foreground font-semibold">Cancel</button>
             <button onClick={save} disabled={busy} className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-semibold disabled:opacity-50">
               {busy ? "Saving…" : editing.id ? "Save" : "Add book"}
             </button>
