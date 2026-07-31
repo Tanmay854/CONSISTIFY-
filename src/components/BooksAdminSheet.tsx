@@ -76,9 +76,10 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
 
   if (!open) return null;
 
-  const startNew = () => { setError(null); setEditing(empty()); };
+  const startNew = () => { setError(null); savedScroll.current = scrollRef.current?.scrollTop ?? 0; setEditing(empty()); };
   const startEdit = (b: Book) => {
     setError(null);
+    savedScroll.current = scrollRef.current?.scrollTop ?? 0;
     const pages = Array.isArray(b.summary_pages) ? [...b.summary_pages] : [];
     while (pages.length < 10) pages.push("");
     const titles = Array.isArray(b.summary_page_titles) ? [...b.summary_page_titles] : [];
