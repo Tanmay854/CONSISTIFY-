@@ -212,6 +212,17 @@ const QuizFlow = ({ book, onDone }: { book: Book; onDone: () => void }) => {
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const q = questions[i];
+  // Randomize the option order for each question (stable per question per session)
+  const order = useMemo(() => {
+    const n = q?.options?.length ?? 0;
+    const arr = Array.from({ length: n }, (_, k) => k);
+    for (let k = arr.length - 1; k > 0; k--) {
+      const j = Math.floor(Math.random() * (k + 1));
+      [arr[k], arr[j]] = [arr[j], arr[k]];
+    }
+    return arr;
+  }, [q]);
+
 
   if (!q) {
     return (
