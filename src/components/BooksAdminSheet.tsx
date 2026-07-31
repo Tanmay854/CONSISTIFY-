@@ -371,7 +371,7 @@ const BooksAdminSheet = ({ open, onClose }: { open: boolean; onClose: () => void
           {error && <p className="text-destructive text-sm">{error}</p>}
 
           <div className="flex gap-2 pt-3">
-            <button onClick={() => setEditing(null)} className="flex-1 h-11 rounded-xl bg-secondary text-foreground font-semibold">Cancel</button>
+            <button onClick={() => { restore.current = true; setEditing(null); }} className="flex-1 h-11 rounded-xl bg-secondary text-foreground font-semibold">Cancel</button>
             <button onClick={save} disabled={busy} className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-semibold disabled:opacity-50">
               {busy ? "Saving…" : editing.id ? "Save" : "Add book"}
             </button>
