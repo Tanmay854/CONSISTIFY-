@@ -64,7 +64,7 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background overflow-hidden animate-float-up" style={{ animationDuration: "0.25s", height: "100dvh" }}>
+    <div className="fixed inset-0 z-50 bg-background overflow-hidden animate-book-open" style={{ height: "100dvh" }}>
       <button
         onClick={mode === "overview" ? onClose : () => setMode("overview")}
         aria-label="Close"
