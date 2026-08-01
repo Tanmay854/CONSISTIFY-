@@ -25,15 +25,18 @@ const BottomNav = ({
 }) => {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10"
-      style={{
-        background: "linear-gradient(180deg, #131313, #0a0a0a)",
-        boxShadow: "0 -20px 60px rgba(0,0,0,0.5)",
-      }}
+      className="fixed left-0 right-0 z-40 flex justify-center"
+      style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
     >
       <div
-        className="flex items-end justify-around gap-2 px-3 pt-1.5 pb-1 max-w-lg mx-auto"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 4px)" }}
+        className="flex items-end justify-around gap-2 px-4 pt-1.5 pb-1 max-w-lg mx-auto border border-white/10"
+        style={{
+          borderRadius: 9999,
+          backgroundColor: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(20px) saturate(140%)",
+          WebkitBackdropFilter: "blur(20px) saturate(140%)",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
+        }}
       >
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -96,7 +99,7 @@ const BottomNav = ({
             </button>
           );
         })}
-      </div>
+        </div>
     </nav>
   );
 };
