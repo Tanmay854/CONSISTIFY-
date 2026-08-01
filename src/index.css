@@ -150,6 +150,29 @@
   transform: translateZ(0);
 }
 
+/* Apple Books style opening: cover swings open from its left spine */
+@keyframes book-open {
+  0% {
+    opacity: 0;
+    transform: perspective(1400px) rotateY(-72deg) scale(0.86);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1400px) rotateY(0deg) scale(1);
+  }
+}
+
+.animate-book-open {
+  transform-origin: left center;
+  animation: book-open 0.52s cubic-bezier(0.22, 0.9, 0.24, 1) forwards;
+  opacity: 0;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
 
 /* Kill Android WebView / Chrome default video overlay play button.
    Without this, paused videos show a huge blurry centered play triangle in the APK. */
