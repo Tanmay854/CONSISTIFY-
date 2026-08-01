@@ -99,6 +99,7 @@ const BottomNav = ({
             </button>
           );
         })}
+        </div>
       </div>
     </nav>
   );
