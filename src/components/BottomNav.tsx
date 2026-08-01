@@ -100,7 +100,6 @@ const BottomNav = ({
           );
         })}
         </div>
-      </div>
     </nav>
   );
 };
