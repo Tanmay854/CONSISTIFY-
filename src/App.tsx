@@ -8,6 +8,7 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import SpotifyCallback from "./pages/SpotifyCallback.tsx";
+import BookLibrary from "./components/BookLibrary.tsx";
 import { setupSpotifyAppUrlListener } from "@/lib/spotifyConnect";
 import { toast } from "@/hooks/use-toast";
 
