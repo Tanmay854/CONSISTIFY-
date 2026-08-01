@@ -54,6 +54,7 @@ const App = () => (
         <PasswordRecoveryRedirect />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/book-library" element={<BookLibrary />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/spotify-callback" element={<SpotifyCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
