@@ -195,11 +195,9 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
               backgroundColor: "hsl(var(--background))",
             }}
           >
-            <div
-              className="absolute inset-0 opacity-60 blur-2xl"
-              style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/80 to-background" />
+            {/* No blur filter here: filters force an expensive repaint every frame. */}
+            <div className="absolute inset-0 bg-gradient-to-b from-secondary/60 via-background/90 to-background" />
+
           </div>
           <img
             aria-hidden
