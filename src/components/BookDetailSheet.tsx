@@ -108,15 +108,25 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     else setPhase("done");
   };
 
+  // Defer network + heavy paint work until the morph has finished (keeps it 90fps).
+  const [settled, setSettled] = useState(!canMorph);
   useEffect(() => {
+    if (phase === "done") setSettled(true);
+  }, [phase]);
+
+  useEffect(() => {
+    if (!settled) return;
+    let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from("books").select("*")
         .neq("id", book.id).eq("category", book.category)
         .eq("is_published", true).limit(10);
-      setSimilar(((data as unknown) as Book[]) ?? []);
+      if (!cancelled) setSimilar(((data as unknown) as Book[]) ?? []);
     })();
-  }, [book.id, book.category]);
+    return () => { cancelled = true; };
+  }, [book.id, book.category, settled]);
+
 
   // Restore overview scroll when returning from summary/quiz/audio
   useEffect(() => {
@@ -185,11 +195,9 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
               backgroundColor: "hsl(var(--background))",
             }}
           >
-            <div
-              className="absolute inset-0 opacity-60 blur-2xl"
-              style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/80 to-background" />
+            {/* No blur filter here: filters force an expensive repaint every frame. */}
+            <div className="absolute inset-0 bg-gradient-to-b from-secondary/60 via-background/90 to-background" />
+
           </div>
           <img
             aria-hidden
@@ -220,11 +228,11 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
         style={{
           height: "100%",
           opacity: contentIn ? 1 : 0,
-          transform: contentIn ? "translateY(0)" : "translateY(10px)",
+          transform: contentIn ? "translate3d(0,0,0)" : "translate3d(0,10px,0)",
           transition: canMorph
             ? `opacity ${CONTENT_MS}ms ease-out ${contentIn ? CONTENT_DELAY : 0}ms, transform ${CONTENT_MS}ms ease-out ${contentIn ? CONTENT_DELAY : 0}ms`
             : undefined,
-          willChange: "opacity, transform",
+          willChange: settled ? "auto" : "opacity, transform",
         }}
       >
         <button
@@ -235,7 +243,8 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
           <X size={20} className="text-foreground" />
         </button>
 
-        {mode === "overview" && <Overview scrollRef={overviewScrollRef} book={book} similar={similar} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />}
+        {mode === "overview" && <Overview scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled && !morphing} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />}
+
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
         {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
         {mode === "audio" && <AudioPlayer book={book} />}
@@ -246,19 +255,22 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
 
 /* ---------------- Overview ---------------- */
 
-const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null> }) => {
+const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   return (
     <div ref={scrollRef} className="h-full overflow-y-auto pb-24">
       <div className="relative pt-14 pb-8 px-6 overflow-hidden">
-        <div className="absolute inset-0 -z-10 opacity-40 blur-3xl"
-          style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+        {showBackdrop && (
+          <div className="absolute inset-0 -z-10 opacity-40 blur-3xl"
+            style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+        )}
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/60 via-background/80 to-background" />
+
 
         <div className="flex flex-col items-center gap-5">
           <div data-book-cover className="w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]">
-            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
+            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="sync" fetchPriority="high" />
           </div>
           <div className="text-center max-w-sm">
             <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold mb-2">{book.category}</p>
