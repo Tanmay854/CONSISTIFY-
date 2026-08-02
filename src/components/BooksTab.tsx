@@ -131,9 +131,9 @@ const BooksTab = () => {
 
         {/* Category chips */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 mt-3">
-          <Chip active={!activeCategory} onClick={() => setActiveCategory(null)}>All</Chip>
+          <Chip active={!activeCategory} onClick={() => { setActiveCategory(null); scrollListTop(); }}>All</Chip>
           {VISIBLE_CATEGORIES.map((c) => (
-            <Chip key={c} active={activeCategory === c} onClick={() => setActiveCategory(activeCategory === c ? null : c)}>
+            <Chip key={c} active={activeCategory === c} onClick={() => { setActiveCategory(activeCategory === c ? null : c); scrollListTop(); }}>
               {c}
             </Chip>
           ))}
