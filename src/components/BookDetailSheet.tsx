@@ -108,15 +108,25 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     else setPhase("done");
   };
 
+  // Defer network + heavy paint work until the morph has finished (keeps it 90fps).
+  const [settled, setSettled] = useState(!canMorph);
   useEffect(() => {
+    if (phase === "done") setSettled(true);
+  }, [phase]);
+
+  useEffect(() => {
+    if (!settled) return;
+    let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from("books").select("*")
         .neq("id", book.id).eq("category", book.category)
         .eq("is_published", true).limit(10);
-      setSimilar(((data as unknown) as Book[]) ?? []);
+      if (!cancelled) setSimilar(((data as unknown) as Book[]) ?? []);
     })();
-  }, [book.id, book.category]);
+    return () => { cancelled = true; };
+  }, [book.id, book.category, settled]);
+
 
   // Restore overview scroll when returning from summary/quiz/audio
   useEffect(() => {
