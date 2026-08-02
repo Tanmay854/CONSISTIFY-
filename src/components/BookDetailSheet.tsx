@@ -35,6 +35,13 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   const [similar, setSimilar] = useState<Book[]>([]);
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
   const savedScrollY = useRef(0);
+  const [closing, setClosing] = useState(false);
+
+  const requestClose = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(onClose, 320);
+  };
 
   useEffect(() => {
     (async () => {
@@ -64,9 +71,12 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background overflow-hidden animate-book-open" style={{ height: "100dvh" }}>
+    <div
+      className={`fixed inset-0 z-50 bg-background overflow-hidden ${closing ? "animate-ios-close" : "animate-ios-open"}`}
+      style={{ height: "100dvh", transformOrigin: "center center" }}
+    >
       <button
-        onClick={mode === "overview" ? onClose : () => setMode("overview")}
+        onClick={mode === "overview" ? requestClose : () => setMode("overview")}
         aria-label="Close"
         className="fixed top-4 right-4 z-20 w-10 h-10 rounded-full bg-secondary/80 backdrop-blur flex items-center justify-center"
       >

@@ -150,27 +150,61 @@
   transform: translateZ(0);
 }
 
-/* Apple Books style opening: cover swings open from its left spine */
-@keyframes book-open {
+/* iOS app launch: scales up from a small rounded "icon" into fullscreen */
+@keyframes ios-app-open {
   0% {
     opacity: 0;
-    transform: perspective(1400px) rotateY(-72deg) scale(0.86);
+    transform: scale(0.28) translateZ(0);
+    border-radius: 44px;
   }
-  60% {
+  40% {
     opacity: 1;
   }
   100% {
     opacity: 1;
-    transform: perspective(1400px) rotateY(0deg) scale(1);
+    transform: scale(1) translateZ(0);
+    border-radius: 0px;
   }
 }
 
-.animate-book-open {
-  transform-origin: left center;
-  animation: book-open 0.52s cubic-bezier(0.22, 0.9, 0.24, 1) forwards;
-  opacity: 0;
+/* iOS app close: shrinks back down into the icon */
+@keyframes ios-app-close {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateZ(0);
+    border-radius: 0px;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.28) translateZ(0);
+    border-radius: 44px;
+  }
+}
+
+.animate-ios-open {
+  animation: ios-app-open 0.42s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform, opacity;
   backface-visibility: hidden;
+  transform: translateZ(0);
+  overflow: hidden;
+}
+
+.animate-ios-close {
+  animation: ios-app-close 0.32s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ios-open,
+  .animate-ios-close {
+    animation-duration: 0.01ms;
+  }
 }
 
 

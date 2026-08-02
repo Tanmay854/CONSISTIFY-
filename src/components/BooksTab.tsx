@@ -98,6 +98,13 @@ const BooksTab = () => {
 
   const isSearching = query.trim().length > 0 || activeCategory;
 
+  const scrollListTop = () => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.scrollingElement?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
@@ -131,9 +138,9 @@ const BooksTab = () => {
 
         {/* Category chips */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 mt-3">
-          <Chip active={!activeCategory} onClick={() => setActiveCategory(null)}>All</Chip>
+          <Chip active={!activeCategory} onClick={() => { setActiveCategory(null); scrollListTop(); }}>All</Chip>
           {VISIBLE_CATEGORIES.map((c) => (
-            <Chip key={c} active={activeCategory === c} onClick={() => setActiveCategory(activeCategory === c ? null : c)}>
+            <Chip key={c} active={activeCategory === c} onClick={() => { setActiveCategory(activeCategory === c ? null : c); scrollListTop(); }}>
               {c}
             </Chip>
           ))}
