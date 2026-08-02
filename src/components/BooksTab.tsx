@@ -43,9 +43,26 @@ const BooksTab = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<Book | null>(null);
+  const [origin, setOrigin] = useState<OpenOrigin | null>(null);
+  const hiddenCardRef = useRef<HTMLElement | null>(null);
   const { recent, push, clear } = useRecent();
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
+
+  const openBook = useCallback((b: Book, o?: OpenOrigin, el?: HTMLElement) => {
+    if (hiddenCardRef.current) hiddenCardRef.current.style.visibility = "";
+    hiddenCardRef.current = el ?? null;
+    if (el) el.style.visibility = "hidden";
+    setOrigin(o ?? null);
+    setSelected(b);
+  }, []);
+
+  const closeBook = useCallback(() => {
+    if (hiddenCardRef.current) hiddenCardRef.current.style.visibility = "";
+    hiddenCardRef.current = null;
+    setSelected(null);
+    setOrigin(null);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
