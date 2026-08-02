@@ -57,62 +57,125 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canMorph = !!origin && !reduced;
 
-  // "start" = mapped onto the card, "open" = identity (full layout), "done" = morph layer idle
-  const [phase, setPhase] = useState<"start" | "open" | "done">(canMorph ? "start" : "done");
+  // Morph layer is mounted while the FLIP animation is running (open or close).
+  const [morphing, setMorphing] = useState(canMorph);
+  const [closing, setClosing] = useState(false);
   const [contentIn, setContentIn] = useState(!canMorph);
-  const [coverTarget, setCoverTarget] = useState<Rect | null>(null);
+  const coverRef = useRef<HTMLImageElement | null>(null);
+  const coverTargetRef = useRef<Rect | null>(null);
+
+  const vw = typeof window !== "undefined" ? window.innerWidth : 1;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 1;
 
   const measureCover = () => {
     const el = rootRef.current?.querySelector("[data-book-cover]");
-    if (el) setCoverTarget(rectOf(el));
-    return !!el;
+    if (el) coverTargetRef.current = rectOf(el);
+    return coverTargetRef.current;
   };
 
-  // Measure the final cover position before the browser paints the first frame.
-  useLayoutEffect(() => {
-    if (!canMorph) return;
-    measureCover();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const morphTransition = `transform ${MORPH_MS}ms ${MORPH_EASE}, border-radius ${MORPH_MS}ms ${MORPH_EASE}`;
 
-  useEffect(() => {
+  // Apply the collapsed ("mapped onto the card") state imperatively.
+  const applyCollapsed = (target: Rect) => {
+    const sheet = sheetRef.current;
+    const cover = coverRef.current;
+    const card = origin!.card;
+    const from = origin!.cover;
+    if (sheet) {
+      sheet.style.transform = `translate3d(${card.left}px, ${card.top}px, 0) scale(${card.width / vw}, ${card.height / vh})`;
+      sheet.style.borderRadius = "16px";
+    }
+    if (cover) {
+      cover.style.top = `${target.top}px`;
+      cover.style.left = `${target.left}px`;
+      cover.style.width = `${target.width}px`;
+      cover.style.height = `${target.height}px`;
+      cover.style.transform = `translate3d(${from.left - target.left}px, ${from.top - target.top}px, 0) scale(${from.width / target.width})`;
+      cover.style.borderRadius = "16px";
+    }
+  };
+
+  const applyExpanded = () => {
+    const sheet = sheetRef.current;
+    const cover = coverRef.current;
+    if (sheet) {
+      sheet.style.transform = "translate3d(0,0,0) scale(1,1)";
+      sheet.style.borderRadius = "0px";
+    }
+    if (cover) {
+      cover.style.transform = "translate3d(0,0,0) scale(1)";
+      cover.style.borderRadius = "16px";
+    }
+  };
+
+  // Open: start collapsed synchronously, flush, then animate to identity.
+  useLayoutEffect(() => {
     if (!canMorph) { setContentIn(true); return; }
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        setPhase("open");
-        setContentIn(true);
-      });
+    const sheet = sheetRef.current;
+    const cover = coverRef.current;
+    const target = measureCover();
+    if (!sheet || !cover || !target) { setMorphing(false); setContentIn(true); return; }
+
+    sheet.style.transition = "none";
+    cover.style.transition = "none";
+    applyCollapsed(target);
+    // force style flush so the start state is registered
+    sheet.getBoundingClientRect();
+
+    const raf = requestAnimationFrame(() => {
+      sheet.style.transition = morphTransition;
+      cover.style.transition = morphTransition;
+      applyExpanded();
+      setContentIn(true);
     });
-    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
+    return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const requestClose = () => {
     if (closingRef.current) return;
     closingRef.current = true;
-    if (canMorph && measureCover()) {
-      setContentIn(false);            // content fades out immediately
-      setPhase("open");               // re-show morph layer at identity
-      requestAnimationFrame(() => requestAnimationFrame(() => setPhase("start")));
-    } else {
-      setContentIn(false);
-      setTimeout(onClose, FADE_MS);
-    }
+    if (!canMorph) { setContentIn(false); setTimeout(onClose, FADE_MS); return; }
+    setContentIn(false);   // content fades out immediately
+    setMorphing(true);     // re-mount morph layer (identity applied in layout effect)
+    setClosing(true);
   };
 
-  // Drive phase completion off the real transition, never a guessed timeout.
+  // Close: snap the morph layer to identity, flush, then animate back to the card.
+  useLayoutEffect(() => {
+    if (!closing) return;
+    const sheet = sheetRef.current;
+    const cover = coverRef.current;
+    const target = measureCover();
+    if (!sheet || !cover || !target) { onClose(); return; }
+
+    sheet.style.transition = "none";
+    cover.style.transition = "none";
+    cover.style.top = `${target.top}px`;
+    cover.style.left = `${target.left}px`;
+    cover.style.width = `${target.width}px`;
+    cover.style.height = `${target.height}px`;
+    applyExpanded();
+    sheet.getBoundingClientRect();
+
+    const raf = requestAnimationFrame(() => {
+      sheet.style.transition = morphTransition;
+      cover.style.transition = morphTransition;
+      applyCollapsed(target);
+    });
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [closing]);
+
+  // Drive completion off the real transition, never a guessed timeout.
   const onSheetTransitionEnd = (e: React.TransitionEvent) => {
     if (e.target !== sheetRef.current || e.propertyName !== "transform") return;
     if (closingRef.current) onClose();
-    else setPhase("done");
+    else { setMorphing(false); setSettled(true); }
   };
 
   // Defer network + heavy paint work until the morph has finished (keeps it 90fps).
   const [settled, setSettled] = useState(!canMorph);
-  useEffect(() => {
-    if (phase === "done") setSettled(true);
-  }, [phase]);
 
   useEffect(() => {
     if (!settled) return;
@@ -145,26 +208,6 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     setMode(m);
   };
 
-  const morphing = canMorph && phase !== "done";
-  const atCard = phase === "start";
-  const cardRect = origin?.card;
-  const coverFrom = origin?.cover;
-
-  const vw = typeof window !== "undefined" ? window.innerWidth : 1;
-  const vh = typeof window !== "undefined" ? window.innerHeight : 1;
-
-  const morphTransition = `transform ${MORPH_MS}ms ${MORPH_EASE}, opacity ${MORPH_MS}ms ${MORPH_EASE}, border-radius ${MORPH_MS}ms ${MORPH_EASE}`;
-
-  // Sheet lives at its final full-screen layout; an initial transform maps it onto the card.
-  const sheetTransform = atCard && cardRect
-    ? `translate3d(${cardRect.left}px, ${cardRect.top}px, 0) scale(${cardRect.width / vw}, ${cardRect.height / vh})`
-    : "none";
-
-  // Cover lives at its final rect; an initial transform maps it onto the card's cover.
-  const coverTransform = atCard && coverFrom && coverTarget
-    ? `translate3d(${coverFrom.left - coverTarget.left}px, ${coverFrom.top - coverTarget.top}px, 0) scale(${coverFrom.width / coverTarget.width})`
-    : "none";
-
   return (
     <div
       ref={rootRef}
@@ -186,9 +229,6 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
               position: "fixed",
               top: 0, left: 0, width: `${vw}px`, height: `${vh}px`,
               transformOrigin: "top left",
-              transform: sheetTransform,
-              borderRadius: atCard ? "16px" : "0px",
-              transition: morphTransition,
               overflow: "hidden",
               willChange: "transform",
               zIndex: 30,
@@ -201,17 +241,13 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
           </div>
           <img
             aria-hidden
+            ref={coverRef}
             src={book.cover_url}
             alt=""
             style={{
               position: "fixed",
-              top: coverTarget ? `${coverTarget.top}px` : 0,
-              left: coverTarget ? `${coverTarget.left}px` : 0,
-              width: coverTarget ? `${coverTarget.width}px` : 0,
-              height: coverTarget ? `${coverTarget.height}px` : 0,
+              top: 0, left: 0, width: 0, height: 0,
               transformOrigin: "top left",
-              transform: coverTransform,
-              transition: morphTransition,
               borderRadius: "16px",
               overflow: "hidden",
               objectFit: "cover",
@@ -222,6 +258,7 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
           />
         </>
       )}
+
 
 
       <div
