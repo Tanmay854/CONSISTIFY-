@@ -234,6 +234,7 @@ const BooksTab = () => {
         />
       )}
     </div>
+    </OpenBookContext.Provider>
   );
 };
 
