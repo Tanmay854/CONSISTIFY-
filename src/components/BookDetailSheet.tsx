@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   X, Star, ShoppingCart, BookOpen, Headphones, ChevronLeft, ChevronRight,
   Play, Pause, Rewind, FastForward, Type as TypeIcon, Check,
