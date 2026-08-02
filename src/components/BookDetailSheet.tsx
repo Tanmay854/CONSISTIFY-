@@ -224,7 +224,7 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/60 via-background/80 to-background" />
 
         <div className="flex flex-col items-center gap-5">
-          <div className="w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]">
+          <div data-book-cover className="w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]">
             <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
           </div>
           <div className="text-center max-w-sm">
