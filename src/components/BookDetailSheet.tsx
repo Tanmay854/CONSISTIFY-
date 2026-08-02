@@ -29,7 +29,21 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void }) => {
+const MORPH_MS = 280;
+const MORPH_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
+const CONTENT_MS = 220;
+const CONTENT_DELAY = 110;
+const FADE_MS = 150;
+
+type Rect = { top: number; left: number; width: number; height: number };
+export type OpenOrigin = { card: Rect; cover: Rect };
+
+const rectOf = (el: Element): Rect => {
+  const r = el.getBoundingClientRect();
+  return { top: r.top, left: r.left, width: r.width, height: r.height };
+};
+
+const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () => void; origin?: OpenOrigin | null }) => {
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
   const [similar, setSimilar] = useState<Book[]>([]);
@@ -37,10 +51,46 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   const savedScrollY = useRef(0);
   const [closing, setClosing] = useState(false);
 
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const reduced = typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const canMorph = !!origin && !reduced;
+
+  // "start" = sitting on the card, "open" = fullscreen, "done" = morph layer removed
+  const [phase, setPhase] = useState<"start" | "open" | "done">(canMorph ? "start" : "done");
+  const [contentIn, setContentIn] = useState(!canMorph);
+  const [coverTarget, setCoverTarget] = useState<Rect | null>(null);
+
+  useEffect(() => {
+    if (!canMorph) { setContentIn(true); return; }
+    const el = rootRef.current?.querySelector("[data-book-cover]");
+    if (el) setCoverTarget(rectOf(el));
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        setPhase("open");
+        setContentIn(true);
+      });
+    });
+    const t = setTimeout(() => setPhase("done"), MORPH_MS + 40);
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const requestClose = () => {
     if (closing) return;
     setClosing(true);
-    setTimeout(onClose, 320);
+    const el = rootRef.current?.querySelector("[data-book-cover]");
+    if (canMorph && el) {
+      setCoverTarget(rectOf(el));
+      setPhase("open");
+      setContentIn(false);
+      requestAnimationFrame(() => requestAnimationFrame(() => setPhase("start")));
+      setTimeout(onClose, MORPH_MS + 20);
+    } else {
+      setContentIn(false);
+      setTimeout(onClose, FADE_MS);
+    }
   };
 
   useEffect(() => {
@@ -70,23 +120,93 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
     setMode(m);
   };
 
+  const morphing = canMorph && phase !== "done";
+  const atCard = phase === "start";
+  const cardRect = origin?.card;
+  const coverFrom = origin?.cover;
+
+  const boxStyle = (from: Rect | undefined, to: Rect | null, radiusFrom: number, radiusTo: number): React.CSSProperties => {
+    const r = atCard ? from : to;
+    return {
+      position: "fixed",
+      top: r ? `${r.top}px` : 0,
+      left: r ? `${r.left}px` : 0,
+      width: r ? `${r.width}px` : "100%",
+      height: r ? `${r.height}px` : "100%",
+      borderRadius: `${atCard ? radiusFrom : radiusTo}px`,
+      transition: `top ${MORPH_MS}ms ${MORPH_EASE}, left ${MORPH_MS}ms ${MORPH_EASE}, width ${MORPH_MS}ms ${MORPH_EASE}, height ${MORPH_MS}ms ${MORPH_EASE}, border-radius ${MORPH_MS}ms ${MORPH_EASE}`,
+      overflow: "hidden",
+      willChange: "top,left,width,height",
+    };
+  };
+
+  const fullRect: Rect = {
+    top: 0, left: 0,
+    width: typeof window !== "undefined" ? window.innerWidth : 0,
+    height: typeof window !== "undefined" ? window.innerHeight : 0,
+  };
+
   return (
     <div
-      className={`fixed inset-0 z-50 bg-background overflow-hidden ${closing ? "animate-ios-close" : "animate-ios-open"}`}
-      style={{ height: "100dvh", transformOrigin: "center center" }}
+      ref={rootRef}
+      className="fixed inset-0 z-50 bg-background overflow-hidden"
+      style={{
+        height: "100dvh",
+        opacity: canMorph ? 1 : contentIn ? 1 : 0,
+        transition: canMorph ? undefined : `opacity ${FADE_MS}ms ease-out`,
+      }}
     >
-      <button
-        onClick={mode === "overview" ? requestClose : () => setMode("overview")}
-        aria-label="Close"
-        className="fixed top-4 right-4 z-20 w-10 h-10 rounded-full bg-secondary/80 backdrop-blur flex items-center justify-center"
-      >
-        <X size={20} className="text-foreground" />
-      </button>
+      {/* Morph layer: sheet background tinted with this book's cover, + cover artwork */}
+      {morphing && (
+        <>
+          <div
+            aria-hidden
+            style={{ ...boxStyle(cardRect, fullRect, 16, 0), zIndex: 30, backgroundColor: "hsl(var(--background))" }}
+          >
+            <div
+              className="absolute inset-0 opacity-60 blur-2xl"
+              style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/80 to-background" />
+          </div>
+          <img
+            aria-hidden
+            src={book.cover_url}
+            alt=""
+            style={{
+              ...boxStyle(coverFrom, coverTarget, 16, 16),
+              zIndex: 31,
+              objectFit: "cover",
+              boxShadow: "0 30px 60px -20px rgba(0,0,0,0.9)",
+            }}
+          />
+        </>
+      )}
 
-      {mode === "overview" && <Overview scrollRef={overviewScrollRef} book={book} similar={similar} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />}
-      {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
-      {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
-      {mode === "audio" && <AudioPlayer book={book} />}
+      <div
+        style={{
+          height: "100%",
+          opacity: contentIn ? 1 : 0,
+          transform: contentIn ? "translateY(0)" : "translateY(10px)",
+          transition: canMorph
+            ? `opacity ${CONTENT_MS}ms ease-out ${contentIn ? CONTENT_DELAY : 0}ms, transform ${CONTENT_MS}ms ease-out ${contentIn ? CONTENT_DELAY : 0}ms`
+            : undefined,
+          willChange: "opacity, transform",
+        }}
+      >
+        <button
+          onClick={mode === "overview" ? requestClose : () => setMode("overview")}
+          aria-label="Close"
+          className="fixed top-4 right-4 z-20 w-10 h-10 rounded-full bg-secondary/80 backdrop-blur flex items-center justify-center"
+        >
+          <X size={20} className="text-foreground" />
+        </button>
+
+        {mode === "overview" && <Overview scrollRef={overviewScrollRef} book={book} similar={similar} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />}
+        {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
+        {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
+        {mode === "audio" && <AudioPlayer book={book} />}
+      </div>
     </div>
   );
 };
