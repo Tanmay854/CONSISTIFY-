@@ -206,7 +206,7 @@ const BooksTab = () => {
           <p className="text-muted-foreground text-sm mt-1">New books will appear here soon.</p>
         </div>
       ) : isSearching ? (
-        <SearchResults books={filtered} onOpen={(b, o, el) => { openBook(b, o, el); push(query); }} />
+        <SearchResults books={filtered} onOpen={(b, o) => { openBook(b, o); push(query); }} />
       ) : (
         <div className="pt-5 space-y-8">
           {featured.length > 0 && <FeaturedHero books={featured} onOpen={openBook} />}
