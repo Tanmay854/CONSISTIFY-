@@ -125,18 +125,13 @@ const SetPage = ({ set, onReport, uploaderProfile, onOpenProfile }: { set: Photo
               )}
             </span>
             <span className="text-white font-semibold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
-              @{uploaderProfile?.username || (uploaderProfile?.display_name && !uploaderProfile.display_name.includes("@") ? uploaderProfile.display_name : "user")}
+              {uploaderProfile?.username || (uploaderProfile?.display_name && !uploaderProfile.display_name.includes("@") ? uploaderProfile.display_name : "user")}
             </span>
           </button>
         )}
         {currentPhoto.title && (
           <p className="text-white font-semibold text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate pointer-events-none">
             {currentPhoto.title}
-          </p>
-        )}
-        {set.items.length > 1 && (
-          <p className="text-white/80 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase tracking-widest mt-0.5 pointer-events-none">
-            {selectedIndex + 1}/{set.items.length}
           </p>
         )}
         {currentPhoto.description && (
