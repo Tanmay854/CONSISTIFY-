@@ -383,18 +383,22 @@ const toRect = (el: Element): Rect => {
 const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   const cardRef = useRef<HTMLButtonElement | null>(null);
   const coverRef = useRef<HTMLDivElement | null>(null);
+  const openBookId = useContext(OpenBookContext);
+  const hidden = openBookId === book.id;
   const handle = () => {
     const cardEl = cardRef.current;
     const coverEl = coverRef.current;
     if (!cardEl || !coverEl) return onOpen(book);
-    onOpen(book, { card: toRect(cardEl), cover: toRect(coverEl) }, cardEl);
+    onOpen(book, { card: toRect(cardEl), cover: toRect(coverEl) });
   };
   return (
   <button
     ref={cardRef}
     onClick={handle}
+    style={{ opacity: hidden ? 0 : 1, pointerEvents: hidden ? "none" : undefined }}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
+
     <div ref={coverRef} className="w-36 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
       <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
     </div>
