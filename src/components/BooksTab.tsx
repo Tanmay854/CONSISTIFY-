@@ -6,6 +6,10 @@ import { useAuth } from "@/hooks/useAuth";
 
 import BookDetailSheet from "./BookDetailSheet";
 
+export type Rect = { top: number; left: number; width: number; height: number };
+export type OpenOrigin = { card: Rect; cover: Rect };
+type OpenHandler = (b: Book, o?: OpenOrigin, el?: HTMLElement) => void;
+
 const POPULAR = ["Discipline", "Atomic Habits", "Deep Work", "Stoicism", "Focus"];
 const RECENT_KEY = "book_recent_searches";
 const HIDDEN_CATEGORIES = new Set(["Fitness", "Psychology"]);
@@ -245,7 +249,7 @@ const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => v
   </button>
 );
 
-const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => void }) => {
+const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: OpenHandler }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const slideWidthRef = useRef(0);
@@ -357,7 +361,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => v
 
 const Row = ({
   title, books, onOpen, onSeeAll,
-}: { title: string; books: Book[]; onOpen: (b: Book) => void; onSeeAll?: () => void }) => (
+}: { title: string; books: Book[]; onOpen: OpenHandler; onSeeAll?: () => void }) => (
   <section>
     <div className="flex items-baseline justify-between px-5 mb-3">
       <h2 className="text-foreground text-sm font-bold uppercase tracking-wider">{title}</h2>
@@ -373,12 +377,27 @@ const Row = ({
   </section>
 );
 
-const BookCard = ({ book, onOpen }: { book: Book; onOpen: (b: Book) => void }) => (
+const toRect = (el: Element): Rect => {
+  const r = el.getBoundingClientRect();
+  return { top: r.top, left: r.left, width: r.width, height: r.height };
+};
+
+const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
+  const cardRef = useRef<HTMLButtonElement | null>(null);
+  const coverRef = useRef<HTMLDivElement | null>(null);
+  const handle = () => {
+    const cardEl = cardRef.current;
+    const coverEl = coverRef.current;
+    if (!cardEl || !coverEl) return onOpen(book);
+    onOpen(book, { card: toRect(cardEl), cover: toRect(coverEl) }, cardEl);
+  };
+  return (
   <button
-    onClick={() => onOpen(book)}
+    ref={cardRef}
+    onClick={handle}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
-    <div className="w-36 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
+    <div ref={coverRef} className="w-36 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
       <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
     </div>
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
@@ -391,9 +410,10 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: (b: Book) => void }) =
       )}
     </div>
   </button>
-);
+  );
+};
 
-const SearchResults = ({ books, onOpen }: { books: Book[]; onOpen: (b: Book) => void }) => (
+const SearchResults = ({ books, onOpen }: { books: Book[]; onOpen: OpenHandler }) => (
   <div className="px-5 pt-5">
     {books.length === 0 ? (
       <div className="text-center text-muted-foreground text-sm py-16">No books found.</div>
