@@ -51,22 +51,17 @@ const BooksTab = () => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<Book | null>(null);
   const [origin, setOrigin] = useState<OpenOrigin | null>(null);
-  const hiddenCardRef = useRef<HTMLElement | null>(null);
   const { recent, push, clear } = useRecent();
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
 
-  const openBook = useCallback((b: Book, o?: OpenOrigin, el?: HTMLElement) => {
-    if (hiddenCardRef.current) hiddenCardRef.current.style.visibility = "";
-    hiddenCardRef.current = el ?? null;
-    if (el) el.style.visibility = "hidden";
+  const openBook = useCallback((b: Book, o?: OpenOrigin) => {
     setOrigin(o ?? null);
     setSelected(b);
   }, []);
 
+  // Unmounting the overlay and restoring the card happen in the same state update.
   const closeBook = useCallback(() => {
-    if (hiddenCardRef.current) hiddenCardRef.current.style.visibility = "";
-    hiddenCardRef.current = null;
     setSelected(null);
     setOrigin(null);
   }, []);
