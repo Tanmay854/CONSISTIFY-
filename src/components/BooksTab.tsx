@@ -8,7 +8,7 @@ import BookDetailSheet from "./BookDetailSheet";
 
 export type Rect = { top: number; left: number; width: number; height: number };
 export type OpenOrigin = { card: Rect; cover: Rect };
-type OpenHandler = (b: Book, o?: OpenOrigin, el?: HTMLElement) => void;
+type OpenHandler = (b: Book, o?: OpenOrigin) => void;
 
 /** Single source of truth for which book is open — cards derive their visibility from this. */
 const OpenBookContext = createContext<string | null>(null);
