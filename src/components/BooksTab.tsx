@@ -187,25 +187,32 @@ const BooksTab = () => {
           <p className="text-muted-foreground text-sm mt-1">New books will appear here soon.</p>
         </div>
       ) : isSearching ? (
-        <SearchResults books={filtered} onOpen={(b) => { setSelected(b); push(query); }} />
+        <SearchResults books={filtered} onOpen={(b, o, el) => { openBook(b, o, el); push(query); }} />
       ) : (
         <div className="pt-5 space-y-8">
-          {featured.length > 0 && <FeaturedHero books={featured} onOpen={setSelected} />}
-          {recommended.length > 0 && <Row title="Recommended for you" books={recommended} onOpen={setSelected} />}
-          {trending.length > 0 && <Row title="Trending" books={trending} onOpen={setSelected} />}
-          {bestSellers.length > 0 && <Row title="Best sellers" books={bestSellers} onOpen={setSelected} />}
-          {newReleases.length > 0 && <Row title="New releases" books={newReleases} onOpen={setSelected} />}
+          {featured.length > 0 && <FeaturedHero books={featured} onOpen={openBook} />}
+          {recommended.length > 0 && <Row title="Recommended for you" books={recommended} onOpen={openBook} />}
+          {trending.length > 0 && <Row title="Trending" books={trending} onOpen={openBook} />}
+          {bestSellers.length > 0 && <Row title="Best sellers" books={bestSellers} onOpen={openBook} />}
+          {newReleases.length > 0 && <Row title="New releases" books={newReleases} onOpen={openBook} />}
 
           {VISIBLE_CATEGORIES.map((cat) => {
             const list = shuffle(books.filter((b) => b.category === cat)).slice(0, 20);
             if (list.length === 0) return null;
-            return <Row key={`${cat}-${shuffleTick}`} title={cat} books={list} onOpen={setSelected} onSeeAll={() => setActiveCategory(cat)} />;
+            return <Row key={`${cat}-${shuffleTick}`} title={cat} books={list} onOpen={openBook} onSeeAll={() => setActiveCategory(cat)} />;
           })}
 
         </div>
       )}
 
-      {selected && <BookDetailSheet key={selected.id} book={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <BookDetailSheet
+          key={selected.id}
+          book={selected}
+          origin={origin}
+          onClose={closeBook}
+        />
+      )}
     </div>
   );
 };
