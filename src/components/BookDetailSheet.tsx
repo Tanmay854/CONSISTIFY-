@@ -228,11 +228,11 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
         style={{
           height: "100%",
           opacity: contentIn ? 1 : 0,
-          transform: contentIn ? "translateY(0)" : "translateY(10px)",
+          transform: contentIn ? "translate3d(0,0,0)" : "translate3d(0,10px,0)",
           transition: canMorph
             ? `opacity ${CONTENT_MS}ms ease-out ${contentIn ? CONTENT_DELAY : 0}ms, transform ${CONTENT_MS}ms ease-out ${contentIn ? CONTENT_DELAY : 0}ms`
             : undefined,
-          willChange: "opacity, transform",
+          willChange: settled ? "auto" : "opacity, transform",
         }}
       >
         <button
@@ -243,7 +243,8 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
           <X size={20} className="text-foreground" />
         </button>
 
-        {mode === "overview" && <Overview scrollRef={overviewScrollRef} book={book} similar={similar} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />}
+        {mode === "overview" && <Overview scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled && !morphing} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />}
+
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
         {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
         {mode === "audio" && <AudioPlayer book={book} />}
