@@ -98,6 +98,13 @@ const BooksTab = () => {
 
   const isSearching = query.trim().length > 0 || activeCategory;
 
+  const scrollListTop = () => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.scrollingElement?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
