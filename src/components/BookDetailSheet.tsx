@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   X, Star, ShoppingCart, BookOpen, Headphones, ChevronLeft, ChevronRight,
   Play, Pause, Rewind, FastForward, Type as TypeIcon, Check,
@@ -49,22 +49,34 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
   const [similar, setSimilar] = useState<Book[]>([]);
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
   const savedScrollY = useRef(0);
-  const [closing, setClosing] = useState(false);
+  const closingRef = useRef(false);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
   const reduced = typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canMorph = !!origin && !reduced;
 
-  // "start" = sitting on the card, "open" = fullscreen, "done" = morph layer removed
+  // "start" = mapped onto the card, "open" = identity (full layout), "done" = morph layer idle
   const [phase, setPhase] = useState<"start" | "open" | "done">(canMorph ? "start" : "done");
   const [contentIn, setContentIn] = useState(!canMorph);
   const [coverTarget, setCoverTarget] = useState<Rect | null>(null);
 
-  useEffect(() => {
-    if (!canMorph) { setContentIn(true); return; }
+  const measureCover = () => {
     const el = rootRef.current?.querySelector("[data-book-cover]");
     if (el) setCoverTarget(rectOf(el));
+    return !!el;
+  };
+
+  // Measure the final cover position before the browser paints the first frame.
+  useLayoutEffect(() => {
+    if (!canMorph) return;
+    measureCover();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!canMorph) { setContentIn(true); return; }
     let raf2 = 0;
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
@@ -72,25 +84,28 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
         setContentIn(true);
       });
     });
-    const t = setTimeout(() => setPhase("done"), MORPH_MS + 40);
-    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); clearTimeout(t); };
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const requestClose = () => {
-    if (closing) return;
-    setClosing(true);
-    const el = rootRef.current?.querySelector("[data-book-cover]");
-    if (canMorph && el) {
-      setCoverTarget(rectOf(el));
-      setPhase("open");
-      setContentIn(false);
+    if (closingRef.current) return;
+    closingRef.current = true;
+    if (canMorph && measureCover()) {
+      setContentIn(false);            // content fades out immediately
+      setPhase("open");               // re-show morph layer at identity
       requestAnimationFrame(() => requestAnimationFrame(() => setPhase("start")));
-      setTimeout(onClose, MORPH_MS + 20);
     } else {
       setContentIn(false);
       setTimeout(onClose, FADE_MS);
     }
+  };
+
+  // Drive phase completion off the real transition, never a guessed timeout.
+  const onSheetTransitionEnd = (e: React.TransitionEvent) => {
+    if (e.target !== sheetRef.current || e.propertyName !== "transform") return;
+    if (closingRef.current) onClose();
+    else setPhase("done");
   };
 
   useEffect(() => {
@@ -125,26 +140,20 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
   const cardRect = origin?.card;
   const coverFrom = origin?.cover;
 
-  const boxStyle = (from: Rect | undefined, to: Rect | null, radiusFrom: number, radiusTo: number): React.CSSProperties => {
-    const r = atCard ? from : to;
-    return {
-      position: "fixed",
-      top: r ? `${r.top}px` : 0,
-      left: r ? `${r.left}px` : 0,
-      width: r ? `${r.width}px` : "100%",
-      height: r ? `${r.height}px` : "100%",
-      borderRadius: `${atCard ? radiusFrom : radiusTo}px`,
-      transition: `top ${MORPH_MS}ms ${MORPH_EASE}, left ${MORPH_MS}ms ${MORPH_EASE}, width ${MORPH_MS}ms ${MORPH_EASE}, height ${MORPH_MS}ms ${MORPH_EASE}, border-radius ${MORPH_MS}ms ${MORPH_EASE}`,
-      overflow: "hidden",
-      willChange: "top,left,width,height",
-    };
-  };
+  const vw = typeof window !== "undefined" ? window.innerWidth : 1;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 1;
 
-  const fullRect: Rect = {
-    top: 0, left: 0,
-    width: typeof window !== "undefined" ? window.innerWidth : 0,
-    height: typeof window !== "undefined" ? window.innerHeight : 0,
-  };
+  const morphTransition = `transform ${MORPH_MS}ms ${MORPH_EASE}, opacity ${MORPH_MS}ms ${MORPH_EASE}, border-radius ${MORPH_MS}ms ${MORPH_EASE}`;
+
+  // Sheet lives at its final full-screen layout; an initial transform maps it onto the card.
+  const sheetTransform = atCard && cardRect
+    ? `translate3d(${cardRect.left}px, ${cardRect.top}px, 0) scale(${cardRect.width / vw}, ${cardRect.height / vh})`
+    : "none";
+
+  // Cover lives at its final rect; an initial transform maps it onto the card's cover.
+  const coverTransform = atCard && coverFrom && coverTarget
+    ? `translate3d(${coverFrom.left - coverTarget.left}px, ${coverFrom.top - coverTarget.top}px, 0) scale(${coverFrom.width / coverTarget.width})`
+    : "none";
 
   return (
     <div
@@ -161,7 +170,20 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
         <>
           <div
             aria-hidden
-            style={{ ...boxStyle(cardRect, fullRect, 16, 0), zIndex: 30, backgroundColor: "hsl(var(--background))" }}
+            ref={sheetRef}
+            onTransitionEnd={onSheetTransitionEnd}
+            style={{
+              position: "fixed",
+              top: 0, left: 0, width: `${vw}px`, height: `${vh}px`,
+              transformOrigin: "top left",
+              transform: sheetTransform,
+              borderRadius: atCard ? "16px" : "0px",
+              transition: morphTransition,
+              overflow: "hidden",
+              willChange: "transform",
+              zIndex: 30,
+              backgroundColor: "hsl(var(--background))",
+            }}
           >
             <div
               className="absolute inset-0 opacity-60 blur-2xl"
@@ -174,14 +196,25 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
             src={book.cover_url}
             alt=""
             style={{
-              ...boxStyle(coverFrom, coverTarget, 16, 16),
-              zIndex: 31,
+              position: "fixed",
+              top: coverTarget ? `${coverTarget.top}px` : 0,
+              left: coverTarget ? `${coverTarget.left}px` : 0,
+              width: coverTarget ? `${coverTarget.width}px` : 0,
+              height: coverTarget ? `${coverTarget.height}px` : 0,
+              transformOrigin: "top left",
+              transform: coverTransform,
+              transition: morphTransition,
+              borderRadius: "16px",
+              overflow: "hidden",
               objectFit: "cover",
+              willChange: "transform",
+              zIndex: 31,
               boxShadow: "0 30px 60px -20px rgba(0,0,0,0.9)",
             }}
           />
         </>
       )}
+
 
       <div
         style={{

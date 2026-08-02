@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef, createContext, useContext } from "react";
 import { Search, X, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
@@ -8,7 +8,10 @@ import BookDetailSheet from "./BookDetailSheet";
 
 export type Rect = { top: number; left: number; width: number; height: number };
 export type OpenOrigin = { card: Rect; cover: Rect };
-type OpenHandler = (b: Book, o?: OpenOrigin, el?: HTMLElement) => void;
+type OpenHandler = (b: Book, o?: OpenOrigin) => void;
+
+/** Single source of truth for which book is open — cards derive their visibility from this. */
+const OpenBookContext = createContext<string | null>(null);
 
 const POPULAR = ["Discipline", "Atomic Habits", "Deep Work", "Stoicism", "Focus"];
 const RECENT_KEY = "book_recent_searches";
@@ -48,22 +51,17 @@ const BooksTab = () => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<Book | null>(null);
   const [origin, setOrigin] = useState<OpenOrigin | null>(null);
-  const hiddenCardRef = useRef<HTMLElement | null>(null);
   const { recent, push, clear } = useRecent();
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
 
-  const openBook = useCallback((b: Book, o?: OpenOrigin, el?: HTMLElement) => {
-    if (hiddenCardRef.current) hiddenCardRef.current.style.visibility = "";
-    hiddenCardRef.current = el ?? null;
-    if (el) el.style.visibility = "hidden";
+  const openBook = useCallback((b: Book, o?: OpenOrigin) => {
     setOrigin(o ?? null);
     setSelected(b);
   }, []);
 
+  // Unmounting the overlay and restoring the card happen in the same state update.
   const closeBook = useCallback(() => {
-    if (hiddenCardRef.current) hiddenCardRef.current.style.visibility = "";
-    hiddenCardRef.current = null;
     setSelected(null);
     setOrigin(null);
   }, []);
@@ -127,6 +125,7 @@ const BooksTab = () => {
   };
 
   return (
+    <OpenBookContext.Provider value={selected?.id ?? null}>
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl pt-4 pb-3 px-5 border-b border-border/40">
@@ -208,7 +207,7 @@ const BooksTab = () => {
           <p className="text-muted-foreground text-sm mt-1">New books will appear here soon.</p>
         </div>
       ) : isSearching ? (
-        <SearchResults books={filtered} onOpen={(b, o, el) => { openBook(b, o, el); push(query); }} />
+        <SearchResults books={filtered} onOpen={(b, o) => { openBook(b, o); push(query); }} />
       ) : (
         <div className="pt-5 space-y-8">
           {featured.length > 0 && <FeaturedHero books={featured} onOpen={openBook} />}
@@ -235,6 +234,7 @@ const BooksTab = () => {
         />
       )}
     </div>
+    </OpenBookContext.Provider>
   );
 };
 
@@ -385,18 +385,22 @@ const toRect = (el: Element): Rect => {
 const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   const cardRef = useRef<HTMLButtonElement | null>(null);
   const coverRef = useRef<HTMLDivElement | null>(null);
+  const openBookId = useContext(OpenBookContext);
+  const hidden = openBookId === book.id;
   const handle = () => {
     const cardEl = cardRef.current;
     const coverEl = coverRef.current;
     if (!cardEl || !coverEl) return onOpen(book);
-    onOpen(book, { card: toRect(cardEl), cover: toRect(coverEl) }, cardEl);
+    onOpen(book, { card: toRect(cardEl), cover: toRect(coverEl) });
   };
   return (
   <button
     ref={cardRef}
     onClick={handle}
+    style={{ opacity: hidden ? 0 : 1, pointerEvents: hidden ? "none" : undefined }}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
+
     <div ref={coverRef} className="w-36 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
       <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
     </div>
