@@ -161,7 +161,7 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
                   <UserIcon size={36} className="text-white/50" />
                 )}
               </div>
-              <p className="mt-4 text-white text-[17px] font-semibold tracking-tight">@{handle}</p>
+              <p className="mt-4 text-white text-[17px] font-semibold tracking-tight">{handle}</p>
               {profile?.bio && (
                 <p className="mt-2 max-w-[80%] text-white/60 text-[13px] leading-relaxed whitespace-pre-wrap">
                   {profile.bio}
