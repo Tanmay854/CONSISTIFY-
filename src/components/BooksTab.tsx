@@ -125,6 +125,7 @@ const BooksTab = () => {
   };
 
   return (
+    <OpenBookContext.Provider value={selected?.id ?? null}>
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl pt-4 pb-3 px-5 border-b border-border/40">
