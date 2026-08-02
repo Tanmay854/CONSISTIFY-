@@ -35,6 +35,13 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   const [similar, setSimilar] = useState<Book[]>([]);
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
   const savedScrollY = useRef(0);
+  const [closing, setClosing] = useState(false);
+
+  const requestClose = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(onClose, 320);
+  };
 
   useEffect(() => {
     (async () => {
