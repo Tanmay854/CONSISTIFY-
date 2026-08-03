@@ -268,7 +268,7 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
           opacity: contentIn ? 1 : 0,
           transform: contentIn ? "translate3d(0,0,0)" : "translate3d(0,10px,0)",
           transition: canMorph
-            ? `opacity ${CONTENT_MS}ms ease-out ${contentIn ? CONTENT_DELAY : 0}ms, transform ${CONTENT_MS}ms ease-out ${contentIn ? CONTENT_DELAY : 0}ms`
+            ? `opacity ${CONTENT_MS}ms ease-out, transform ${CONTENT_MS}ms ease-out`
             : undefined,
           willChange: settled ? "auto" : "opacity, transform",
         }}
