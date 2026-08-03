@@ -170,8 +170,10 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
   const onSheetTransitionEnd = (e: React.TransitionEvent) => {
     if (e.target !== sheetRef.current || e.propertyName !== "transform") return;
     if (closingRef.current) onClose();
-    else { setMorphing(false); setSettled(true); }
+    // Mount the heavy content only after the morph is done, then let it fade/rise in.
+    else { setMorphing(false); setSettled(true); setContentIn(true); }
   };
+
 
   // Defer network + heavy paint work until the morph has finished (keeps it 90fps).
   const [settled, setSettled] = useState(!canMorph);
