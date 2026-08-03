@@ -3,6 +3,7 @@ import { Search, X, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
 import { useAuth } from "@/hooks/useAuth";
+import { getCoverUrl, THUMB_WIDTH } from "@/lib/coverUrl";
 
 import BookDetailSheet from "./BookDetailSheet";
 
@@ -402,7 +403,7 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   >
 
     <div ref={coverRef} className="w-36 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
-      <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
+      <img src={getCoverUrl(book.cover_url, THUMB_WIDTH, 70)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
     </div>
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
     <p className="text-muted-foreground text-[10px] mt-1 line-clamp-1 min-h-[0.9rem]">{book.author}</p>
