@@ -32,7 +32,7 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
 const MORPH_MS = 280;
 const MORPH_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 const CONTENT_MS = 220;
-const CONTENT_DELAY = 110;
+
 const FADE_MS = 150;
 
 type Rect = { top: number; left: number; width: number; height: number };
