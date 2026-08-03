@@ -3,7 +3,7 @@ import { Search, X, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
 import { useAuth } from "@/hooks/useAuth";
-import { getCoverUrl, THUMB_WIDTH } from "@/lib/coverUrl";
+import { getCoverUrl, THUMB_WIDTH, DETAIL_WIDTH } from "@/lib/coverUrl";
 
 import BookDetailSheet from "./BookDetailSheet";
 
@@ -388,6 +388,13 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   const coverRef = useRef<HTMLDivElement | null>(null);
   const openBookId = useContext(OpenBookContext);
   const hidden = openBookId === book.id;
+  // Warm the detail-size cover before the tap completes so the morph layer's
+  // <img> never has to fetch/decode on the critical path.
+  const warm = () => {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = getCoverUrl(book.cover_url, DETAIL_WIDTH, 75);
+  };
   const handle = () => {
     const cardEl = cardRef.current;
     const coverEl = coverRef.current;
@@ -398,6 +405,8 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   <button
     ref={cardRef}
     onClick={handle}
+    onPointerDown={warm}
+    onPointerEnter={warm}
     style={{ opacity: hidden ? 0 : 1, pointerEvents: hidden ? "none" : undefined }}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
