@@ -32,7 +32,7 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
 const MORPH_MS = 280;
 const MORPH_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 const CONTENT_MS = 220;
-const CONTENT_DELAY = 110;
+
 const FADE_MS = 150;
 
 type Rect = { top: number; left: number; width: number; height: number };
@@ -73,7 +73,9 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     return coverTargetRef.current;
   };
 
-  const morphTransition = `transform ${MORPH_MS}ms ${MORPH_EASE}, border-radius ${MORPH_MS}ms ${MORPH_EASE}`;
+  // Only `transform` is animated: border-radius is not compositor-only and would
+  // force a full repaint of the viewport-sized sheet on every frame.
+  const morphTransition = `transform ${MORPH_MS}ms ${MORPH_EASE}`;
 
   // Apply the collapsed ("mapped onto the card") state imperatively.
   const applyCollapsed = (target: Rect) => {
@@ -83,7 +85,6 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     const from = origin!.cover;
     if (sheet) {
       sheet.style.transform = `translate3d(${card.left}px, ${card.top}px, 0) scale(${card.width / vw}, ${card.height / vh})`;
-      sheet.style.borderRadius = "16px";
     }
     if (cover) {
       cover.style.top = `${target.top}px`;
@@ -91,7 +92,6 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
       cover.style.width = `${target.width}px`;
       cover.style.height = `${target.height}px`;
       cover.style.transform = `translate3d(${from.left - target.left}px, ${from.top - target.top}px, 0) scale(${from.width / target.width})`;
-      cover.style.borderRadius = "16px";
     }
   };
 
@@ -100,13 +100,12 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     const cover = coverRef.current;
     if (sheet) {
       sheet.style.transform = "translate3d(0,0,0) scale(1,1)";
-      sheet.style.borderRadius = "0px";
     }
     if (cover) {
       cover.style.transform = "translate3d(0,0,0) scale(1)";
-      cover.style.borderRadius = "16px";
     }
   };
+
 
   // Open: start collapsed synchronously, flush, then animate to identity.
   useLayoutEffect(() => {
@@ -126,8 +125,8 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
       sheet.style.transition = morphTransition;
       cover.style.transition = morphTransition;
       applyExpanded();
-      setContentIn(true);
     });
+
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -171,8 +170,10 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
   const onSheetTransitionEnd = (e: React.TransitionEvent) => {
     if (e.target !== sheetRef.current || e.propertyName !== "transform") return;
     if (closingRef.current) onClose();
-    else { setMorphing(false); setSettled(true); }
+    // Mount the heavy content only after the morph is done, then let it fade/rise in.
+    else { setMorphing(false); setSettled(true); setContentIn(true); }
   };
+
 
   // Defer network + heavy paint work until the morph has finished (keeps it 90fps).
   const [settled, setSettled] = useState(!canMorph);
@@ -267,7 +268,7 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
           opacity: contentIn ? 1 : 0,
           transform: contentIn ? "translate3d(0,0,0)" : "translate3d(0,10px,0)",
           transition: canMorph
-            ? `opacity ${CONTENT_MS}ms ease-out ${contentIn ? CONTENT_DELAY : 0}ms, transform ${CONTENT_MS}ms ease-out ${contentIn ? CONTENT_DELAY : 0}ms`
+            ? `opacity ${CONTENT_MS}ms ease-out, transform ${CONTENT_MS}ms ease-out`
             : undefined,
           willChange: settled ? "auto" : "opacity, transform",
         }}
@@ -280,7 +281,11 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
           <X size={20} className="text-foreground" />
         </button>
 
-        {mode === "overview" && <Overview scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled && !morphing} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />}
+        {/* During the morph only the light header renders (keeps the cover
+            measurement target); the heavy content mounts once settled. */}
+        {mode === "overview" && (
+          <Overview light={!settled} scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled && !morphing} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+        )}
 
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
         {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
@@ -292,7 +297,7 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
 
 /* ---------------- Overview ---------------- */
 
-const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
+const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true, light = false }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean; light?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   return (
@@ -327,6 +332,8 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
         </div>
       </div>
 
+      {/* Heavy content is skipped while the morph runs (light mode). */}
+      {!light && (<>
       <div className="px-6 space-y-3">
         <button
           onClick={onBuy}
@@ -406,6 +413,7 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
           </div>
         </section>
       )}
+      </>)}
     </div>
   );
 };
