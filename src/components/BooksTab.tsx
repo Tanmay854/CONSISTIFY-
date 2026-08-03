@@ -3,6 +3,7 @@ import { Search, X, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
 import { useAuth } from "@/hooks/useAuth";
+import { getCoverUrl, THUMB_WIDTH, DETAIL_WIDTH } from "@/lib/coverUrl";
 
 import BookDetailSheet from "./BookDetailSheet";
 
@@ -387,6 +388,13 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   const coverRef = useRef<HTMLDivElement | null>(null);
   const openBookId = useContext(OpenBookContext);
   const hidden = openBookId === book.id;
+  // Warm the detail-size cover before the tap completes so the morph layer's
+  // <img> never has to fetch/decode on the critical path.
+  const warm = () => {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = getCoverUrl(book.cover_url, DETAIL_WIDTH, 75);
+  };
   const handle = () => {
     const cardEl = cardRef.current;
     const coverEl = coverRef.current;
@@ -397,12 +405,14 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   <button
     ref={cardRef}
     onClick={handle}
+    onPointerDown={warm}
+    onPointerEnter={warm}
     style={{ opacity: hidden ? 0 : 1, pointerEvents: hidden ? "none" : undefined }}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
 
     <div ref={coverRef} className="w-36 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
-      <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
+      <img src={getCoverUrl(book.cover_url, THUMB_WIDTH, 70)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
     </div>
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
     <p className="text-muted-foreground text-[10px] mt-1 line-clamp-1 min-h-[0.9rem]">{book.author}</p>

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Book, QuizQuestion } from "@/lib/bookCategories";
 import { normalizeSummaryText } from "@/lib/textNormalize";
+import { getCoverUrl, THUMB_WIDTH, DETAIL_WIDTH } from "@/lib/coverUrl";
 
 type Mode = "overview" | "quiz" | "summary" | "audio";
 
@@ -243,8 +244,10 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
           <img
             aria-hidden
             ref={coverRef}
-            src={book.cover_url}
+            src={getCoverUrl(book.cover_url, DETAIL_WIDTH, 75)}
             alt=""
+            decoding="async"
+            fetchPriority="high"
             style={{
               position: "fixed",
               top: 0, left: 0, width: 0, height: 0,
@@ -305,14 +308,14 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
       <div className="relative pt-14 pb-8 px-6 overflow-hidden">
         {showBackdrop && (
           <div className="absolute inset-0 -z-10 opacity-40 blur-3xl"
-            style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+            style={{ backgroundImage: `url(${getCoverUrl(book.cover_url, THUMB_WIDTH, 40)})`, backgroundSize: "cover", backgroundPosition: "center" }} />
         )}
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/60 via-background/80 to-background" />
 
 
         <div className="flex flex-col items-center gap-5">
           <div data-book-cover className="w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]">
-            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="sync" fetchPriority="high" />
+            <img src={getCoverUrl(book.cover_url, DETAIL_WIDTH, 75)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
           </div>
           <div className="text-center max-w-sm">
             <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold mb-2">{book.category}</p>
@@ -404,7 +407,7 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
               <button key={b.id} onClick={() => (window as any).__openBook?.(b)}
                 className="shrink-0 w-28 snap-start text-left active:scale-[0.97] transition-transform">
                 <div className="w-28 aspect-[2/3] rounded-xl overflow-hidden bg-secondary">
-                  <img src={b.cover_url} alt={b.title} className="w-full h-full object-cover" loading="lazy" />
+                  <img src={getCoverUrl(b.cover_url, THUMB_WIDTH, 70)} alt={b.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 </div>
                 <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2">{b.title}</p>
                 <p className="text-muted-foreground text-[10px] line-clamp-1">{b.author}</p>
@@ -624,7 +627,7 @@ const SummaryReader = ({ book, onBuy, startPage = 0 }: { book: Book; onBuy: () =
             <h2 className="text-foreground text-2xl font-extrabold">Enjoyed this summary?</h2>
             <p className="text-muted-foreground text-sm mt-2 max-w-xs mx-auto">Read the complete book for the full experience.</p>
             <div className="mt-8 w-40 aspect-[2/3] mx-auto rounded-2xl overflow-hidden shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]">
-              <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+              <img src={getCoverUrl(book.cover_url, DETAIL_WIDTH, 75)} alt={book.title} className="w-full h-full object-cover" decoding="async" />
             </div>
           </div>
         )}
@@ -739,7 +742,7 @@ const AudioPlayer = ({ book }: { book: Book }) => {
     <div className="h-full flex flex-col relative overflow-y-auto bg-background">
       {/* Subtle cover backdrop */}
       <div className="absolute inset-x-0 top-0 h-2/3 -z-10 opacity-25 blur-3xl"
-        style={{ backgroundImage: `url(${book.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+        style={{ backgroundImage: `url(${getCoverUrl(book.cover_url, THUMB_WIDTH, 40)})`, backgroundSize: "cover", backgroundPosition: "center" }} />
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/80 via-background/90 to-background" />
 
       <audio ref={audioRef} src={book.audio_url} preload="metadata" />
@@ -751,7 +754,7 @@ const AudioPlayer = ({ book }: { book: Book }) => {
 
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6 py-4 shrink-0">
         <div className={`w-44 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)] transition-transform duration-500 ${playing ? "scale-100" : "scale-[0.97]"}`}>
-          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+          <img src={getCoverUrl(book.cover_url, DETAIL_WIDTH, 75)} alt={book.title} className="w-full h-full object-cover" decoding="async" />
         </div>
         <div className="text-center max-w-xs">
           <h2 className="text-foreground text-xl font-extrabold leading-tight">{book.title}</h2>
