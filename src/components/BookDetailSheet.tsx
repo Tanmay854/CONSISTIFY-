@@ -281,13 +281,11 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
           <X size={20} className="text-foreground" />
         </button>
 
-        {/* During the morph, keep the DOM light: the cover/title are already
-            visible through the morph layer. Mount the real Overview once settled. */}
-        {mode === "overview" && (settled ? (
-          <Overview scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled && !morphing} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
-        ) : (
-          <div className="h-full" aria-hidden />
-        ))}
+        {/* During the morph only the light header renders (keeps the cover
+            measurement target); the heavy content mounts once settled. */}
+        {mode === "overview" && (
+          <Overview light={!settled} scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled && !morphing} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+        )}
 
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
         {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
