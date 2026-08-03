@@ -299,7 +299,7 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
 
 /* ---------------- Overview ---------------- */
 
-const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
+const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true, light = false }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean; light?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   return (
