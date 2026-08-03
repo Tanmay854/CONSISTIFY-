@@ -334,6 +334,8 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
         </div>
       </div>
 
+      {/* Heavy content is skipped while the morph runs (light mode). */}
+      {!light && (<>
       <div className="px-6 space-y-3">
         <button
           onClick={onBuy}
