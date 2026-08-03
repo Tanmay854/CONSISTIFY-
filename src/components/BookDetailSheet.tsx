@@ -73,7 +73,9 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     return coverTargetRef.current;
   };
 
-  const morphTransition = `transform ${MORPH_MS}ms ${MORPH_EASE}, border-radius ${MORPH_MS}ms ${MORPH_EASE}`;
+  // Only `transform` is animated: border-radius is not compositor-only and would
+  // force a full repaint of the viewport-sized sheet on every frame.
+  const morphTransition = `transform ${MORPH_MS}ms ${MORPH_EASE}`;
 
   // Apply the collapsed ("mapped onto the card") state imperatively.
   const applyCollapsed = (target: Rect) => {
@@ -83,7 +85,6 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     const from = origin!.cover;
     if (sheet) {
       sheet.style.transform = `translate3d(${card.left}px, ${card.top}px, 0) scale(${card.width / vw}, ${card.height / vh})`;
-      sheet.style.borderRadius = "16px";
     }
     if (cover) {
       cover.style.top = `${target.top}px`;
@@ -91,7 +92,6 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
       cover.style.width = `${target.width}px`;
       cover.style.height = `${target.height}px`;
       cover.style.transform = `translate3d(${from.left - target.left}px, ${from.top - target.top}px, 0) scale(${from.width / target.width})`;
-      cover.style.borderRadius = "16px";
     }
   };
 
@@ -100,13 +100,12 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     const cover = coverRef.current;
     if (sheet) {
       sheet.style.transform = "translate3d(0,0,0) scale(1,1)";
-      sheet.style.borderRadius = "0px";
     }
     if (cover) {
       cover.style.transform = "translate3d(0,0,0) scale(1)";
-      cover.style.borderRadius = "16px";
     }
   };
+
 
   // Open: start collapsed synchronously, flush, then animate to identity.
   useLayoutEffect(() => {
