@@ -125,8 +125,8 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
       sheet.style.transition = morphTransition;
       cover.style.transition = morphTransition;
       applyExpanded();
-      setContentIn(true);
     });
+
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
