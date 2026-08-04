@@ -345,6 +345,26 @@ const UploadTab = () => {
                   />
                 </div>
                 <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Feed</label>
+                  <div className="flex gap-2">
+                    {UPLOAD_FEEDS.map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setVideoFeed(f.id)}
+                        className={`flex-1 py-2 rounded-lg text-[11px] font-semibold ${
+                          videoFeed === f.id ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground text-[10px] mt-1">
+                    Quick Spark is the short vertical feed. Long Game and Calm State hold full sessions up to 45 minutes.
+                  </p>
+                </div>
+                <div>
                   <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Interest / Category</label>
                   <select
                     value={videoCategory}
