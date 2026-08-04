@@ -133,10 +133,21 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
     <div ref={scrollRef} className="h-full overflow-y-auto pb-24">
       <div className="relative pt-14 pb-8 px-6 overflow-hidden">
         {showBackdrop && (
-          <div className="absolute inset-0 -z-10 opacity-40 blur-3xl"
+          <motion.div
+            className="absolute inset-0 -z-10 blur-3xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.4 }}
+            exit={{ opacity: 0, transition: { duration: 0.08, ease: "easeOut" } }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             style={{ backgroundImage: `url(${getCoverUrl(book.cover_url, THUMB_WIDTH, 40)})`, backgroundSize: "cover", backgroundPosition: "center" }} />
         )}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/60 via-background/80 to-background" />
+        <motion.div
+          className="absolute inset-0 -z-10 bg-gradient-to-b from-background/60 via-background/80 to-background"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.08, ease: "easeOut" } }}
+        />
+
 
 
         <div className="flex flex-col items-center gap-5">
