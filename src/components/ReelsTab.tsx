@@ -706,7 +706,7 @@ const ReelsTab = ({ muted = false, feed: feedId = "quick_spark", active: paneAct
             <ReelCard
               key={`r-${item.data.id}`}
               reel={item.data}
-              isActive={index === activeIndex}
+              isActive={paneActive && index === activeIndex}
               distance={Math.abs(index - activeIndex)}
               index={index}
               muted={muted}
