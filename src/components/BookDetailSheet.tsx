@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
   X, Star, ShoppingCart, BookOpen, Headphones, ChevronLeft, ChevronRight,
   Play, Pause, Rewind, FastForward, Type as TypeIcon, Check,
@@ -7,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Book, QuizQuestion } from "@/lib/bookCategories";
 import { normalizeSummaryText } from "@/lib/textNormalize";
-import { getCoverUrl, THUMB_WIDTH, DETAIL_WIDTH } from "@/lib/coverUrl";
+import { getCoverUrl, THUMB_WIDTH, DETAIL_WIDTH, sharedCoverUrl } from "@/lib/coverUrl";
 
 type Mode = "overview" | "quiz" | "summary" | "audio";
 
