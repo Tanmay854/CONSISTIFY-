@@ -1,18 +1,14 @@
-import { useEffect, useMemo, useState, useCallback, useRef, createContext, useContext } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Search, X, Star } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
 import { useAuth } from "@/hooks/useAuth";
-import { getCoverUrl, THUMB_WIDTH, DETAIL_WIDTH } from "@/lib/coverUrl";
+import { sharedCoverUrl } from "@/lib/coverUrl";
 
 import BookDetailSheet from "./BookDetailSheet";
 
-export type Rect = { top: number; left: number; width: number; height: number };
-export type OpenOrigin = { card: Rect; cover: Rect };
-type OpenHandler = (b: Book, o?: OpenOrigin) => void;
-
-/** Single source of truth for which book is open — cards derive their visibility from this. */
-const OpenBookContext = createContext<string | null>(null);
+type OpenHandler = (b: Book) => void;
 
 const POPULAR = ["Discipline", "Atomic Habits", "Deep Work", "Stoicism", "Focus"];
 const RECENT_KEY = "book_recent_searches";
