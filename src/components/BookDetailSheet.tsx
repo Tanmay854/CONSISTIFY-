@@ -42,12 +42,24 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
   const savedScrollY = useRef(0);
 
+  // Close: unmount the shared cover first so the grid card immediately springs
+  // back to the exact slot it was tapped from, while the sheet fades out.
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<number | null>(null);
+  const handleClose = () => {
+    if (closing) return;
+    setClosing(true);
+    closeTimer.current = window.setTimeout(onClose, 300);
+  };
+  useEffect(() => () => { if (closeTimer.current) window.clearTimeout(closeTimer.current); }, []);
+
   // Defer network + heavy paint work until the morph has settled.
   const [settled, setSettled] = useState(false);
   useEffect(() => {
     const id = window.setTimeout(() => setSettled(true), 320);
     return () => window.clearTimeout(id);
   }, []);
+
 
   useEffect(() => {
     if (!settled) return;
