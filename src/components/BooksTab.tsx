@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef, useId } from "react";
 import { Search, X, Star } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,8 @@ import { sharedCoverUrl } from "@/lib/coverUrl";
 
 import BookDetailSheet from "./BookDetailSheet";
 
-type OpenHandler = (b: Book) => void;
+type OpenHandler = (b: Book, coverLayoutId: string) => void;
+type SelectedBook = { book: Book; coverLayoutId: string };
 
 const POPULAR = ["Discipline", "Atomic Habits", "Deep Work", "Stoicism", "Focus"];
 const RECENT_KEY = "book_recent_searches";
@@ -46,12 +47,14 @@ const BooksTab = () => {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [selected, setSelected] = useState<Book | null>(null);
+  const [selected, setSelected] = useState<SelectedBook | null>(null);
   const { recent, push, clear } = useRecent();
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
 
-  const openBook = useCallback((b: Book) => setSelected(b), []);
+  const openBook = useCallback((b: Book, coverLayoutId: string) => {
+    setSelected({ book: b, coverLayoutId });
+  }, []);
   const closeBook = useCallback(() => setSelected(null), []);
 
   const load = useCallback(async () => {
@@ -69,7 +72,7 @@ const BooksTab = () => {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    (window as any).__openBook = (b: Book) => setSelected(b);
+    (window as any).__openBook = (b: Book) => setSelected({ book: b, coverLayoutId: `similar-book-cover-${b.id}` });
     return () => { delete (window as any).__openBook; };
   }, []);
 
@@ -194,7 +197,7 @@ const BooksTab = () => {
           <p className="text-muted-foreground text-sm mt-1">New books will appear here soon.</p>
         </div>
       ) : isSearching ? (
-        <SearchResults books={filtered} onOpen={(b) => { openBook(b); push(query); }} />
+        <SearchResults books={filtered} onOpen={(b, coverLayoutId) => { openBook(b, coverLayoutId); push(query); }} />
       ) : (
         <div className="pt-5 space-y-8">
           {featured.length > 0 && <FeaturedHero books={featured} onOpen={openBook} />}
@@ -216,7 +219,12 @@ const BooksTab = () => {
           reveals it again with no black flash. */}
       <AnimatePresence>
         {selected && (
-          <BookDetailSheet key={selected.id} book={selected} onClose={closeBook} />
+          <BookDetailSheet
+            key={`${selected.book.id}-${selected.coverLayoutId}`}
+            book={selected.book}
+            coverLayoutId={selected.coverLayoutId}
+            onClose={closeBook}
+          />
         )}
       </AnimatePresence>
     </div>
@@ -362,13 +370,17 @@ const Row = ({
   </section>
 );
 
-const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => (
+const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
+  const instanceId = useId();
+  const coverLayoutId = `book-cover-${book.id}-${instanceId}`;
+
+  return (
   <button
-    onClick={() => onOpen(book)}
+    onClick={() => onOpen(book, coverLayoutId)}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
     <motion.div
-      layoutId={`book-cover-${book.id}`}
+      layoutId={coverLayoutId}
       transition={{ type: "spring", stiffness: 420, damping: 42, mass: 0.9 }}
       style={{ borderRadius: 16 }}
       className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
@@ -385,7 +397,8 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => (
       )}
     </div>
   </button>
-);
+  );
+};
 
 
 const SearchResults = ({ books, onOpen }: { books: Book[]; onOpen: OpenHandler }) => (
