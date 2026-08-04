@@ -141,8 +141,9 @@ const UploadTab = () => {
             v.onerror = () => resolve(0);
             v.src = URL.createObjectURL(videoFile);
           });
-          if (duration > 180) {
-            setError(`Video must be 3 minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
+          const maxSeconds = videoFeed === "quick_spark" ? 180 : 2700;
+          if (duration > maxSeconds) {
+            setError(`Video must be ${maxSeconds / 60} minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
             setLoading(false);
             return;
           }
@@ -376,7 +377,7 @@ const UploadTab = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Video file (from device, max 3 min)</label>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">{`Video file (from device, max ${videoFeed === "quick_spark" ? "3" : "45"} min)`}</label>
                   <input
                     type="file"
                     accept="video/*"
