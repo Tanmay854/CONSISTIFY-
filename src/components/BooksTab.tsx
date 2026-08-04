@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef, useId, createContext, useContext } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef, useId } from "react";
 import { Search, X, Star } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,10 +41,6 @@ const useRecent = () => {
   return { recent, push, clear };
 };
 
-/** When false, grid cards drop their shared-element id so a downward
-    dismissal slides the whole page without the cover flying back. */
-const LayoutEnabledCtx = createContext(true);
-
 const BooksTab = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +48,6 @@ const BooksTab = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<SelectedBook | null>(null);
-  const [dismissing, setDismissing] = useState(false);
   const { recent, push, clear } = useRecent();
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
@@ -135,7 +130,6 @@ const BooksTab = () => {
   };
 
   return (
-    <LayoutEnabledCtx.Provider value={!dismissing}>
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl pt-4 pb-3 px-5 border-b border-border/40">
@@ -236,19 +230,17 @@ const BooksTab = () => {
 
       {/* The grid stays mounted the whole time the sheet is open, so closing
           reveals it again with no black flash. */}
-      <AnimatePresence onExitComplete={() => setDismissing(false)}>
+      <AnimatePresence>
         {selected && (
           <BookDetailSheet
             key={`${selected.book.id}-${selected.coverLayoutId}`}
             book={selected.book}
             coverLayoutId={selected.coverLayoutId}
-            onDismissStart={() => setDismissing(true)}
             onClose={closeBook}
           />
         )}
       </AnimatePresence>
     </div>
-    </LayoutEnabledCtx.Provider>
   );
 };
 
@@ -394,32 +386,20 @@ const Row = ({
 const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   const instanceId = useId();
   const coverLayoutId = `book-cover-${book.id}-${instanceId}`;
-  const layoutEnabled = useContext(LayoutEnabledCtx);
 
   return (
   <button
     onClick={() => onOpen(book, coverLayoutId)}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
-    {layoutEnabled ? (
-      <motion.div
-        layoutId={coverLayoutId}
-        transition={{ type: "spring", stiffness: 300, damping: 34, mass: 0.8 }}
-        style={{ borderRadius: 16 }}
-        className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
-      >
-        <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
-      </motion.div>
-    ) : (
-      /* During a downward dismissal the card is a plain element: no layout
-         projection, so it can never shift or fly while the page slides away. */
-      <div
-        style={{ borderRadius: 16 }}
-        className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
-      >
-        <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
-      </div>
-    )}
+    <motion.div
+      layoutId={coverLayoutId}
+      transition={{ type: "spring", stiffness: 300, damping: 34, mass: 0.8 }}
+      style={{ borderRadius: 16 }}
+      className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
+    >
+      <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
+    </motion.div>
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
     <p className="text-muted-foreground text-[10px] mt-1 line-clamp-1 min-h-[0.9rem]">{book.author}</p>
     <div className="flex items-center gap-2 mt-auto pt-1">
