@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
   X, Star, ShoppingCart, BookOpen, Headphones, ChevronLeft, ChevronRight,
   Play, Pause, Rewind, FastForward, Type as TypeIcon, Check,
@@ -7,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Book, QuizQuestion } from "@/lib/bookCategories";
 import { normalizeSummaryText } from "@/lib/textNormalize";
-import { getCoverUrl, THUMB_WIDTH, DETAIL_WIDTH } from "@/lib/coverUrl";
+import { getCoverUrl, THUMB_WIDTH, DETAIL_WIDTH, sharedCoverUrl } from "@/lib/coverUrl";
 
 type Mode = "overview" | "quiz" | "summary" | "audio";
 
@@ -30,154 +31,23 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-const MORPH_MS = 280;
-const MORPH_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
-const CONTENT_MS = 220;
+/** Shared-element spring used by both the grid card and this sheet. */
+export const COVER_SPRING = { type: "spring" as const, stiffness: 420, damping: 42, mass: 0.9 };
+const CONTENT_TRANSITION = { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
 
-const FADE_MS = 150;
-
-type Rect = { top: number; left: number; width: number; height: number };
-export type OpenOrigin = { card: Rect; cover: Rect };
-
-const rectOf = (el: Element): Rect => {
-  const r = el.getBoundingClientRect();
-  return { top: r.top, left: r.left, width: r.width, height: r.height };
-};
-
-const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () => void; origin?: OpenOrigin | null }) => {
+const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void }) => {
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
   const [similar, setSimilar] = useState<Book[]>([]);
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
   const savedScrollY = useRef(0);
-  const closingRef = useRef(false);
 
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const sheetRef = useRef<HTMLDivElement | null>(null);
-  const reduced = typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const canMorph = !!origin && !reduced;
-
-  // Morph layer is mounted while the FLIP animation is running (open or close).
-  const [morphing, setMorphing] = useState(canMorph);
-  const [closing, setClosing] = useState(false);
-  const [contentIn, setContentIn] = useState(!canMorph);
-  const coverRef = useRef<HTMLImageElement | null>(null);
-  const coverTargetRef = useRef<Rect | null>(null);
-
-  const vw = typeof window !== "undefined" ? window.innerWidth : 1;
-  const vh = typeof window !== "undefined" ? window.innerHeight : 1;
-
-  const measureCover = () => {
-    const el = rootRef.current?.querySelector("[data-book-cover]");
-    if (el) coverTargetRef.current = rectOf(el);
-    return coverTargetRef.current;
-  };
-
-  // Only `transform` is animated: border-radius is not compositor-only and would
-  // force a full repaint of the viewport-sized sheet on every frame.
-  const morphTransition = `transform ${MORPH_MS}ms ${MORPH_EASE}`;
-
-  // Apply the collapsed ("mapped onto the card") state imperatively.
-  const applyCollapsed = (target: Rect) => {
-    const sheet = sheetRef.current;
-    const cover = coverRef.current;
-    const card = origin!.card;
-    const from = origin!.cover;
-    if (sheet) {
-      sheet.style.transform = `translate3d(${card.left}px, ${card.top}px, 0) scale(${card.width / vw}, ${card.height / vh})`;
-    }
-    if (cover) {
-      cover.style.top = `${target.top}px`;
-      cover.style.left = `${target.left}px`;
-      cover.style.width = `${target.width}px`;
-      cover.style.height = `${target.height}px`;
-      cover.style.transform = `translate3d(${from.left - target.left}px, ${from.top - target.top}px, 0) scale(${from.width / target.width})`;
-    }
-  };
-
-  const applyExpanded = () => {
-    const sheet = sheetRef.current;
-    const cover = coverRef.current;
-    if (sheet) {
-      sheet.style.transform = "translate3d(0,0,0) scale(1,1)";
-    }
-    if (cover) {
-      cover.style.transform = "translate3d(0,0,0) scale(1)";
-    }
-  };
-
-
-  // Open: start collapsed synchronously, flush, then animate to identity.
-  useLayoutEffect(() => {
-    if (!canMorph) { setContentIn(true); return; }
-    const sheet = sheetRef.current;
-    const cover = coverRef.current;
-    const target = measureCover();
-    if (!sheet || !cover || !target) { setMorphing(false); setContentIn(true); return; }
-
-    sheet.style.transition = "none";
-    cover.style.transition = "none";
-    applyCollapsed(target);
-    // force style flush so the start state is registered
-    sheet.getBoundingClientRect();
-
-    const raf = requestAnimationFrame(() => {
-      sheet.style.transition = morphTransition;
-      cover.style.transition = morphTransition;
-      applyExpanded();
-    });
-
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Defer network + heavy paint work until the morph has settled.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setSettled(true), 320);
+    return () => window.clearTimeout(id);
   }, []);
-
-  const requestClose = () => {
-    if (closingRef.current) return;
-    closingRef.current = true;
-    if (!canMorph) { setContentIn(false); setTimeout(onClose, FADE_MS); return; }
-    setContentIn(false);   // content fades out immediately
-    setMorphing(true);     // re-mount morph layer (identity applied in layout effect)
-    setClosing(true);
-  };
-
-  // Close: snap the morph layer to identity, flush, then animate back to the card.
-  useLayoutEffect(() => {
-    if (!closing) return;
-    const sheet = sheetRef.current;
-    const cover = coverRef.current;
-    const target = measureCover();
-    if (!sheet || !cover || !target) { onClose(); return; }
-
-    sheet.style.transition = "none";
-    cover.style.transition = "none";
-    cover.style.top = `${target.top}px`;
-    cover.style.left = `${target.left}px`;
-    cover.style.width = `${target.width}px`;
-    cover.style.height = `${target.height}px`;
-    applyExpanded();
-    sheet.getBoundingClientRect();
-
-    const raf = requestAnimationFrame(() => {
-      sheet.style.transition = morphTransition;
-      cover.style.transition = morphTransition;
-      applyCollapsed(target);
-    });
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [closing]);
-
-  // Drive completion off the real transition, never a guessed timeout.
-  const onSheetTransitionEnd = (e: React.TransitionEvent) => {
-    if (e.target !== sheetRef.current || e.propertyName !== "transform") return;
-    if (closingRef.current) onClose();
-    // Mount the heavy content only after the morph is done, then let it fade/rise in.
-    else { setMorphing(false); setSettled(true); setContentIn(true); }
-  };
-
-
-  // Defer network + heavy paint work until the morph has finished (keeps it 90fps).
-  const [settled, setSettled] = useState(!canMorph);
 
   useEffect(() => {
     if (!settled) return;
@@ -191,7 +61,6 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
     })();
     return () => { cancelled = true; };
   }, [book.id, book.category, settled]);
-
 
   // Restore overview scroll when returning from summary/quiz/audio
   useEffect(() => {
@@ -211,83 +80,31 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
   };
 
   return (
-    <div
-      ref={rootRef}
-      className="fixed inset-0 z-50 bg-background overflow-hidden"
-      style={{
-        height: "100dvh",
-        opacity: canMorph ? 1 : contentIn ? 1 : 0,
-        transition: canMorph ? undefined : `opacity ${FADE_MS}ms ease-out`,
-      }}
-    >
-      {/* Morph layer: sheet background tinted with this book's cover, + cover artwork */}
-      {morphing && (
-        <>
-          <div
-            aria-hidden
-            ref={sheetRef}
-            onTransitionEnd={onSheetTransitionEnd}
-            style={{
-              position: "fixed",
-              top: 0, left: 0, width: `${vw}px`, height: `${vh}px`,
-              transformOrigin: "top left",
-              overflow: "hidden",
-              willChange: "transform",
-              zIndex: 30,
-              backgroundColor: "hsl(var(--background))",
-            }}
-          >
-            {/* No blur filter here: filters force an expensive repaint every frame. */}
-            <div className="absolute inset-0 bg-gradient-to-b from-secondary/60 via-background/90 to-background" />
+    <div className="fixed inset-0 z-50 overflow-hidden" style={{ height: "100dvh" }}>
+      {/* Backdrop: only opacity animates, so the grid below is revealed on close. */}
+      <motion.div
+        className="absolute inset-0 bg-background"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.24, ease: "easeOut" }}
+      />
 
-          </div>
-          <img
-            aria-hidden
-            ref={coverRef}
-            src={getCoverUrl(book.cover_url, DETAIL_WIDTH, 75)}
-            alt=""
-            decoding="async"
-            fetchPriority="high"
-            style={{
-              position: "fixed",
-              top: 0, left: 0, width: 0, height: 0,
-              transformOrigin: "top left",
-              borderRadius: "16px",
-              overflow: "hidden",
-              objectFit: "cover",
-              willChange: "transform",
-              zIndex: 31,
-              boxShadow: "0 30px 60px -20px rgba(0,0,0,0.9)",
-            }}
-          />
-        </>
-      )}
-
-
-
-      <div
-        style={{
-          height: "100%",
-          opacity: contentIn ? 1 : 0,
-          transform: contentIn ? "translate3d(0,0,0)" : "translate3d(0,10px,0)",
-          transition: canMorph
-            ? `opacity ${CONTENT_MS}ms ease-out, transform ${CONTENT_MS}ms ease-out`
-            : undefined,
-          willChange: settled ? "auto" : "opacity, transform",
-        }}
-      >
-        <button
-          onClick={mode === "overview" ? requestClose : () => setMode("overview")}
+      <div className="relative h-full">
+        <motion.button
+          onClick={mode === "overview" ? onClose : () => setMode("overview")}
           aria-label="Close"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.1 } }}
+          transition={CONTENT_TRANSITION}
           className="fixed top-4 right-4 z-20 w-10 h-10 rounded-full bg-secondary/80 backdrop-blur flex items-center justify-center"
         >
           <X size={20} className="text-foreground" />
-        </button>
+        </motion.button>
 
-        {/* During the morph only the light header renders (keeps the cover
-            measurement target); the heavy content mounts once settled. */}
         {mode === "overview" && (
-          <Overview light={!settled} scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled && !morphing} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+          <Overview scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
         )}
 
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
@@ -300,9 +117,15 @@ const BookDetailSheet = ({ book, onClose, origin }: { book: Book; onClose: () =>
 
 /* ---------------- Overview ---------------- */
 
-const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true, light = false }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean; light?: boolean }) => {
+const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
+  const contentMotion = {
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, transition: { duration: 0.1 } },
+    transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
+  };
   return (
     <div ref={scrollRef} className="h-full overflow-y-auto pb-24">
       <div className="relative pt-14 pb-8 px-6 overflow-hidden">
@@ -314,10 +137,16 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
 
 
         <div className="flex flex-col items-center gap-5">
-          <div data-book-cover className="w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]">
-            <img src={getCoverUrl(book.cover_url, DETAIL_WIDTH, 75)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
-          </div>
-          <div className="text-center max-w-sm">
+          {/* Shared element: the very same rendered image as the grid card. */}
+          <motion.div
+            layoutId={`book-cover-${book.id}`}
+            transition={COVER_SPRING}
+            style={{ borderRadius: 16 }}
+            className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
+          >
+            <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
+          </motion.div>
+          <motion.div className="text-center max-w-sm" {...contentMotion}>
             <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold mb-2">{book.category}</p>
             <h1 className="text-foreground text-2xl font-extrabold leading-tight">{book.title}</h1>
             <p className="text-muted-foreground text-sm mt-1">by {book.author}</p>
@@ -325,18 +154,17 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
               <Rating value={book.rating} />
               {user && book.public_id && <span className="text-muted-foreground text-[11px] font-mono">#{book.public_id}</span>}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="w-full max-w-sm flex items-stretch gap-2 mt-2 py-3 px-4 rounded-2xl bg-secondary/60 border border-border/40">
+          <motion.div className="w-full max-w-sm flex items-stretch gap-2 mt-2 py-3 px-4 rounded-2xl bg-secondary/60 border border-border/40" {...contentMotion}>
             <Stat label="Listen" value={lt} />
             <div className="w-px bg-border/60" />
             <Stat label="Pages" value={String((book.summary_pages ?? []).length || "—")} />
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Heavy content is skipped while the morph runs (light mode). */}
-      {!light && (<>
+      <motion.div {...contentMotion}>
       <div className="px-6 space-y-3">
         <button
           onClick={onBuy}

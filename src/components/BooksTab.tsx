@@ -1,18 +1,14 @@
-import { useEffect, useMemo, useState, useCallback, useRef, createContext, useContext } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Search, X, Star } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
 import { useAuth } from "@/hooks/useAuth";
-import { getCoverUrl, THUMB_WIDTH, DETAIL_WIDTH } from "@/lib/coverUrl";
+import { sharedCoverUrl } from "@/lib/coverUrl";
 
 import BookDetailSheet from "./BookDetailSheet";
 
-export type Rect = { top: number; left: number; width: number; height: number };
-export type OpenOrigin = { card: Rect; cover: Rect };
-type OpenHandler = (b: Book, o?: OpenOrigin) => void;
-
-/** Single source of truth for which book is open — cards derive their visibility from this. */
-const OpenBookContext = createContext<string | null>(null);
+type OpenHandler = (b: Book) => void;
 
 const POPULAR = ["Discipline", "Atomic Habits", "Deep Work", "Stoicism", "Focus"];
 const RECENT_KEY = "book_recent_searches";
@@ -51,21 +47,12 @@ const BooksTab = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<Book | null>(null);
-  const [origin, setOrigin] = useState<OpenOrigin | null>(null);
   const { recent, push, clear } = useRecent();
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
 
-  const openBook = useCallback((b: Book, o?: OpenOrigin) => {
-    setOrigin(o ?? null);
-    setSelected(b);
-  }, []);
-
-  // Unmounting the overlay and restoring the card happen in the same state update.
-  const closeBook = useCallback(() => {
-    setSelected(null);
-    setOrigin(null);
-  }, []);
+  const openBook = useCallback((b: Book) => setSelected(b), []);
+  const closeBook = useCallback(() => setSelected(null), []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -126,7 +113,6 @@ const BooksTab = () => {
   };
 
   return (
-    <OpenBookContext.Provider value={selected?.id ?? null}>
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl pt-4 pb-3 px-5 border-b border-border/40">
@@ -208,7 +194,7 @@ const BooksTab = () => {
           <p className="text-muted-foreground text-sm mt-1">New books will appear here soon.</p>
         </div>
       ) : isSearching ? (
-        <SearchResults books={filtered} onOpen={(b, o) => { openBook(b, o); push(query); }} />
+        <SearchResults books={filtered} onOpen={(b) => { openBook(b); push(query); }} />
       ) : (
         <div className="pt-5 space-y-8">
           {featured.length > 0 && <FeaturedHero books={featured} onOpen={openBook} />}
@@ -226,16 +212,14 @@ const BooksTab = () => {
         </div>
       )}
 
-      {selected && (
-        <BookDetailSheet
-          key={selected.id}
-          book={selected}
-          origin={origin}
-          onClose={closeBook}
-        />
-      )}
+      {/* The grid stays mounted the whole time the sheet is open, so closing
+          reveals it again with no black flash. */}
+      <AnimatePresence>
+        {selected && (
+          <BookDetailSheet key={selected.id} book={selected} onClose={closeBook} />
+        )}
+      </AnimatePresence>
     </div>
-    </OpenBookContext.Provider>
   );
 };
 
@@ -378,42 +362,19 @@ const Row = ({
   </section>
 );
 
-const toRect = (el: Element): Rect => {
-  const r = el.getBoundingClientRect();
-  return { top: r.top, left: r.left, width: r.width, height: r.height };
-};
-
-const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
-  const cardRef = useRef<HTMLButtonElement | null>(null);
-  const coverRef = useRef<HTMLDivElement | null>(null);
-  const openBookId = useContext(OpenBookContext);
-  const hidden = openBookId === book.id;
-  // Warm the detail-size cover before the tap completes so the morph layer's
-  // <img> never has to fetch/decode on the critical path.
-  const warm = () => {
-    const img = new Image();
-    img.decoding = "async";
-    img.src = getCoverUrl(book.cover_url, DETAIL_WIDTH, 75);
-  };
-  const handle = () => {
-    const cardEl = cardRef.current;
-    const coverEl = coverRef.current;
-    if (!cardEl || !coverEl) return onOpen(book);
-    onOpen(book, { card: toRect(cardEl), cover: toRect(coverEl) });
-  };
-  return (
+const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => (
   <button
-    ref={cardRef}
-    onClick={handle}
-    onPointerDown={warm}
-    onPointerEnter={warm}
-    style={{ opacity: hidden ? 0 : 1, pointerEvents: hidden ? "none" : undefined }}
+    onClick={() => onOpen(book)}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
-
-    <div ref={coverRef} className="w-36 aspect-[2/3] rounded-2xl overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
-      <img src={getCoverUrl(book.cover_url, THUMB_WIDTH, 70)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
-    </div>
+    <motion.div
+      layoutId={`book-cover-${book.id}`}
+      transition={{ type: "spring", stiffness: 420, damping: 42, mass: 0.9 }}
+      style={{ borderRadius: 16 }}
+      className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
+    >
+      <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
+    </motion.div>
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
     <p className="text-muted-foreground text-[10px] mt-1 line-clamp-1 min-h-[0.9rem]">{book.author}</p>
     <div className="flex items-center gap-2 mt-auto pt-1">
@@ -424,8 +385,8 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
       )}
     </div>
   </button>
-  );
-};
+);
+
 
 const SearchResults = ({ books, onOpen }: { books: Book[]; onOpen: OpenHandler }) => (
   <div className="px-5 pt-5">
