@@ -92,9 +92,14 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
 
       />
 
-      <div className="relative h-full">
+      <motion.div
+        className="relative h-full"
+        animate={{ y: dismissDown ? "100%" : 0 }}
+        transition={{ duration: 0.34, ease: [0.32, 0.72, 0, 1] }}
+        onAnimationComplete={() => { if (dismissDown) onClose(); }}
+      >
         <motion.button
-          onClick={mode === "overview" ? onClose : () => setMode("overview")}
+          onClick={mode === "overview" ? onClose : () => setDismissDown(true)}
           aria-label="Close"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -112,7 +117,8 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
         {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
         {mode === "audio" && <AudioPlayer book={book} />}
-      </div>
+      </motion.div>
+
     </div>
   );
 
