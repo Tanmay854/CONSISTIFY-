@@ -92,31 +92,31 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden" style={{ height: "100dvh" }}>
+    <div className="fixed inset-0 z-50 overflow-hidden" style={{ height: "100dvh", pointerEvents: closing ? "none" : undefined }}>
       {/* Backdrop: only opacity animates, so the grid below is revealed on close. */}
       <motion.div
         className="absolute inset-0 bg-background"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        animate={{ opacity: closing ? 0 : 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.24, ease: "easeOut" }}
+        transition={{ duration: closing ? 0.26 : 0.24, ease: "easeOut" }}
       />
 
       <div className="relative h-full">
         <motion.button
-          onClick={mode === "overview" ? onClose : () => setMode("overview")}
+          onClick={mode === "overview" ? handleClose : () => setMode("overview")}
           aria-label="Close"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: closing ? 0 : 1 }}
           exit={{ opacity: 0, transition: { duration: 0.1 } }}
-          transition={CONTENT_TRANSITION}
+          transition={closing ? { duration: 0.1 } : CONTENT_TRANSITION}
           className="fixed top-4 right-4 z-20 w-10 h-10 rounded-full bg-secondary/80 backdrop-blur flex items-center justify-center"
         >
           <X size={20} className="text-foreground" />
         </motion.button>
 
         {mode === "overview" && (
-          <Overview scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+          <Overview scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled && !closing} closing={closing} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
         )}
 
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
@@ -125,6 +125,7 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
       </div>
     </div>
   );
+
 };
 
 /* ---------------- Overview ---------------- */
