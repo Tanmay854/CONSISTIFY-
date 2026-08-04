@@ -12,3 +12,9 @@ export const getCoverUrl = (url: string | null | undefined, width: number, quali
 
 export const THUMB_WIDTH = 300;
 export const DETAIL_WIDTH = 800;
+/**
+ * Single cover size shared by the grid card and the detail view so the shared
+ * element (layoutId) never re-fetches or re-decodes a different URL.
+ */
+export const COVER_WIDTH = 600;
+export const sharedCoverUrl = (url: string | null | undefined) => getCoverUrl(url, COVER_WIDTH, 72);
