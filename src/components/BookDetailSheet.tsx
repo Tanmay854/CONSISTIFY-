@@ -189,7 +189,7 @@ const CONTENT_MOTION = {
 } as const;
 
 
-const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; coverLayoutId?: string; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
+const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, coverRef, showBackdrop = true }: { book: Book; coverLayoutId?: string; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; coverRef?: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   const contentMotion = CONTENT_MOTION;
