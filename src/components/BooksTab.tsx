@@ -47,21 +47,12 @@ const BooksTab = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<Book | null>(null);
-  const [origin, setOrigin] = useState<OpenOrigin | null>(null);
   const { recent, push, clear } = useRecent();
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
 
-  const openBook = useCallback((b: Book, o?: OpenOrigin) => {
-    setOrigin(o ?? null);
-    setSelected(b);
-  }, []);
-
-  // Unmounting the overlay and restoring the card happen in the same state update.
-  const closeBook = useCallback(() => {
-    setSelected(null);
-    setOrigin(null);
-  }, []);
+  const openBook = useCallback((b: Book) => setSelected(b), []);
+  const closeBook = useCallback(() => setSelected(null), []);
 
   const load = useCallback(async () => {
     setLoading(true);
