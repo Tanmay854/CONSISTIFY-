@@ -81,6 +81,15 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
     setMode(m);
   };
 
+  // If the user has scrolled the overview, close with a downward slide.
+  // Otherwise morph the cover straight back into its grid card.
+  const handleClose = () => {
+    if (mode !== "overview") { setDismissDown(true); return; }
+    const scrolled = (overviewScrollRef.current?.scrollTop ?? 0) > 40;
+    if (scrolled) setDismissDown(true);
+    else onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" style={{ height: "100dvh" }}>
       {/* Backdrop: only opacity animates, so the grid below is revealed on close. */}
