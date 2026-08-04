@@ -12,7 +12,21 @@ const cache = new Map<string, Banner[]>();
  * Rotating hero strip. Up to 5 admin-managed images per tab, crossfading
  * every 5 seconds.
  */
-const TabBanner = ({ tab, className = "" }: { tab: string; className?: string }) => {
+const TabBanner = ({
+  tab,
+  className = "",
+  aspectClass = "aspect-[16/9]",
+  roundedClass = "rounded-2xl",
+  dots = true,
+  overlay = true,
+}: {
+  tab: string;
+  className?: string;
+  aspectClass?: string;
+  roundedClass?: string;
+  dots?: boolean;
+  overlay?: boolean;
+}) => {
   const [banners, setBanners] = useState<Banner[]>(() => cache.get(tab) ?? []);
   const [index, setIndex] = useState(0);
 
@@ -43,7 +57,7 @@ const TabBanner = ({ tab, className = "" }: { tab: string; className?: string })
   if (banners.length === 0) return null;
 
   return (
-    <div className={`relative w-full aspect-[16/9] overflow-hidden rounded-2xl bg-secondary ${className}`}>
+    <div className={`relative w-full ${aspectClass} overflow-hidden ${roundedClass} bg-secondary ${className}`}>
       {banners.map((b, i) => (
         <img
           key={b.id}
@@ -54,8 +68,10 @@ const TabBanner = ({ tab, className = "" }: { tab: string; className?: string })
           style={{ opacity: i === index ? 1 : 0 }}
         />
       ))}
-      <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
-      {banners.length > 1 && (
+      {overlay && (
+        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
+      )}
+      {dots && banners.length > 1 && (
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
           {banners.map((b, i) => (
             <span
