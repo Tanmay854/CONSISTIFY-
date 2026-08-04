@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import SplashScreen from "@/components/SplashScreen";
 import BottomNav from "@/components/BottomNav";
-import ReelsTab from "@/components/ReelsTab";
+import VideosSection from "@/components/VideosSection";
 import MusicTab from "@/components/MusicTab";
 import QuotesTab from "@/components/QuotesTab";
 import UploadTab from "@/components/UploadTab";
@@ -55,7 +55,7 @@ const AppContent = () => {
         </button>
       )}
 
-      {activeTab === "reels" && <ReelsTab muted={muted} />}
+      {activeTab === "reels" && <VideosSection muted={muted} />}
       {activeTab === "music" && <MusicTab />}
       {activeTab === "quotes" && <QuotesTab />}
       {activeTab === "upload" && <UploadTab />}

@@ -580,7 +580,7 @@ const AdCard = ({ ad, isActive }: { ad: Ad; isActive: boolean }) => {
 const PAGE_SIZE = 5;
 const FETCH_WINDOW = 30;
 
-const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
+const ReelsTab = ({ muted = false, feed: feedId = "quick_spark", active: paneActive = true }: { muted?: boolean; feed?: string; active?: boolean }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [reels, setReels] = useState<Reel[]>(defaultReels);
   const [ads, setAds] = useState<Ad[]>([]);
@@ -609,6 +609,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
     const { data } = await supabase
       .from("reels")
       .select("id,title,description,category,video_url,bunny_video_guid,bunny_library_id,video_fit,trim_start,trim_end,author_name,uploaded_by,created_at")
+      .eq("feed", feedId)
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) {
@@ -627,7 +628,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
       if (data.length < FETCH_WINDOW) setHasMore(false);
     }
     setLoading(false);
-  }, []);
+  }, [feedId]);
 
   useEffect(() => {
     fetchPage(0);
@@ -705,7 +706,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
             <ReelCard
               key={`r-${item.data.id}`}
               reel={item.data}
-              isActive={index === activeIndex}
+              isActive={paneActive && index === activeIndex}
               distance={Math.abs(index - activeIndex)}
               index={index}
               muted={muted}
@@ -714,7 +715,7 @@ const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
               onOpenProfile={setOpenProfileId}
             />
           ) : (
-            <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={index === activeIndex} />
+            <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={paneActive && index === activeIndex} />
           )
         )}
         {hasMore && !usingDefaults && <div ref={sentinelRef} className="h-1" />}

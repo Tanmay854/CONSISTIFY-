@@ -1,3 +1,4 @@
+import { UPLOAD_FEEDS } from "@/lib/videoFeeds";
 import { useEffect, useMemo, useState } from "react";
 import { Film, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
 import * as tus from "tus-js-client";
@@ -25,6 +26,7 @@ const UploadTab = () => {
   const [videoTitle, setVideoTitle] = useState("");
   const [videoDescription, setVideoDescription] = useState("");
   const [videoCategory, setVideoCategory] = useState("Motivation");
+  const [videoFeed, setVideoFeed] = useState<string>("quick_spark");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoFit, setVideoFit] = useState<"cover" | "contain" | "fill">("cover");
   // Only build a preview URL for files that can be decoded in the WebView without
@@ -139,8 +141,9 @@ const UploadTab = () => {
             v.onerror = () => resolve(0);
             v.src = URL.createObjectURL(videoFile);
           });
-          if (duration > 180) {
-            setError(`Video must be 3 minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
+          const maxSeconds = videoFeed === "quick_spark" ? 180 : 2700;
+          if (duration > maxSeconds) {
+            setError(`Video must be ${maxSeconds / 60} minutes or less (yours is ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")})`);
             setLoading(false);
             return;
           }
@@ -182,7 +185,7 @@ const UploadTab = () => {
 
 
         // 3. Save Bunny playback URL and exact Stream identifiers into reels
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim() || null, description: videoDescription.trim() || null, video_url: ticket.playbackUrl, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim() || null, description: videoDescription.trim() || null, video_url: ticket.playbackUrl, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, feed: videoFeed, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
 
       } else if (activeType === "photo") {
@@ -344,6 +347,26 @@ const UploadTab = () => {
                   />
                 </div>
                 <div>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Feed</label>
+                  <div className="flex gap-2">
+                    {UPLOAD_FEEDS.map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setVideoFeed(f.id)}
+                        className={`flex-1 py-2 rounded-lg text-[11px] font-semibold ${
+                          videoFeed === f.id ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground text-[10px] mt-1">
+                    Quick Spark is the short vertical feed. Long Game and Calm State hold full sessions up to 45 minutes.
+                  </p>
+                </div>
+                <div>
                   <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Interest / Category</label>
                   <select
                     value={videoCategory}
@@ -354,7 +377,7 @@ const UploadTab = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Video file (from device, max 3 min)</label>
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">{`Video file (from device, max ${videoFeed === "quick_spark" ? "3" : "45"} min)`}</label>
                   <input
                     type="file"
                     accept="video/*"

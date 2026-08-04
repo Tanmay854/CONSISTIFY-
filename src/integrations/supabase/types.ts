@@ -248,6 +248,30 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_quotes: {
+        Row: {
+          author: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          text: string
+        }
+        Insert: {
+          author?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          text: string
+        }
+        Update: {
+          author?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          text?: string
+        }
+        Relationships: []
+      }
       music: {
         Row: {
           artist: string
@@ -335,6 +359,33 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_backgrounds: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string
+          name: string | null
+          position: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url: string
+          name?: string | null
+          position?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string
+          name?: string | null
+          position?: number
+        }
+        Relationships: []
+      }
       quotes: {
         Row: {
           bunny_storage_path: string | null
@@ -388,6 +439,7 @@ export type Database = {
           category: string
           created_at: string
           description: string | null
+          feed: string
           id: string
           public_id: string
           title: string | null
@@ -404,6 +456,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          feed?: string
           id?: string
           public_id?: string
           title?: string | null
@@ -420,6 +473,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          feed?: string
           id?: string
           public_id?: string
           title?: string | null
@@ -503,6 +557,33 @@ export type Database = {
           spotify_user_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      tab_banners: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string
+          position: number
+          tab: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url: string
+          position?: number
+          tab: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string
+          position?: number
+          tab?: string
         }
         Relationships: []
       }
