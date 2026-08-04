@@ -55,7 +55,7 @@ const AppContent = () => {
         </button>
       )}
 
-      {activeTab === "reels" && <ReelsTab muted={muted} />}
+      {activeTab === "reels" && <VideosSection muted={muted} />}
       {activeTab === "music" && <MusicTab />}
       {activeTab === "quotes" && <QuotesTab />}
       {activeTab === "upload" && <UploadTab />}
