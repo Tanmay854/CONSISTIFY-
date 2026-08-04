@@ -130,14 +130,14 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
 
 /* ---------------- Overview ---------------- */
 
-const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
+const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true, closing = false }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean; closing?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   const contentMotion = {
     initial: { opacity: 0, y: 10 },
-    animate: { opacity: 1, y: 0 },
+    animate: { opacity: closing ? 0 : 1, y: 0 },
     exit: { opacity: 0, transition: { duration: 0.1 } },
-    transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
+    transition: closing ? { duration: 0.12, ease: "easeOut" as const } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
   };
   return (
     <div ref={scrollRef} className="h-full overflow-y-auto pb-24">
@@ -150,15 +150,21 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
 
 
         <div className="flex flex-col items-center gap-5">
-          {/* Shared element: the very same rendered image as the grid card. */}
-          <motion.div
-            layoutId={`book-cover-${book.id}`}
-            transition={COVER_SPRING}
-            style={{ borderRadius: 16 }}
-            className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
-          >
-            <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
-          </motion.div>
+          {/* Shared element: the very same rendered image as the grid card.
+              On close it unmounts first so the grid card springs back into its
+              original slot instead of popping in after the sheet is gone. */}
+          {!closing && (
+            <motion.div
+              layoutId={`book-cover-${book.id}`}
+              transition={COVER_SPRING}
+              style={{ borderRadius: 16 }}
+              className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
+            >
+              <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
+            </motion.div>
+          )}
+          {closing && <div className="w-48 aspect-[2/3]" />}
+
           <motion.div className="text-center max-w-sm" {...contentMotion}>
             <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold mb-2">{book.category}</p>
             <h1 className="text-foreground text-2xl font-extrabold leading-tight">{book.title}</h1>
