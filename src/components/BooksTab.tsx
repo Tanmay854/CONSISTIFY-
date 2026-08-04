@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef, useId } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef, useId, createContext, useContext } from "react";
 import { Search, X, Star } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,10 @@ const useRecent = () => {
   return { recent, push, clear };
 };
 
+/** When false, grid cards drop their shared-element id so a downward
+    dismissal slides the whole page without the cover flying back. */
+const LayoutEnabledCtx = createContext(true);
+
 const BooksTab = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +52,7 @@ const BooksTab = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<SelectedBook | null>(null);
+  const [dismissing, setDismissing] = useState(false);
   const { recent, push, clear } = useRecent();
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
