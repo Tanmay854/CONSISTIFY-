@@ -59,7 +59,10 @@ const BooksTab = () => {
   }, []);
   const closeBook = useCallback(() => {
     setSelected(null);
-    setStaticDismiss(false);
+    // Keep shared covers disabled after a slide-down dismissal. Re-enabling
+    // them here makes Framer project the tapped cover once more after the
+    // sheet has gone, which visibly moves the otherwise static grid image.
+    // openBook restores the shared layer only when a new transition begins.
   }, []);
 
   const load = useCallback(async () => {
