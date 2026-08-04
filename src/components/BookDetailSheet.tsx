@@ -94,14 +94,14 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose, onDismissStart }: { boo
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" style={{ height: "100dvh" }}>
-      {/* Backdrop: only opacity animates, so the grid below is revealed on close. */}
+      {/* Backdrop travels with the page on a downward dismissal so the grid
+          is revealed underneath as the sheet slides away. */}
       <motion.div
         className="absolute inset-0 bg-background"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0, transition: { duration: 0.16, ease: "easeOut" } }}
-        transition={{ duration: 0.24, ease: "easeOut" }}
-
+        animate={{ opacity: 1, y: dismissDown ? "100%" : 0 }}
+        exit={{ opacity: dismissDown ? 1 : 0, transition: { duration: dismissDown ? 0 : 0.16, ease: "easeOut" } }}
+        transition={{ opacity: { duration: 0.24, ease: "easeOut" }, y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] } }}
       />
 
       <motion.div
@@ -123,8 +123,9 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose, onDismissStart }: { boo
         </motion.button>
 
         {mode === "overview" && (
-          <Overview scrollRef={overviewScrollRef} book={book} coverLayoutId={coverLayoutId} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+          <Overview scrollRef={overviewScrollRef} book={book} coverLayoutId={dismissDown ? undefined : coverLayoutId} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
         )}
+
 
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
         {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
