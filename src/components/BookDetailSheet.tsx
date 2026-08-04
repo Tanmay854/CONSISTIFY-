@@ -42,12 +42,24 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
   const savedScrollY = useRef(0);
 
+  // Close: unmount the shared cover first so the grid card immediately springs
+  // back to the exact slot it was tapped from, while the sheet fades out.
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<number | null>(null);
+  const handleClose = () => {
+    if (closing) return;
+    setClosing(true);
+    closeTimer.current = window.setTimeout(onClose, 300);
+  };
+  useEffect(() => () => { if (closeTimer.current) window.clearTimeout(closeTimer.current); }, []);
+
   // Defer network + heavy paint work until the morph has settled.
   const [settled, setSettled] = useState(false);
   useEffect(() => {
     const id = window.setTimeout(() => setSettled(true), 320);
     return () => window.clearTimeout(id);
   }, []);
+
 
   useEffect(() => {
     if (!settled) return;
@@ -80,31 +92,31 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden" style={{ height: "100dvh" }}>
+    <div className="fixed inset-0 z-50 overflow-hidden" style={{ height: "100dvh", pointerEvents: closing ? "none" : undefined }}>
       {/* Backdrop: only opacity animates, so the grid below is revealed on close. */}
       <motion.div
         className="absolute inset-0 bg-background"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        animate={{ opacity: closing ? 0 : 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.24, ease: "easeOut" }}
+        transition={{ duration: closing ? 0.26 : 0.24, ease: "easeOut" }}
       />
 
       <div className="relative h-full">
         <motion.button
-          onClick={mode === "overview" ? onClose : () => setMode("overview")}
+          onClick={mode === "overview" ? handleClose : () => setMode("overview")}
           aria-label="Close"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: closing ? 0 : 1 }}
           exit={{ opacity: 0, transition: { duration: 0.1 } }}
-          transition={CONTENT_TRANSITION}
+          transition={closing ? { duration: 0.1 } : CONTENT_TRANSITION}
           className="fixed top-4 right-4 z-20 w-10 h-10 rounded-full bg-secondary/80 backdrop-blur flex items-center justify-center"
         >
           <X size={20} className="text-foreground" />
         </motion.button>
 
         {mode === "overview" && (
-          <Overview scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+          <Overview scrollRef={overviewScrollRef} book={book} similar={similar} showBackdrop={settled && !closing} closing={closing} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
         )}
 
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
@@ -113,18 +125,19 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
       </div>
     </div>
   );
+
 };
 
 /* ---------------- Overview ---------------- */
 
-const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
+const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true, closing = false }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean; closing?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   const contentMotion = {
     initial: { opacity: 0, y: 10 },
-    animate: { opacity: 1, y: 0 },
+    animate: { opacity: closing ? 0 : 1, y: 0 },
     exit: { opacity: 0, transition: { duration: 0.1 } },
-    transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
+    transition: closing ? { duration: 0.12, ease: "easeOut" as const } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
   };
   return (
     <div ref={scrollRef} className="h-full overflow-y-auto pb-24">
@@ -137,15 +150,21 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
 
 
         <div className="flex flex-col items-center gap-5">
-          {/* Shared element: the very same rendered image as the grid card. */}
-          <motion.div
-            layoutId={`book-cover-${book.id}`}
-            transition={COVER_SPRING}
-            style={{ borderRadius: 16 }}
-            className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
-          >
-            <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
-          </motion.div>
+          {/* Shared element: the very same rendered image as the grid card.
+              On close it unmounts first so the grid card springs back into its
+              original slot instead of popping in after the sheet is gone. */}
+          {!closing && (
+            <motion.div
+              layoutId={`book-cover-${book.id}`}
+              transition={COVER_SPRING}
+              style={{ borderRadius: 16 }}
+              className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
+            >
+              <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
+            </motion.div>
+          )}
+          {closing && <div className="w-48 aspect-[2/3]" />}
+
           <motion.div className="text-center max-w-sm" {...contentMotion}>
             <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold mb-2">{book.category}</p>
             <h1 className="text-foreground text-2xl font-extrabold leading-tight">{book.title}</h1>
