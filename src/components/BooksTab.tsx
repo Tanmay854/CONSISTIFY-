@@ -135,6 +135,7 @@ const BooksTab = () => {
   };
 
   return (
+    <LayoutEnabledCtx.Provider value={!dismissing}>
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl pt-4 pb-3 px-5 border-b border-border/40">
@@ -235,17 +236,19 @@ const BooksTab = () => {
 
       {/* The grid stays mounted the whole time the sheet is open, so closing
           reveals it again with no black flash. */}
-      <AnimatePresence>
+      <AnimatePresence onExitComplete={() => setDismissing(false)}>
         {selected && (
           <BookDetailSheet
             key={`${selected.book.id}-${selected.coverLayoutId}`}
             book={selected.book}
             coverLayoutId={selected.coverLayoutId}
+            onDismissStart={() => setDismissing(true)}
             onClose={closeBook}
           />
         )}
       </AnimatePresence>
     </div>
+    </LayoutEnabledCtx.Provider>
   );
 };
 
