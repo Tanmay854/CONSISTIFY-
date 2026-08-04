@@ -38,6 +38,7 @@ const CONTENT_TRANSITION = { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
 const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLayoutId: string; onClose: () => void }) => {
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
+  const [dismissDown, setDismissDown] = useState(false);
   const [similar, setSimilar] = useState<Book[]>([]);
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
   const savedScrollY = useRef(0);
@@ -92,9 +93,14 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
 
       />
 
-      <div className="relative h-full">
+      <motion.div
+        className="relative h-full"
+        animate={{ y: dismissDown ? "100%" : 0 }}
+        transition={{ duration: 0.34, ease: [0.32, 0.72, 0, 1] }}
+        onAnimationComplete={() => { if (dismissDown) onClose(); }}
+      >
         <motion.button
-          onClick={mode === "overview" ? onClose : () => setMode("overview")}
+          onClick={mode === "overview" ? onClose : () => setDismissDown(true)}
           aria-label="Close"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -112,7 +118,8 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
         {mode === "summary" && <SummaryReader book={book} startPage={summaryStart} onBuy={() => openAmazon(book.amazon_url)} />}
         {mode === "audio" && <AudioPlayer book={book} />}
-      </div>
+      </motion.div>
+
     </div>
   );
 
