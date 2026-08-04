@@ -35,7 +35,7 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
 export const COVER_SPRING = { type: "spring" as const, stiffness: 300, damping: 34, mass: 0.8, restDelta: 0.4 };
 const CONTENT_TRANSITION = { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
 
-const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLayoutId: string; onClose: () => void }) => {
+const BookDetailSheet = ({ book, coverLayoutId, onClose, onDismissStart }: { book: Book; coverLayoutId: string; onClose: () => void; onDismissStart?: () => void }) => {
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
   const [dismissDown, setDismissDown] = useState(false);
@@ -83,10 +83,12 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
 
   // If the user has scrolled the overview, close with a downward slide.
   // Otherwise morph the cover straight back into its grid card.
+  const slideDown = () => { onDismissStart?.(); setDismissDown(true); };
+
   const handleClose = () => {
-    if (mode !== "overview") { setDismissDown(true); return; }
+    if (mode !== "overview") { slideDown(); return; }
     const scrolled = (overviewScrollRef.current?.scrollTop ?? 0) > 40;
-    if (scrolled) setDismissDown(true);
+    if (scrolled) slideDown();
     else onClose();
   };
 
