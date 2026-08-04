@@ -580,7 +580,7 @@ const AdCard = ({ ad, isActive }: { ad: Ad; isActive: boolean }) => {
 const PAGE_SIZE = 5;
 const FETCH_WINDOW = 30;
 
-const ReelsTab = ({ muted = false }: { muted?: boolean }) => {
+const ReelsTab = ({ muted = false, feed = "quick_spark", active = true }: { muted?: boolean; feed?: string; active?: boolean }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [reels, setReels] = useState<Reel[]>(defaultReels);
   const [ads, setAds] = useState<Ad[]>([]);
