@@ -628,7 +628,7 @@ const ReelsTab = ({ muted = false, feed: feedId = "quick_spark", active: paneAct
       if (data.length < FETCH_WINDOW) setHasMore(false);
     }
     setLoading(false);
-  }, []);
+  }, [feedId]);
 
   useEffect(() => {
     fetchPage(0);
