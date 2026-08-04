@@ -220,11 +220,10 @@ const BooksTab = () => {
           {bestSellers.length > 0 && <Row title="Best sellers" books={bestSellers} onOpen={openBook} />}
           {newReleases.length > 0 && <Row title="New releases" books={newReleases} onOpen={openBook} />}
 
-          {VISIBLE_CATEGORIES.map((cat) => {
-            const list = shuffle(books.filter((b) => b.category === cat)).slice(0, 20);
-            if (list.length === 0) return null;
-            return <Row key={`${cat}-${shuffleTick}`} title={cat} books={list} onOpen={openBook} onSeeAll={() => setActiveCategory(cat)} />;
-          })}
+          {categoryRows.map(({ cat, list }) => (
+            <Row key={cat} title={cat} books={list} onOpen={openBook} onSeeAll={() => setActiveCategory(cat)} />
+          ))}
+
 
         </div>
       )}
