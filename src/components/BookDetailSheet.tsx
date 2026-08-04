@@ -32,7 +32,7 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
 );
 
 /** Shared-element spring used by both the grid card and this sheet. */
-export const COVER_SPRING = { type: "spring" as const, stiffness: 420, damping: 42, mass: 0.9 };
+export const COVER_SPRING = { type: "spring" as const, stiffness: 300, damping: 34, mass: 0.8, restDelta: 0.4 };
 const CONTENT_TRANSITION = { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
 
 const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLayoutId: string; onClose: () => void }) => {
