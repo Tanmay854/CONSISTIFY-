@@ -401,7 +401,7 @@ const BookCard = ({ book, onOpen, sharedCoverVisible = true }: { book: Book; onO
     onClick={() => onOpen(book, coverLayoutId)}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
-    <div className="relative w-36 aspect-[2/3] overflow-hidden rounded-2xl bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
+    <div data-cover-id={coverLayoutId} className="relative w-36 aspect-[2/3] overflow-hidden rounded-2xl bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
       {/* This base image never participates in layout projection, so it remains
           fixed when a scrolled detail page dismisses downward. */}
       <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="absolute inset-0 w-full h-full object-cover" loading="eager" decoding="async" />

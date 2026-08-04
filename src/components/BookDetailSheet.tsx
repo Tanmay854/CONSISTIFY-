@@ -39,8 +39,10 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose, onDismissStart }: { boo
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
   const [dismissDown, setDismissDown] = useState(false);
+  const [morph, setMorph] = useState<{ left: number; top: number; width: number; height: number; dx: number; dy: number; sx: number; sy: number } | null>(null);
   const [similar, setSimilar] = useState<Book[]>([]);
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
+  const coverRef = useRef<HTMLDivElement | null>(null);
   const savedScrollY = useRef(0);
 
   // Defer network + heavy paint work until the morph has settled.
@@ -90,11 +92,28 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose, onDismissStart }: { boo
     setDismissDown(true);
   };
 
+  // Reverse morph: the detail cover travels continuously back into the exact
+  // rect of the grid card that opened it, through every intermediate size and
+  // position (the mirror image of the opening transition).
+  const morphBack = () => {
+    const from = coverRef.current?.getBoundingClientRect();
+    const targetEl = document.querySelector(`[data-cover-id="${coverLayoutId}"]`);
+    const to = targetEl?.getBoundingClientRect();
+    if (!from || !to || to.width === 0) { onClose(); return; }
+    onDismissStart(); // grid keeps only its static base image
+    setMorph({
+      left: to.left, top: to.top, width: to.width, height: to.height,
+      dx: from.left - to.left, dy: from.top - to.top,
+      sx: from.width / to.width, sy: from.height / to.height,
+    });
+  };
+
   const handleClose = () => {
+    if (morph || dismissDown) return;
     if (mode !== "overview") { slideDown(); return; }
     const scrolled = (overviewScrollRef.current?.scrollTop ?? 0) > 40;
     if (scrolled) slideDown();
-    else onClose();
+    else morphBack();
   };
 
   return (
@@ -104,16 +123,17 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose, onDismissStart }: { boo
       <motion.div
         className="absolute inset-0 bg-background"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1, y: dismissDown ? "100%" : 0 }}
-        exit={{ opacity: dismissDown ? 1 : 0, transition: { duration: dismissDown ? 0 : 0.16, ease: "easeOut" } }}
-        transition={{ opacity: { duration: 0.24, ease: "easeOut" }, y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] } }}
+        animate={{ opacity: morph ? 0 : 1, y: dismissDown ? "100%" : 0 }}
+        exit={{ opacity: dismissDown || morph ? 1 : 0, transition: { duration: dismissDown || morph ? 0 : 0.16, ease: "easeOut" } }}
+        transition={{ opacity: { duration: morph ? 0.24 : 0.24, ease: "easeOut" }, y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] } }}
       />
 
       <motion.div
         className="relative h-full"
-        animate={{ y: dismissDown ? "100%" : 0 }}
-        transition={{ duration: 0.34, ease: [0.32, 0.72, 0, 1] }}
+        animate={{ y: dismissDown ? "100%" : 0, opacity: morph ? 0 : 1 }}
+        transition={{ y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] }, opacity: { duration: 0.18, ease: "easeOut" } }}
         onAnimationComplete={() => { if (dismissDown) onClose(); }}
+        style={{ pointerEvents: morph ? "none" : "auto" }}
       >
         <motion.button
           onClick={handleClose}
@@ -128,7 +148,7 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose, onDismissStart }: { boo
         </motion.button>
 
         {mode === "overview" && (
-          <Overview scrollRef={overviewScrollRef} book={book} coverLayoutId={dismissDown ? undefined : coverLayoutId} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+          <Overview coverRef={coverRef} scrollRef={overviewScrollRef} book={book} coverLayoutId={dismissDown || morph ? undefined : coverLayoutId} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
         )}
 
 
@@ -137,6 +157,21 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose, onDismissStart }: { boo
         {mode === "audio" && <AudioPlayer book={book} />}
       </motion.div>
 
+      {morph && (
+        <motion.div
+          className="fixed overflow-hidden z-[60] will-change-transform"
+          style={{
+            left: morph.left, top: morph.top, width: morph.width, height: morph.height,
+            borderRadius: 16, transformOrigin: "top left",
+          }}
+          initial={{ x: morph.dx, y: morph.dy, scaleX: morph.sx, scaleY: morph.sy }}
+          animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1 }}
+          transition={COVER_SPRING}
+          onAnimationComplete={onClose}
+        >
+          <img src={sharedCoverUrl(book.cover_url)} alt="" aria-hidden="true" className="w-full h-full object-cover" decoding="async" />
+        </motion.div>
+      )}
     </div>
   );
 
@@ -154,7 +189,7 @@ const CONTENT_MOTION = {
 } as const;
 
 
-const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; coverLayoutId?: string; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
+const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, coverRef, showBackdrop = true }: { book: Book; coverLayoutId?: string; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; coverRef?: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   const contentMotion = CONTENT_MOTION;
@@ -185,6 +220,7 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
               hand it back to the exact card instance that opened the sheet. */}
           {coverLayoutId ? (
             <motion.div
+              ref={coverRef}
               layoutId={coverLayoutId}
               transition={COVER_SPRING}
               style={{ borderRadius: 16 }}
@@ -194,6 +230,7 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
             </motion.div>
           ) : (
             <div
+              ref={coverRef}
               style={{ borderRadius: 16 }}
               className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
             >
