@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef, useId } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef, useId, createContext, useContext } from "react";
 import { Search, X, Star } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,10 @@ const useRecent = () => {
   return { recent, push, clear };
 };
 
+/** When false, grid cards drop their shared-element id so a downward
+    dismissal slides the whole page without the cover flying back. */
+const LayoutEnabledCtx = createContext(true);
+
 const BooksTab = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +52,7 @@ const BooksTab = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<SelectedBook | null>(null);
+  const [dismissing, setDismissing] = useState(false);
   const { recent, push, clear } = useRecent();
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
@@ -130,6 +135,7 @@ const BooksTab = () => {
   };
 
   return (
+    <LayoutEnabledCtx.Provider value={!dismissing}>
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl pt-4 pb-3 px-5 border-b border-border/40">
@@ -230,17 +236,19 @@ const BooksTab = () => {
 
       {/* The grid stays mounted the whole time the sheet is open, so closing
           reveals it again with no black flash. */}
-      <AnimatePresence>
+      <AnimatePresence onExitComplete={() => setDismissing(false)}>
         {selected && (
           <BookDetailSheet
             key={`${selected.book.id}-${selected.coverLayoutId}`}
             book={selected.book}
             coverLayoutId={selected.coverLayoutId}
+            onDismissStart={() => setDismissing(true)}
             onClose={closeBook}
           />
         )}
       </AnimatePresence>
     </div>
+    </LayoutEnabledCtx.Provider>
   );
 };
 
@@ -386,6 +394,7 @@ const Row = ({
 const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   const instanceId = useId();
   const coverLayoutId = `book-cover-${book.id}-${instanceId}`;
+  const layoutEnabled = useContext(LayoutEnabledCtx);
 
   return (
   <button
@@ -393,7 +402,7 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
     <motion.div
-      layoutId={coverLayoutId}
+      layoutId={layoutEnabled ? coverLayoutId : undefined}
       transition={{ type: "spring", stiffness: 300, damping: 34, mass: 0.8 }}
       style={{ borderRadius: 16 }}
       className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
