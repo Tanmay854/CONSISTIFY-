@@ -140,9 +140,8 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
 
 
         <div className="flex flex-col items-center gap-5">
-          {/* Shared element: the very same rendered image as the grid card.
-              On close it unmounts first so the grid card springs back into its
-              original slot instead of popping in after the sheet is gone. */}
+          {/* Keep this shared element mounted through exit so Framer Motion can
+              hand it back to the exact card instance that opened the sheet. */}
           <motion.div
             layoutId={coverLayoutId}
             transition={COVER_SPRING}
