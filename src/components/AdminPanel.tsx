@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { X, UserPlus, Shield, LayoutGrid, Inbox, Users, TrendingUp, AlertCircle } from "lucide-react";
+import { X, UserPlus, Shield, LayoutGrid, Inbox, Users, TrendingUp, AlertCircle, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminContentManager from "@/components/AdminContentManager";
@@ -7,8 +7,9 @@ import UploaderApplications from "@/components/UploaderApplications";
 import MembersManager from "@/components/MembersManager";
 import ReportsTab from "@/components/ReportsTab";
 import AnalyticsChart from "@/components/AnalyticsChart";
+import TabMediaManager from "@/components/TabMediaManager";
 
-type AdminTab = "roles" | "applications" | "content" | "members" | "reports" | "analytics";
+type AdminTab = "roles" | "applications" | "content" | "members" | "reports" | "analytics" | "feeds";
 
 const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { isAdmin, isSuperAdmin } = useAuth();
@@ -81,6 +82,10 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
             className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "analytics" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
             <TrendingUp size={12} /> Analytics
           </button>
+          <button onClick={() => setTab("feeds")}
+            className={`flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ${tab === "feeds" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            <Sparkles size={12} /> Feeds
+          </button>
         </div>
 
         {tab === "roles" && (
@@ -125,6 +130,7 @@ const AdminPanel = ({ open, onClose }: { open: boolean; onClose: () => void }) =
         {tab === "content" && <AdminContentManager />}
         {tab === "reports" && <ReportsTab />}
         {tab === "analytics" && <AnalyticsChart />}
+        {tab === "feeds" && <TabMediaManager />}
       </div>
     </div>
   );

@@ -25,6 +25,7 @@ const UploadTab = () => {
   const [videoTitle, setVideoTitle] = useState("");
   const [videoDescription, setVideoDescription] = useState("");
   const [videoCategory, setVideoCategory] = useState("Motivation");
+  const [videoFeed, setVideoFeed] = useState<string>("quick_spark");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoFit, setVideoFit] = useState<"cover" | "contain" | "fill">("cover");
   // Only build a preview URL for files that can be decoded in the WebView without
@@ -182,7 +183,7 @@ const UploadTab = () => {
 
 
         // 3. Save Bunny playback URL and exact Stream identifiers into reels
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim() || null, description: videoDescription.trim() || null, video_url: ticket.playbackUrl, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, video_fit: videoFit, uploaded_by: user?.id });
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim() || null, description: videoDescription.trim() || null, video_url: ticket.playbackUrl, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, feed: videoFeed, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
 
       } else if (activeType === "photo") {
