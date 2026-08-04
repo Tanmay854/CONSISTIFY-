@@ -39,8 +39,10 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose, onDismissStart }: { boo
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
   const [dismissDown, setDismissDown] = useState(false);
+  const [morph, setMorph] = useState<{ left: number; top: number; width: number; height: number; dx: number; dy: number; sx: number; sy: number } | null>(null);
   const [similar, setSimilar] = useState<Book[]>([]);
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
+  const coverRef = useRef<HTMLDivElement | null>(null);
   const savedScrollY = useRef(0);
 
   // Defer network + heavy paint work until the morph has settled.
