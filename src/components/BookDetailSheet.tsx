@@ -180,14 +180,23 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
         <div className="flex flex-col items-center gap-5">
           {/* Keep this shared element mounted through exit so Framer Motion can
               hand it back to the exact card instance that opened the sheet. */}
-          <motion.div
-            layoutId={coverLayoutId}
-            transition={COVER_SPRING}
-            style={{ borderRadius: 16 }}
-            className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
-          >
-            <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
-          </motion.div>
+          {coverLayoutId ? (
+            <motion.div
+              layoutId={coverLayoutId}
+              transition={COVER_SPRING}
+              style={{ borderRadius: 16 }}
+              className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
+            >
+              <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
+            </motion.div>
+          ) : (
+            <div
+              style={{ borderRadius: 16 }}
+              className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
+            >
+              <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
+            </div>
+          )}
 
           <motion.div className="text-center max-w-sm" {...contentMotion}>
             <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold mb-2">{book.category}</p>
