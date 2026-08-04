@@ -220,6 +220,7 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
               hand it back to the exact card instance that opened the sheet. */}
           {coverLayoutId ? (
             <motion.div
+              ref={coverRef}
               layoutId={coverLayoutId}
               transition={COVER_SPRING}
               style={{ borderRadius: 16 }}
@@ -229,6 +230,7 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
             </motion.div>
           ) : (
             <div
+              ref={coverRef}
               style={{ borderRadius: 16 }}
               className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
             >
