@@ -117,9 +117,15 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
 
 /* ---------------- Overview ---------------- */
 
-const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true, light = false }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean; light?: boolean }) => {
+const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
+  const contentMotion = {
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, transition: { duration: 0.1 } },
+    transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
+  };
   return (
     <div ref={scrollRef} className="h-full overflow-y-auto pb-24">
       <div className="relative pt-14 pb-8 px-6 overflow-hidden">
@@ -131,10 +137,16 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
 
 
         <div className="flex flex-col items-center gap-5">
-          <div data-book-cover className="w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]">
-            <img src={getCoverUrl(book.cover_url, DETAIL_WIDTH, 75)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
-          </div>
-          <div className="text-center max-w-sm">
+          {/* Shared element: the very same rendered image as the grid card. */}
+          <motion.div
+            layoutId={`book-cover-${book.id}`}
+            transition={COVER_SPRING}
+            style={{ borderRadius: 16 }}
+            className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
+          >
+            <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
+          </motion.div>
+          <motion.div className="text-center max-w-sm" {...contentMotion}>
             <p className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold mb-2">{book.category}</p>
             <h1 className="text-foreground text-2xl font-extrabold leading-tight">{book.title}</h1>
             <p className="text-muted-foreground text-sm mt-1">by {book.author}</p>
@@ -142,18 +154,17 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
               <Rating value={book.rating} />
               {user && book.public_id && <span className="text-muted-foreground text-[11px] font-mono">#{book.public_id}</span>}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="w-full max-w-sm flex items-stretch gap-2 mt-2 py-3 px-4 rounded-2xl bg-secondary/60 border border-border/40">
+          <motion.div className="w-full max-w-sm flex items-stretch gap-2 mt-2 py-3 px-4 rounded-2xl bg-secondary/60 border border-border/40" {...contentMotion}>
             <Stat label="Listen" value={lt} />
             <div className="w-px bg-border/60" />
             <Stat label="Pages" value={String((book.summary_pages ?? []).length || "—")} />
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Heavy content is skipped while the morph runs (light mode). */}
-      {!light && (<>
+      <motion.div {...contentMotion}>
       <div className="px-6 space-y-3">
         <button
           onClick={onBuy}
