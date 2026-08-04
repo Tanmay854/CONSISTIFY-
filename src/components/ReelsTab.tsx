@@ -609,6 +609,7 @@ const ReelsTab = ({ muted = false, feed: feedId = "quick_spark", active: paneAct
     const { data } = await supabase
       .from("reels")
       .select("id,title,description,category,video_url,bunny_video_guid,bunny_library_id,video_fit,trim_start,trim_end,author_name,uploaded_by,created_at")
+      .eq("feed", feedId)
       .order("created_at", { ascending: false })
       .range(from, to);
     if (data) {
