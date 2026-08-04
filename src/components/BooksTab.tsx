@@ -394,6 +394,7 @@ const Row = ({
 const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   const instanceId = useId();
   const coverLayoutId = `book-cover-${book.id}-${instanceId}`;
+  const layoutEnabled = useContext(LayoutEnabledCtx);
 
   return (
   <button
@@ -401,7 +402,7 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
     <motion.div
-      layoutId={coverLayoutId}
+      layoutId={layoutEnabled ? coverLayoutId : undefined}
       transition={{ type: "spring", stiffness: 300, damping: 34, mass: 0.8 }}
       style={{ borderRadius: 16 }}
       className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
