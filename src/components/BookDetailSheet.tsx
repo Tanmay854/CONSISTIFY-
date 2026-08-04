@@ -97,9 +97,10 @@ const BookDetailSheet = ({ book, onClose }: { book: Book; onClose: () => void })
       <motion.div
         className="absolute inset-0 bg-background"
         initial={{ opacity: 0 }}
-        animate={{ opacity: closing ? 0 : 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: closing ? 0.26 : 0.24, ease: "easeOut" }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.16, ease: "easeOut" } }}
+        transition={{ duration: 0.24, ease: "easeOut" }}
+
       />
 
       <div className="relative h-full">
