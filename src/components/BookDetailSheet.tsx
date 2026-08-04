@@ -120,6 +120,16 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
 
 /* ---------------- Overview ---------------- */
 
+// Module-level so the motion props keep a stable identity across re-renders
+// (a new object each render can re-trigger the enter animation).
+const CONTENT_MOTION = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, transition: { duration: 0.1 } },
+  transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
+} as const;
+
+
 const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; coverLayoutId: string; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
