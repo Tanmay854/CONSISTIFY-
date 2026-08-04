@@ -48,14 +48,19 @@ const BooksTab = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<SelectedBook | null>(null);
+  const [staticDismiss, setStaticDismiss] = useState(false);
   const { recent, push, clear } = useRecent();
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
 
   const openBook = useCallback((b: Book, coverLayoutId: string) => {
+    setStaticDismiss(false);
     setSelected({ book: b, coverLayoutId });
   }, []);
-  const closeBook = useCallback(() => setSelected(null), []);
+  const closeBook = useCallback(() => {
+    setSelected(null);
+    setStaticDismiss(false);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -214,14 +219,14 @@ const BooksTab = () => {
         <SearchResults books={filtered} onOpen={(b, coverLayoutId) => { openBook(b, coverLayoutId); push(query); }} />
       ) : (
         <div className="pt-5 space-y-8">
-          {featured.length > 0 && <FeaturedHero books={featured} onOpen={openBook} />}
-          {recommended.length > 0 && <Row title="Recommended for you" books={recommended} onOpen={openBook} />}
-          {trending.length > 0 && <Row title="Trending" books={trending} onOpen={openBook} />}
-          {bestSellers.length > 0 && <Row title="Best sellers" books={bestSellers} onOpen={openBook} />}
-          {newReleases.length > 0 && <Row title="New releases" books={newReleases} onOpen={openBook} />}
+          {featured.length > 0 && <FeaturedHero books={featured} onOpen={openBook} sharedCoverVisible={!staticDismiss} />}
+          {recommended.length > 0 && <Row title="Recommended for you" books={recommended} onOpen={openBook} sharedCoverVisible={!staticDismiss} />}
+          {trending.length > 0 && <Row title="Trending" books={trending} onOpen={openBook} sharedCoverVisible={!staticDismiss} />}
+          {bestSellers.length > 0 && <Row title="Best sellers" books={bestSellers} onOpen={openBook} sharedCoverVisible={!staticDismiss} />}
+          {newReleases.length > 0 && <Row title="New releases" books={newReleases} onOpen={openBook} sharedCoverVisible={!staticDismiss} />}
 
           {categoryRows.map(({ cat, list }) => (
-            <Row key={cat} title={cat} books={list} onOpen={openBook} onSeeAll={() => setActiveCategory(cat)} />
+            <Row key={cat} title={cat} books={list} onOpen={openBook} onSeeAll={() => setActiveCategory(cat)} sharedCoverVisible={!staticDismiss} />
           ))}
 
 
@@ -237,6 +242,7 @@ const BooksTab = () => {
             book={selected.book}
             coverLayoutId={selected.coverLayoutId}
             onClose={closeBook}
+            onDismissStart={() => setStaticDismiss(true)}
           />
         )}
       </AnimatePresence>
@@ -255,7 +261,7 @@ const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => v
   </button>
 );
 
-const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: OpenHandler }) => {
+const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; onOpen: OpenHandler; sharedCoverVisible: boolean }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const slideWidthRef = useRef(0);
@@ -357,7 +363,7 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: OpenHandler })
       >
         <div ref={trackRef} className="flex gap-4 items-stretch">
           {books.map((b) => (
-            <BookCard key={b.id} book={b} onOpen={onOpen} />
+            <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} />
           ))}
         </div>
       </div>
@@ -366,8 +372,8 @@ const FeaturedHero = ({ books, onOpen }: { books: Book[]; onOpen: OpenHandler })
 };
 
 const Row = ({
-  title, books, onOpen, onSeeAll,
-}: { title: string; books: Book[]; onOpen: OpenHandler; onSeeAll?: () => void }) => (
+  title, books, onOpen, onSeeAll, sharedCoverVisible,
+}: { title: string; books: Book[]; onOpen: OpenHandler; onSeeAll?: () => void; sharedCoverVisible: boolean }) => (
   <section>
     <div className="flex items-baseline justify-between px-5 mb-3">
       <h2 className="text-foreground text-sm font-bold uppercase tracking-wider">{title}</h2>
@@ -377,13 +383,13 @@ const Row = ({
     </div>
     <div className="flex gap-3 overflow-x-auto scrollbar-hide px-5 pb-2 snap-x items-stretch">
       {books.map((b) => (
-        <BookCard key={b.id} book={b} onOpen={onOpen} />
+        <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} />
       ))}
     </div>
   </section>
 );
 
-const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
+const BookCard = ({ book, onOpen, sharedCoverVisible = true }: { book: Book; onOpen: OpenHandler; sharedCoverVisible?: boolean }) => {
   const instanceId = useId();
   const coverLayoutId = `book-cover-${book.id}-${instanceId}`;
 
@@ -392,14 +398,19 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
     onClick={() => onOpen(book, coverLayoutId)}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
-    <motion.div
-      layoutId={coverLayoutId}
-      transition={{ type: "spring", stiffness: 300, damping: 34, mass: 0.8 }}
-      style={{ borderRadius: 16 }}
-      className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
-    >
-      <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
-    </motion.div>
+    <div className="relative w-36 aspect-[2/3] overflow-hidden rounded-2xl bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
+      {/* This base image never participates in layout projection, so it remains
+          fixed when a scrolled detail page dismisses downward. */}
+      <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="absolute inset-0 w-full h-full object-cover" loading="eager" decoding="async" />
+      <motion.div
+        layoutId={coverLayoutId}
+        transition={{ type: "spring", stiffness: 300, damping: 34, mass: 0.8 }}
+        style={{ borderRadius: 16, display: sharedCoverVisible ? "block" : "none" }}
+        className="absolute inset-0 overflow-hidden bg-secondary"
+      >
+        <img src={sharedCoverUrl(book.cover_url)} alt="" aria-hidden="true" className="w-full h-full object-cover" loading="eager" decoding="async" />
+      </motion.div>
+    </div>
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
     <p className="text-muted-foreground text-[10px] mt-1 line-clamp-1 min-h-[0.9rem]">{book.author}</p>
     <div className="flex items-center gap-2 mt-auto pt-1">
