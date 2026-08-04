@@ -10,17 +10,16 @@ const CategoryCard = ({ feed, onOpen }: { feed: FeedDef; onOpen: () => void }) =
   <button
     type="button"
     onClick={onOpen}
-    className="relative block w-full overflow-hidden rounded-2xl bg-secondary/40 ring-1 ring-foreground/10 active:scale-[0.985] transition-transform duration-200 ease-out"
+    className="relative block w-full aspect-[21/9] overflow-hidden rounded-2xl bg-secondary/40 ring-1 ring-foreground/10 active:scale-[0.985] transition-transform duration-200 ease-out"
   >
     <TabBanner
       tab={feed.id}
-      aspectClass="aspect-[16/9]"
+      className="absolute inset-0"
+      aspectClass="h-full"
       roundedClass="rounded-2xl"
       dots={false}
       overlay={false}
     />
-    {/* Fallback height when the tab has no images yet */}
-    <div className="aspect-[16/9] w-full [&:not(:first-child)]:hidden" style={{ display: "none" }} />
     <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
     <div className="absolute inset-y-0 left-0 flex items-center pl-5 pr-24">
       <span className="text-left text-foreground font-extrabold uppercase tracking-[0.02em] text-xl leading-[1.05] drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
