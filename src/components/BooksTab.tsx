@@ -401,14 +401,25 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
     onClick={() => onOpen(book, coverLayoutId)}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
-    <motion.div
-      layoutId={layoutEnabled ? coverLayoutId : undefined}
-      transition={{ type: "spring", stiffness: 300, damping: 34, mass: 0.8 }}
-      style={{ borderRadius: 16 }}
-      className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
-    >
-      <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
-    </motion.div>
+    {layoutEnabled ? (
+      <motion.div
+        layoutId={coverLayoutId}
+        transition={{ type: "spring", stiffness: 300, damping: 34, mass: 0.8 }}
+        style={{ borderRadius: 16 }}
+        className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
+      >
+        <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
+      </motion.div>
+    ) : (
+      /* During a downward dismissal the card is a plain element: no layout
+         projection, so it can never shift or fly while the page slides away. */
+      <div
+        style={{ borderRadius: 16 }}
+        className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
+      >
+        <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" />
+      </div>
+    )}
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
     <p className="text-muted-foreground text-[10px] mt-1 line-clamp-1 min-h-[0.9rem]">{book.author}</p>
     <div className="flex items-center gap-2 mt-auto pt-1">
