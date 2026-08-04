@@ -213,16 +213,14 @@ const BooksTab = () => {
         </div>
       )}
 
-      {selected && (
-        <BookDetailSheet
-          key={selected.id}
-          book={selected}
-          origin={origin}
-          onClose={closeBook}
-        />
-      )}
+      {/* The grid stays mounted the whole time the sheet is open, so closing
+          reveals it again with no black flash. */}
+      <AnimatePresence>
+        {selected && (
+          <BookDetailSheet key={selected.id} book={selected} onClose={closeBook} />
+        )}
+      </AnimatePresence>
     </div>
-    </OpenBookContext.Provider>
   );
 };
 
