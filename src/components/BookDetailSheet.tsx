@@ -244,7 +244,7 @@ const Overview = ({ book, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRe
           </div>
         </section>
       )}
-      </>)}
+      </motion.div>
     </div>
   );
 };
