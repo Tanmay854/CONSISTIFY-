@@ -92,18 +92,32 @@ const BooksTab = () => {
     return list;
   }, [books, query, activeCategory, canSearchById]);
 
-  // Reshuffle the ordering of every row every 3 minutes
+  // Reshuffle the ordering of every row every 5 minutes
   const [shuffleTick, setShuffleTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setShuffleTick((t) => t + 1), 3 * 60 * 1000);
+    const id = setInterval(() => setShuffleTick((t) => t + 1), 5 * 60 * 1000);
     return () => clearInterval(id);
   }, []);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const featured = useMemo(() => shuffle(books.filter((b) => b.is_featured)).slice(0, 8), [books, shuffleTick]);
   const trending = useMemo(() => shuffle(books.filter((b) => b.is_trending)).slice(0, 20), [books, shuffleTick]);
   const bestSellers = useMemo(() => shuffle(books.filter((b) => b.is_best_seller)).slice(0, 20), [books, shuffleTick]);
   const newReleases = useMemo(() => shuffle(books.filter((b) => b.is_new_release)).slice(0, 20), [books, shuffleTick]);
   const recommended = useMemo(() => shuffle(books).slice(0, 20), [books, shuffleTick]);
+
+  // Category rows: shuffled once per books/tick change, never on unrelated re-renders
+  // (e.g. opening or closing a book detail sheet).
+  const categoryRows = useMemo(
+    () =>
+      VISIBLE_CATEGORIES.map((cat) => ({
+        cat,
+        list: shuffle(books.filter((b) => b.category === cat)).slice(0, 20),
+      })).filter((r) => r.list.length > 0),
+    [books, shuffleTick],
+  );
+  /* eslint-enable react-hooks/exhaustive-deps */
+
 
 
   const isSearching = query.trim().length > 0 || activeCategory;
