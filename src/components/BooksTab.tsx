@@ -394,7 +394,7 @@ const BookCard = ({ book, onOpen }: { book: Book; onOpen: OpenHandler }) => {
   >
     <motion.div
       layoutId={coverLayoutId}
-      transition={{ type: "spring", stiffness: 420, damping: 42, mass: 0.9 }}
+      transition={{ type: "spring", stiffness: 300, damping: 34, mass: 0.8 }}
       style={{ borderRadius: 16 }}
       className="w-36 aspect-[2/3] overflow-hidden bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
     >

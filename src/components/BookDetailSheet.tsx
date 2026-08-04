@@ -32,7 +32,7 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
 );
 
 /** Shared-element spring used by both the grid card and this sheet. */
-export const COVER_SPRING = { type: "spring" as const, stiffness: 420, damping: 42, mass: 0.9 };
+export const COVER_SPRING = { type: "spring" as const, stiffness: 300, damping: 34, mass: 0.8, restDelta: 0.4 };
 const CONTENT_TRANSITION = { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
 
 const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLayoutId: string; onClose: () => void }) => {
@@ -81,6 +81,15 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
     setMode(m);
   };
 
+  // If the user has scrolled the overview, close with a downward slide.
+  // Otherwise morph the cover straight back into its grid card.
+  const handleClose = () => {
+    if (mode !== "overview") { setDismissDown(true); return; }
+    const scrolled = (overviewScrollRef.current?.scrollTop ?? 0) > 40;
+    if (scrolled) setDismissDown(true);
+    else onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" style={{ height: "100dvh" }}>
       {/* Backdrop: only opacity animates, so the grid below is revealed on close. */}
@@ -100,7 +109,7 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
         onAnimationComplete={() => { if (dismissDown) onClose(); }}
       >
         <motion.button
-          onClick={mode === "overview" ? onClose : () => setDismissDown(true)}
+          onClick={handleClose}
           aria-label="Close"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -112,7 +121,7 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
         </motion.button>
 
         {mode === "overview" && (
-          <Overview scrollRef={overviewScrollRef} book={book} coverLayoutId={coverLayoutId} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+          <Overview scrollRef={overviewScrollRef} book={book} coverLayoutId={dismissDown ? undefined : coverLayoutId} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
         )}
 
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
@@ -137,7 +146,7 @@ const CONTENT_MOTION = {
 } as const;
 
 
-const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; coverLayoutId: string; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
+const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, showBackdrop = true }: { book: Book; coverLayoutId?: string; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   const contentMotion = CONTENT_MOTION;
