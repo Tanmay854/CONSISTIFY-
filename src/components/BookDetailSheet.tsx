@@ -109,7 +109,7 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLa
         onAnimationComplete={() => { if (dismissDown) onClose(); }}
       >
         <motion.button
-          onClick={mode === "overview" ? onClose : () => setDismissDown(true)}
+          onClick={handleClose}
           aria-label="Close"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
