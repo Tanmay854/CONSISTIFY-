@@ -38,6 +38,7 @@ const CONTENT_TRANSITION = { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
 const BookDetailSheet = ({ book, coverLayoutId, onClose }: { book: Book; coverLayoutId: string; onClose: () => void }) => {
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
+  const [dismissDown, setDismissDown] = useState(false);
   const [similar, setSimilar] = useState<Book[]>([]);
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
   const savedScrollY = useRef(0);
