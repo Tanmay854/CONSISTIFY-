@@ -124,8 +124,8 @@ const BookDetailSheet = ({ book, coverLayoutId, onClose, onDismissStart }: { boo
         className="absolute inset-0 bg-background"
         initial={{ opacity: 0 }}
         animate={{ opacity: morph ? 0 : 1, y: dismissDown ? "100%" : 0 }}
-        exit={{ opacity: dismissDown || morph ? 1 : 0, transition: { duration: dismissDown || morph ? 0 : 0.16, ease: "easeOut" } }}
-        transition={{ opacity: { duration: morph ? 0.24 : 0.24, ease: "easeOut" }, y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] } }}
+        exit={{ opacity: dismissDown ? 1 : 0, transition: { duration: dismissDown || morph ? 0 : 0.16, ease: "easeOut" } }}
+        transition={{ opacity: { duration: 0.24, ease: "easeOut" }, y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] } }}
       />
 
       <motion.div
