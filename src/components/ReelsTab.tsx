@@ -715,7 +715,7 @@ const ReelsTab = ({ muted = false, feed: feedId = "quick_spark", active: paneAct
               onOpenProfile={setOpenProfileId}
             />
           ) : (
-            <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={index === activeIndex} />
+            <AdCard key={`a-${item.data.id}-${index}`} ad={item.data} isActive={paneActive && index === activeIndex} />
           )
         )}
         {hasMore && !usingDefaults && <div ref={sentinelRef} className="h-1" />}
