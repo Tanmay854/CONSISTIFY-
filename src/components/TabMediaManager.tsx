@@ -100,9 +100,15 @@ const TabMediaManager = () => {
     if (!lines.length) return;
     setBusy(true); setMessage(null);
     const rows = lines.map((line) => {
-      const parts = line.split(/\s+[—-]\s+/);
+      const parts = line.replace(/^\d+[.)]\s*/, "").split(/\s+[—-]\s+/);
       const author = parts.length > 1 ? parts.pop()!.trim() : null;
-      return { text: parts.join(" - ").replace(/^["“]|["”]$/g, "").trim(), author, created_by: user?.id };
+      return {
+        text: parts.join(" - ").replace(/^["“]|["”]$/g, "").trim(),
+        author,
+        category: qCat,
+        subcategory: qSub,
+        created_by: user?.id,
+      };
     });
     const { error } = await supabase.from("daily_quotes").insert(rows);
     if (error) setMessage(error.message);
@@ -110,6 +116,30 @@ const TabMediaManager = () => {
     await load();
     setBusy(false);
   };
+
+  const importPdfs = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setBusy(true); setMessage("Reading PDFs...");
+    let total = 0;
+    for (const file of Array.from(files)) {
+      try {
+        const parsed = await parseQuotePdf(file);
+        if (!parsed.length) { setMessage(`No quotes found in ${file.name}`); continue; }
+        for (let i = 0; i < parsed.length; i += 200) {
+          const chunk = parsed.slice(i, i + 200).map((p) => ({ ...p, author: null, created_by: user?.id }));
+          const { error } = await supabase.from("daily_quotes").insert(chunk);
+          if (error) { setMessage(error.message); break; }
+          total += chunk.length;
+        }
+      } catch (e) {
+        setMessage(`Failed to read ${file.name}: ${(e as Error).message}`);
+      }
+    }
+    if (total) setMessage(`Imported ${total} quotes`);
+    await load();
+    setBusy(false);
+  };
+
 
   const remove = async (table: "tab_banners" | "quote_backgrounds" | "daily_quotes", id: string) => {
     if (!confirm("Delete this item?")) return;
