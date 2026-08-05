@@ -32,6 +32,18 @@ export function parseQuoteText(raw: string): ParsedQuote[] {
   const seen = new Set<string>();
   let cat: string | null = null;
   let sub: string | null = null;
+  let pending: ParsedQuote | null = null;
+
+  const flush = () => {
+    if (!pending) return;
+    const text = pending.text.replace(/^["“]|["”]$/g, "").trim();
+    const key = `${pending.category}|${pending.subcategory}|${text.toLowerCase()}`;
+    if (text.length > 5 && !seen.has(key)) {
+      seen.add(key);
+      out.push({ ...pending, text });
+    }
+    pending = null;
+  };
 
   for (const rawLine of raw.split("\n")) {
     const line = rawLine.replace(/[*_#]/g, "").replace(/\s+/g, " ").trim();
@@ -40,27 +52,33 @@ export function parseQuoteText(raw: string): ParsedQuote[] {
     const headingCandidate = line.replace(/^\d+[.)]\s*/, "");
     const asCat = CAT_BY_LABEL.get(norm(headingCandidate));
     if (asCat && headingCandidate.length < 45) {
+      flush();
       cat = asCat;
       sub = null;
       continue;
     }
     const asSub = SUB_BY_LABEL.get(norm(headingCandidate));
     if (asSub && headingCandidate.length < 45) {
+      flush();
       cat = asSub.cat;
       sub = asSub.sub;
       continue;
     }
 
     const m = line.match(/^(\d+)[.)]\s+(.{6,})$/);
-    if (!m || !cat || !sub) continue;
-    const text = m[2].replace(/^["“]|["”]$/g, "").trim();
-    const key = `${cat}|${sub}|${text.toLowerCase()}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({ text, category: cat, subcategory: sub });
+    if (m) {
+      flush();
+      if (!cat || !sub) continue;
+      pending = { text: m[2].trim(), category: cat, subcategory: sub };
+      continue;
+    }
+    // continuation of a wrapped quote line
+    if (pending) pending.text = `${pending.text} ${line}`.replace(/\s+/g, " ");
   }
+  flush();
   return out;
 }
+
 
 export async function parseQuotePdf(file: File): Promise<ParsedQuote[]> {
   const buf = await file.arrayBuffer();
