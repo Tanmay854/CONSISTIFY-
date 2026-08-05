@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { VIDEO_FEEDS } from "@/lib/videoFeeds";
 import { QUOTE_CATEGORIES, findCategory, subLabel } from "@/lib/quoteTopics";
-import { parseQuotePdf } from "@/lib/parseQuotePdf";
+import { parseQuotePdf, parseQuoteText } from "@/lib/parseQuotePdf";
 
 type Section = "banners" | "backgrounds" | "quotes";
 
@@ -37,6 +37,8 @@ const TabMediaManager = () => {
   // Quotes
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [bulk, setBulk] = useState("");
+  const [bulkAll, setBulkAll] = useState("");
+
   const [qCat, setQCat] = useState<string>(QUOTE_CATEGORIES[0].id);
   const [qSub, setQSub] = useState<string>(QUOTE_CATEGORIES[0].subs[0].id);
   const pdfInput = useRef<HTMLInputElement>(null);
@@ -139,6 +141,44 @@ const TabMediaManager = () => {
     await load();
     setBusy(false);
   };
+  // Bulk import across every category / subcategory at once
+  const importAllTopics = async () => {
+    const parsed = parseQuoteText(bulkAll);
+    if (!parsed.length) {
+      setMessage("No quotes found. Make sure each topic/sub-topic heading is on its own line and quotes are numbered.");
+      return;
+    }
+    setBusy(true); setMessage("Importing...");
+    const { data: existing } = await supabase
+      .from("daily_quotes")
+      .select("text,category,subcategory")
+      .limit(10000);
+    const seen = new Set(
+      (existing ?? []).map((e) => `${e.category}|${e.subcategory}|${(e.text || "").trim().toLowerCase()}`)
+    );
+    const rows = parsed
+      .filter((p) => !seen.has(`${p.category}|${p.subcategory}|${p.text.toLowerCase()}`))
+      .map((p) => ({ ...p, author: null, created_by: user?.id }));
+    if (!rows.length) {
+      setMessage(`All ${parsed.length} quotes already exist.`);
+      setBusy(false);
+      return;
+    }
+    let total = 0;
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error } = await supabase.from("daily_quotes").insert(rows.slice(i, i + 200));
+      if (error) { setMessage(error.message); break; }
+      total += Math.min(200, rows.length - i);
+    }
+    if (total) {
+      const topics = new Set(rows.slice(0, total).map((r) => `${r.category}/${r.subcategory}`));
+      setBulkAll("");
+      setMessage(`Imported ${total} quotes across ${topics.size} sub-topics (${parsed.length - rows.length} duplicates skipped).`);
+    }
+    await load();
+    setBusy(false);
+  };
+
 
 
   const remove = async (table: "tab_banners" | "quote_backgrounds" | "daily_quotes", id: string) => {
@@ -280,6 +320,29 @@ const TabMediaManager = () => {
           </button>
           <input ref={pdfInput} type="file" accept="application/pdf" multiple hidden
             onChange={(e) => { importPdfs(e.target.files); e.target.value = ""; }} />
+
+          <div className="rounded-xl border border-border p-3 space-y-2">
+            <p className="text-foreground text-xs font-semibold">Import all topics at once</p>
+            <p className="text-muted-foreground text-[11px]">
+              Paste the full list. Category and sub-topic headings on their own line (e.g. <em>Mental Health</em>, then <em>Stress</em>),
+              quotes numbered below each heading. Duplicates are skipped automatically.
+            </p>
+            <textarea
+              value={bulkAll}
+              onChange={(e) => setBulkAll(e.target.value)}
+              rows={7}
+              placeholder={"Mental Health\nStress\n1. Stress is a sign you are growing.\n2. Put down what isn't yours to carry.\nAnxiety\n3. Your anxious thoughts are not facts."}
+              className="w-full bg-secondary text-foreground rounded-xl px-3 py-2.5 text-xs placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none"
+            />
+            <button
+              onClick={importAllTopics}
+              disabled={busy || !bulkAll.trim()}
+              className="w-full bg-primary text-primary-foreground rounded-xl py-2.5 text-xs font-semibold disabled:opacity-50"
+            >
+              {busy ? "Importing..." : "Import all categories"}
+            </button>
+          </div>
+
 
           <p className="text-muted-foreground text-[11px]">
             Or one quote per line for the selected topic. Add an author with an em dash: <em>Discipline equals freedom — Jocko</em>
