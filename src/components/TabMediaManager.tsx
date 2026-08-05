@@ -37,6 +37,8 @@ const TabMediaManager = () => {
   // Quotes
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [bulk, setBulk] = useState("");
+  const [bulkAll, setBulkAll] = useState("");
+
   const [qCat, setQCat] = useState<string>(QUOTE_CATEGORIES[0].id);
   const [qSub, setQSub] = useState<string>(QUOTE_CATEGORIES[0].subs[0].id);
   const pdfInput = useRef<HTMLInputElement>(null);
