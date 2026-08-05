@@ -3,12 +3,15 @@ import { Trash2, Upload, Plus, Image as ImageIcon, Quote as QuoteIcon } from "lu
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { VIDEO_FEEDS } from "@/lib/videoFeeds";
+import { QUOTE_CATEGORIES, findCategory, subLabel } from "@/lib/quoteTopics";
+import { parseQuotePdf } from "@/lib/parseQuotePdf";
 
 type Section = "banners" | "backgrounds" | "quotes";
 
 interface BannerRow { id: string; tab: string; image_url: string; position: number }
 interface BgRow { id: string; image_url: string; name: string | null; position: number }
-interface QuoteRow { id: string; text: string; author: string | null }
+interface QuoteRow { id: string; text: string; author: string | null; category: string | null; subcategory: string | null }
+
 
 const uploadImage = async (file: File, prefix: string): Promise<string | null> => {
   const ext = file.name.split(".").pop() || "jpg";
