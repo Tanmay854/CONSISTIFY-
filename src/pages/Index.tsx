@@ -46,16 +46,8 @@ const AppContent = () => {
       </button>
 
       {activeTab === "reels" && (
-        <button
-          onClick={() => setMuted((m) => !m)}
-          aria-label={muted ? "Unmute video" : "Mute video"}
-          className="fixed bottom-32 right-4 z-30 w-7 h-7 rounded-full bg-secondary/80 flex items-center justify-center"
-        >
-          {muted ? <VolumeX size={13} className="text-foreground" /> : <Volume2 size={13} className="text-foreground" />}
-        </button>
+        <VideosSection muted={muted} onToggleMute={() => setMuted((m) => !m)} />
       )}
-
-      {activeTab === "reels" && <VideosSection muted={muted} />}
       {activeTab === "music" && <MusicTab />}
       {activeTab === "quotes" && <QuotesTab />}
       {activeTab === "upload" && <UploadTab />}
