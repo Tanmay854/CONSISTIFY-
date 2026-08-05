@@ -37,6 +37,9 @@ const TabMediaManager = () => {
   // Quotes
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [bulk, setBulk] = useState("");
+  const [qCat, setQCat] = useState<string>(QUOTE_CATEGORIES[0].id);
+  const [qSub, setQSub] = useState<string>(QUOTE_CATEGORIES[0].subs[0].id);
+  const pdfInput = useRef<HTMLInputElement>(null);
 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -45,8 +48,9 @@ const TabMediaManager = () => {
     const [b, bg, q] = await Promise.all([
       supabase.from("tab_banners").select("id,tab,image_url,position").order("position"),
       supabase.from("quote_backgrounds").select("id,image_url,name,position").order("position"),
-      supabase.from("daily_quotes").select("id,text,author").order("created_at", { ascending: false }),
+      supabase.from("daily_quotes").select("id,text,author,category,subcategory").order("created_at", { ascending: false }).limit(1000),
     ]);
+
     setBanners((b.data as BannerRow[]) || []);
     setBackgrounds((bg.data as BgRow[]) || []);
     setQuotes((q.data as QuoteRow[]) || []);
