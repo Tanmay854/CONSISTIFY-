@@ -217,8 +217,35 @@ const TabMediaManager = () => {
 
       {section === "quotes" && (
         <div className="space-y-3">
+          <div className="flex gap-2">
+            <select
+              value={qCat}
+              onChange={(e) => { setQCat(e.target.value); setQSub(findCategory(e.target.value)!.subs[0].id); }}
+              className="flex-1 bg-secondary text-foreground rounded-lg px-2 py-2 text-[11px] outline-none"
+            >
+              {QUOTE_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+            <select
+              value={qSub}
+              onChange={(e) => setQSub(e.target.value)}
+              className="flex-1 bg-secondary text-foreground rounded-lg px-2 py-2 text-[11px] outline-none"
+            >
+              {(findCategory(qCat)?.subs ?? []).map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </select>
+          </div>
+
+          <button
+            onClick={() => pdfInput.current?.click()}
+            disabled={busy}
+            className="w-full bg-secondary text-secondary-foreground rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Upload size={14} /> {busy ? "Working..." : "Bulk import from PDF"}
+          </button>
+          <input ref={pdfInput} type="file" accept="application/pdf" multiple hidden
+            onChange={(e) => { importPdfs(e.target.files); e.target.value = ""; }} />
+
           <p className="text-muted-foreground text-[11px]">
-            One quote per line. Add an author with an em dash: <em>Discipline equals freedom — Jocko</em>
+            Or one quote per line for the selected topic. Add an author with an em dash: <em>Discipline equals freedom — Jocko</em>
           </p>
           <textarea
             value={bulk}
@@ -239,7 +266,11 @@ const TabMediaManager = () => {
               <div key={q.id} className="flex items-start gap-2 bg-secondary rounded-lg px-3 py-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-foreground text-xs">{q.text}</p>
-                  {q.author && <p className="text-muted-foreground text-[10px] mt-0.5">{q.author}</p>}
+                  <p className="text-muted-foreground text-[10px] mt-0.5">
+                    {[findCategory(q.category)?.label, q.category && q.subcategory ? subLabel(q.category, q.subcategory) : null, q.author]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
                 </div>
                 <button onClick={() => remove("daily_quotes", q.id)} className="text-muted-foreground hover:text-destructive">
                   <Trash2 size={13} />
@@ -249,6 +280,7 @@ const TabMediaManager = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };
