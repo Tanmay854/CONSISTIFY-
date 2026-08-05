@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Share2, ImageIcon, Check, MessageCircle } from "lucide-react";
+import { Share2, ImageIcon, Check, MessageCircle, LayoutGrid, ChevronLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import TabBanner from "@/components/TabBanner";
 import { shareQuote, shareQuoteToWhatsApp } from "@/lib/shareQuote";
+import { QUOTE_CATEGORIES, findCategory } from "@/lib/quoteTopics";
 
 interface Background {
   id: string;
@@ -17,6 +18,10 @@ interface Quote {
 }
 
 const BG_KEY = "daily_quote_bg_id";
+const CAT_KEY = "daily_quote_cat";
+const SUB_KEY = "daily_quote_sub";
+
+type Step = "category" | "sub" | "wallpaper" | "feed";
 
 const DailyQuotesFeed = () => {
   const [backgrounds, setBackgrounds] = useState<Background[]>([]);
@@ -24,33 +29,79 @@ const DailyQuotesFeed = () => {
   const [bgId, setBgId] = useState<string | null>(() => {
     try { return localStorage.getItem(BG_KEY); } catch { return null; }
   });
-  const [picking, setPicking] = useState(false);
+  const [cat, setCat] = useState<string | null>(() => {
+    try { return localStorage.getItem(CAT_KEY); } catch { return null; }
+  });
+  const [sub, setSub] = useState<string | null>(() => {
+    try { return localStorage.getItem(SUB_KEY); } catch { return null; }
+  });
+  const [step, setStep] = useState<Step>(() => {
+    try {
+      return localStorage.getItem(SUB_KEY) ? "feed" : "category";
+    } catch { return "category"; }
+  });
   const [loading, setLoading] = useState(true);
+  const [quotesLoading, setQuotesLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      supabase.from("quote_backgrounds").select("id,image_url,name").order("position", { ascending: true }).limit(300),
-      supabase.from("daily_quotes").select("id,text,author").order("created_at", { ascending: false }).limit(300),
-    ]).then(([bgRes, qRes]) => {
-      if (cancelled) return;
-      setBackgrounds((bgRes.data as Background[]) || []);
-      setQuotes((qRes.data as Quote[]) || []);
-      setLoading(false);
-    });
+    supabase
+      .from("quote_backgrounds")
+      .select("id,image_url,name")
+      .order("position", { ascending: true })
+      .limit(400)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setBackgrounds((data as Background[]) || []);
+        setLoading(false);
+      });
     return () => { cancelled = true; };
   }, []);
 
-  const chosen = backgrounds.find((b) => b.id === bgId) ?? null;
+  useEffect(() => {
+    if (!cat || !sub) return;
+    let cancelled = false;
+    setQuotesLoading(true);
+    supabase
+      .from("daily_quotes")
+      .select("id,text,author")
+      .eq("category", cat)
+      .eq("subcategory", sub)
+      .order("created_at", { ascending: true })
+      .limit(500)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setQuotes((data as Quote[]) || []);
+        setActiveIndex(0);
+        scrollRef.current?.scrollTo({ top: 0 });
+        setQuotesLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [cat, sub]);
 
-  const choose = useCallback((id: string) => {
+  const chosen = backgrounds.find((b) => b.id === bgId) ?? null;
+  const category = findCategory(cat);
+
+  const chooseBg = useCallback((id: string) => {
     setBgId(id);
     try { localStorage.setItem(BG_KEY, id); } catch { /* empty */ }
-    setPicking(false);
+    setStep("feed");
   }, []);
+
+  const chooseCat = useCallback((id: string) => {
+    setCat(id);
+    try { localStorage.setItem(CAT_KEY, id); } catch { /* empty */ }
+    setStep("sub");
+  }, []);
+
+  const chooseSub = useCallback((id: string) => {
+    setSub(id);
+    try { localStorage.setItem(SUB_KEY, id); } catch { /* empty */ }
+    setStep(bgId ? "feed" : "wallpaper");
+  }, [bgId]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -68,8 +119,6 @@ const DailyQuotesFeed = () => {
     setSharing(false);
   }, [current, chosen, sharing]);
 
-  const needsPicker = picking || (!bgId && backgrounds.length > 0);
-
   if (loading) {
     return (
       <div className="h-[100dvh] bg-background flex items-center justify-center">
@@ -78,11 +127,61 @@ const DailyQuotesFeed = () => {
     );
   }
 
-  if (needsPicker) {
+  if (step === "category") {
     return (
       <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28">
         <div className="px-4 pt-20">
           <TabBanner tab="daily_quotes" className="mb-5" />
+          <h2 className="text-foreground font-display text-2xl font-bold tracking-tight">What's on your mind?</h2>
+          <p className="text-muted-foreground text-xs mt-1 mb-4">Pick a topic to get quotes that fit.</p>
+          <div className="space-y-2">
+            {QUOTE_CATEGORIES.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => chooseCat(c.id)}
+                className="w-full text-left bg-secondary text-secondary-foreground rounded-xl px-4 py-3.5 text-sm font-semibold active:scale-[0.98] transition-transform"
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === "sub" && category) {
+    return (
+      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28">
+        <div className="px-4 pt-20">
+          <button
+            onClick={() => setStep("category")}
+            className="flex items-center gap-1 text-muted-foreground text-xs mb-3"
+          >
+            <ChevronLeft size={14} /> Topics
+          </button>
+          <h2 className="text-foreground font-display text-2xl font-bold tracking-tight">{category.label}</h2>
+          <p className="text-muted-foreground text-xs mt-1 mb-4">Choose what you're dealing with.</p>
+          <div className="space-y-2">
+            {category.subs.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => chooseSub(s.id)}
+                className="w-full text-left bg-secondary text-secondary-foreground rounded-xl px-4 py-3.5 text-sm font-semibold active:scale-[0.98] transition-transform"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === "wallpaper") {
+    return (
+      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28">
+        <div className="px-4 pt-20">
           <h2 className="text-foreground font-display text-2xl font-bold tracking-tight">Choose your wallpaper</h2>
           <p className="text-muted-foreground text-xs mt-1 mb-4">
             Every quote will flow over the photo you pick. You can change it any time.
@@ -94,7 +193,7 @@ const DailyQuotesFeed = () => {
               {backgrounds.map((b) => (
                 <button
                   key={b.id}
-                  onClick={() => choose(b.id)}
+                  onClick={() => chooseBg(b.id)}
                   className="relative aspect-[9/16] rounded-xl overflow-hidden bg-secondary active:scale-95 transition-transform"
                 >
                   <img src={b.image_url} alt={b.name || ""} loading="lazy" className="w-full h-full object-cover" />
@@ -109,7 +208,7 @@ const DailyQuotesFeed = () => {
           )}
           {bgId && (
             <button
-              onClick={() => setPicking(false)}
+              onClick={() => setStep("feed")}
               className="w-full mt-5 bg-secondary text-secondary-foreground rounded-xl py-3 text-sm font-semibold"
             >
               Done
@@ -120,53 +219,55 @@ const DailyQuotesFeed = () => {
     );
   }
 
-  if (quotes.length === 0) {
-    return (
-      <div className="h-[100dvh] bg-background flex items-center justify-center px-8 text-center">
-        <p className="text-muted-foreground text-sm">No quotes yet.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
-      {/* Static chosen wallpaper */}
       {chosen && (
-        <img
-          src={chosen.image_url}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src={chosen.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/40 to-background/80 pointer-events-none" />
 
-      {/* Quotes scroll over the static photo */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-contain [scroll-snap-stop:always]"
-      >
-        {quotes.map((q, i) => (
-          <div key={q.id} className="h-[100dvh] w-full snap-start snap-always flex items-center justify-center px-9">
-            <div className={i === activeIndex ? "animate-fade-in" : ""}>
-              <p className="font-display text-[1.7rem] leading-snug text-center text-foreground font-semibold drop-shadow-[0_2px_10px_rgba(0,0,0,0.75)]">
-                “{q.text}”
-              </p>
-              {q.author && (
-                <p className="mt-4 text-center text-xs uppercase tracking-[0.22em] text-foreground/75">
-                  {q.author}
+      {quotesLoading ? (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-9 w-9 rounded-full border-2 border-foreground/25 border-t-foreground animate-spin" />
+        </div>
+      ) : quotes.length === 0 ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-10 text-center gap-4">
+          <p className="text-muted-foreground text-sm">No quotes in this topic yet.</p>
+          <button
+            onClick={() => setStep("category")}
+            className="bg-secondary text-secondary-foreground rounded-xl px-5 py-2.5 text-sm font-semibold"
+          >
+            Pick another topic
+          </button>
+        </div>
+      ) : (
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-contain [scroll-snap-stop:always]"
+        >
+          {quotes.map((q, i) => (
+            <div key={q.id} className="h-[100dvh] w-full snap-start snap-always flex items-center justify-center px-9">
+              <div className={i === activeIndex ? "animate-fade-in" : ""}>
+                <p className="font-display text-[1.7rem] leading-snug text-center text-foreground font-semibold drop-shadow-[0_2px_10px_rgba(0,0,0,0.75)]">
+                  “{q.text}”
                 </p>
-              )}
+                {q.author && (
+                  <p className="mt-4 text-center text-xs uppercase tracking-[0.22em] text-foreground/75">
+                    {q.author}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Actions */}
       <div className="absolute bottom-24 right-4 z-30 flex flex-col gap-2.5">
         <button
           onClick={onShare}
-          disabled={sharing}
+          disabled={sharing || !current}
           aria-label="Share quote"
           className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground disabled:opacity-50"
         >
@@ -184,11 +285,18 @@ const DailyQuotesFeed = () => {
           <MessageCircle size={16} />
         </button>
         <button
-          onClick={() => setPicking(true)}
+          onClick={() => setStep("wallpaper")}
           aria-label="Change background"
           className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
         >
           <ImageIcon size={16} />
+        </button>
+        <button
+          onClick={() => setStep("category")}
+          aria-label="Change topic"
+          className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
+        >
+          <LayoutGrid size={16} />
         </button>
       </div>
     </div>
