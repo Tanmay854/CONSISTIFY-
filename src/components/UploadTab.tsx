@@ -165,7 +165,10 @@ const UploadTab = () => {
         const uploadErr = await new Promise<string | null>((resolve) => {
           const upload = new tus.Upload(videoFile, {
             endpoint: ticket.tusEndpoint,
-            retryDelays: [0, 2000, 5000, 10000],
+            // Larger chunks = far fewer round-trips to Bunny (big win for
+            // long-form uploads from high-latency mobile networks).
+            chunkSize: 32 * 1024 * 1024,
+            retryDelays: [0, 1000, 3000, 5000, 10000, 20000],
             storeFingerprintForResuming: false,
             removeFingerprintOnSuccess: true,
             headers: {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Volume2, VolumeX } from "lucide-react";
 import ReelsTab from "@/components/ReelsTab";
 import LongVideoFeed from "@/components/LongVideoFeed";
 import DailyQuotesFeed from "@/components/DailyQuotesFeed";
@@ -35,7 +35,7 @@ const CategoryCard = ({ feed, onOpen }: { feed: FeedDef; onOpen: () => void }) =
  * sessions, Quick Spark is the immersive vertical short feed, and Daily
  * Quotes flows words over a wallpaper the user picks.
  */
-const VideosSection = ({ muted = false }: { muted?: boolean }) => {
+const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onToggleMute?: () => void }) => {
   const [open, setOpen] = useState<FeedId | null>(null);
   const active = VIDEO_FEEDS.find((f) => f.id === open) ?? null;
 
@@ -50,6 +50,15 @@ const VideosSection = ({ muted = false }: { muted?: boolean }) => {
         >
           <ChevronLeft size={20} className="text-foreground" />
         </button>
+        {active.kind === "short" && onToggleMute && (
+          <button
+            onClick={onToggleMute}
+            aria-label={muted ? "Unmute video" : "Mute video"}
+            className="fixed bottom-32 right-4 z-40 w-7 h-7 rounded-full bg-secondary/80 flex items-center justify-center"
+          >
+            {muted ? <VolumeX size={13} className="text-foreground" /> : <Volume2 size={13} className="text-foreground" />}
+          </button>
+        )}
         {active.kind === "short" ? (
           <ReelsTab muted={muted} feed={active.id} active />
         ) : active.kind === "quotes" ? (
