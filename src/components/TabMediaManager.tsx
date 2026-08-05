@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { VIDEO_FEEDS } from "@/lib/videoFeeds";
 import { QUOTE_CATEGORIES, findCategory, subLabel } from "@/lib/quoteTopics";
-import { parseQuotePdf } from "@/lib/parseQuotePdf";
+import { parseQuotePdf, parseQuoteText } from "@/lib/parseQuotePdf";
 
 type Section = "banners" | "backgrounds" | "quotes";
 
