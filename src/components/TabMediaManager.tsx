@@ -321,6 +321,29 @@ const TabMediaManager = () => {
           <input ref={pdfInput} type="file" accept="application/pdf" multiple hidden
             onChange={(e) => { importPdfs(e.target.files); e.target.value = ""; }} />
 
+          <div className="rounded-xl border border-border p-3 space-y-2">
+            <p className="text-foreground text-xs font-semibold">Import all topics at once</p>
+            <p className="text-muted-foreground text-[11px]">
+              Paste the full list. Category and sub-topic headings on their own line (e.g. <em>Mental Health</em>, then <em>Stress</em>),
+              quotes numbered below each heading. Duplicates are skipped automatically.
+            </p>
+            <textarea
+              value={bulkAll}
+              onChange={(e) => setBulkAll(e.target.value)}
+              rows={7}
+              placeholder={"Mental Health\nStress\n1. Stress is a sign you are growing.\n2. Put down what isn't yours to carry.\nAnxiety\n3. Your anxious thoughts are not facts."}
+              className="w-full bg-secondary text-foreground rounded-xl px-3 py-2.5 text-xs placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none"
+            />
+            <button
+              onClick={importAllTopics}
+              disabled={busy || !bulkAll.trim()}
+              className="w-full bg-primary text-primary-foreground rounded-xl py-2.5 text-xs font-semibold disabled:opacity-50"
+            >
+              {busy ? "Importing..." : "Import all categories"}
+            </button>
+          </div>
+
+
           <p className="text-muted-foreground text-[11px]">
             Or one quote per line for the selected topic. Add an author with an em dash: <em>Discipline equals freedom — Jocko</em>
           </p>
