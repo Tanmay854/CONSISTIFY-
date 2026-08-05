@@ -286,6 +286,7 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderPr
   const [showIcon, setShowIcon] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isQualityReady, setIsQualityReady] = useState(false);
+  const [attachNonce, setAttachNonce] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
   const infoTimerRef = useRef<number | null>(null);
   const isActiveRef = useRef(isActive);
@@ -298,8 +299,10 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderPr
 
   // Adaptive prebuffer: slow devices keep a tight window (current + next, only
   // current fully buffered). Capable devices keep the wider 2-neighbor window.
-  const mountRadius = isSlowDevice ? 1 : 2;
-  const autoPreloadRadius = isSlowDevice ? 0 : 1;
+  // Keeping many hls.js instances alive at once starves the network and makes
+  // the 3rd/4th reel spin forever. Mount current + 1 neighbour only.
+  const mountRadius = 1;
+  const autoPreloadRadius = 0;
   const shouldMount = hasVideo && distance <= mountRadius;
   const preload = distance <= autoPreloadRadius ? "auto" : "metadata";
   const videoFit: CSSProperties["objectFit"] =
@@ -368,7 +371,32 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderPr
       },
     );
     return cleanup;
-  }, [shouldMount, playableUrl, trimStart]);
+  }, [shouldMount, playableUrl, trimStart, attachNonce]);
+
+  // Watchdog: if the active reel is still spinning after 9s, or stalls mid
+  // playback for 12s, tear the stream down and re-attach instead of hanging.
+  useEffect(() => {
+    if (!isActive || !shouldMount) return;
+    let timer: number | null = null;
+    if (isLoading) {
+      timer = window.setTimeout(() => setAttachNonce((n) => n + 1), 9000);
+    }
+    const v = videoRef.current;
+    let stallTimer: number | null = null;
+    const onWaiting = () => {
+      if (stallTimer) window.clearTimeout(stallTimer);
+      stallTimer = window.setTimeout(() => setAttachNonce((n) => n + 1), 12000);
+    };
+    const clearStall = () => { if (stallTimer) { window.clearTimeout(stallTimer); stallTimer = null; } };
+    v?.addEventListener("waiting", onWaiting);
+    v?.addEventListener("playing", clearStall);
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      clearStall();
+      v?.removeEventListener("waiting", onWaiting);
+      v?.removeEventListener("playing", clearStall);
+    };
+  }, [isActive, shouldMount, isLoading]);
 
   // Reset to trimStart only when the active card changes — NOT on every pause/play toggle.
   useEffect(() => {
