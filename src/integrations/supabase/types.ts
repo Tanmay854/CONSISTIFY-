@@ -251,23 +251,29 @@ export type Database = {
       daily_quotes: {
         Row: {
           author: string | null
+          category: string
           created_at: string
           created_by: string | null
           id: string
+          subcategory: string
           text: string
         }
         Insert: {
           author?: string | null
+          category?: string
           created_at?: string
           created_by?: string | null
           id?: string
+          subcategory?: string
           text: string
         }
         Update: {
           author?: string | null
+          category?: string
           created_at?: string
           created_by?: string | null
           id?: string
+          subcategory?: string
           text?: string
         }
         Relationships: []
