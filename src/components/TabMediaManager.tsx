@@ -340,24 +340,32 @@ const TabMediaManager = () => {
             </button>
           </div>
 
+          <div className="rounded-xl border border-border p-3 space-y-2">
+            <div className="flex items-baseline justify-between">
+              <p className="text-foreground text-xs font-semibold">Library</p>
+              <p className="text-muted-foreground text-[11px]">{totalQuotes} quotes total</p>
+            </div>
+            <div className="max-h-[28vh] overflow-y-auto space-y-2">
+              {QUOTE_CATEGORIES.map((c) => {
+                const catTotal = c.subs.reduce((n, s) => n + (counts[`${c.id}|${s.id}`] || 0), 0);
+                return (
+                  <div key={c.id}>
+                    <div className="flex justify-between text-[11px] text-foreground font-semibold">
+                      <span>{c.label}</span>
+                      <span>{catTotal}</span>
+                    </div>
+                    {c.subs.map((s) => (
+                      <div key={s.id} className="flex justify-between text-[10px] text-muted-foreground pl-2">
+                        <span>{s.label}</span>
+                        <span>{counts[`${c.id}|${s.id}`] || 0}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-          <p className="text-muted-foreground text-[11px]">
-            Or one quote per line for the selected topic. Add an author with an em dash: <em>Discipline equals freedom — Jocko</em>
-          </p>
-          <textarea
-            value={bulk}
-            onChange={(e) => setBulk(e.target.value)}
-            rows={5}
-            placeholder={"Discipline equals freedom — Jocko Willink\nStay hard — David Goggins"}
-            className="w-full bg-secondary text-foreground rounded-xl px-3 py-2.5 text-xs placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none"
-          />
-          <button
-            onClick={addQuotes}
-            disabled={busy || !bulk.trim()}
-            className="w-full bg-primary text-primary-foreground rounded-xl py-2.5 text-xs font-semibold disabled:opacity-50"
-          >
-            {busy ? "Saving..." : "Add quotes"}
-          </button>
           <div className="max-h-[35vh] overflow-y-auto space-y-1.5">
             {quotes.map((q) => (
               <div key={q.id} className="flex items-start gap-2 bg-secondary rounded-lg px-3 py-2">
