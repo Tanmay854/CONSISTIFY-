@@ -108,50 +108,54 @@ const TabMediaManager = () => {
     setBusy(false);
   };
 
-  const addQuotes = async () => {
-    const lines = bulk.split("\n").map((l) => l.trim()).filter(Boolean);
-    if (!lines.length) return;
-    setBusy(true); setMessage(null);
-    const rows = lines.map((line) => {
-      const parts = line.replace(/^\d+[.)]\s*/, "").split(/\s+[—-]\s+/);
-      const author = parts.length > 1 ? parts.pop()!.trim() : null;
-      return {
-        text: parts.join(" - ").replace(/^["“]|["”]$/g, "").trim(),
-        author,
-        category: qCat,
-        subcategory: qSub,
-        created_by: user?.id,
-      };
-    });
-    const { error } = await supabase.from("daily_quotes").insert(rows);
-    if (error) setMessage(error.message);
-    else { setBulk(""); setMessage(`Added ${rows.length} quotes`); }
-    await load();
-    setBusy(false);
+  /**
+   * Inserts quotes while guaranteeing no duplicates: text is de-duplicated
+   * within the batch and against everything already stored (case/whitespace
+   * insensitive). The database also enforces this with a unique index.
+   */
+  const insertUnique = async (
+    parsed: { text: string; category: string; subcategory: string }[],
+  ): Promise<{ added: number; skipped: number; error?: string }> => {
+    const { data: existing } = await supabase.from("daily_quotes").select("text").limit(50000);
+    const seen = new Set((existing ?? []).map((e) => (e.text || "").trim().toLowerCase()));
+    const rows: { text: string; category: string; subcategory: string; author: null; created_by?: string }[] = [];
+    for (const p of parsed) {
+      const key = p.text.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      rows.push({ ...p, text: p.text.trim(), author: null, created_by: user?.id });
+    }
+    let added = 0;
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error } = await supabase.from("daily_quotes").insert(rows.slice(i, i + 200));
+      if (error) return { added, skipped: parsed.length - rows.length, error: error.message };
+      added += Math.min(200, rows.length - i);
+    }
+    return { added, skipped: parsed.length - rows.length };
   };
 
   const importPdfs = async (files: FileList | null) => {
     if (!files?.length) return;
     setBusy(true); setMessage("Reading PDFs...");
     let total = 0;
+    let skipped = 0;
     for (const file of Array.from(files)) {
       try {
         const parsed = await parseQuotePdf(file);
         if (!parsed.length) { setMessage(`No quotes found in ${file.name}`); continue; }
-        for (let i = 0; i < parsed.length; i += 200) {
-          const chunk = parsed.slice(i, i + 200).map((p) => ({ ...p, author: null, created_by: user?.id }));
-          const { error } = await supabase.from("daily_quotes").insert(chunk);
-          if (error) { setMessage(error.message); break; }
-          total += chunk.length;
-        }
+        const res = await insertUnique(parsed);
+        total += res.added;
+        skipped += res.skipped;
+        if (res.error) { setMessage(res.error); break; }
       } catch (e) {
         setMessage(`Failed to read ${file.name}: ${(e as Error).message}`);
       }
     }
-    if (total) setMessage(`Imported ${total} quotes`);
+    if (total || skipped) setMessage(`Imported ${total} quotes (${skipped} duplicates skipped)`);
     await load();
     setBusy(false);
   };
+
   // Bulk import across every category / subcategory at once
   const importAllTopics = async () => {
     const parsed = parseQuoteText(bulkAll);
