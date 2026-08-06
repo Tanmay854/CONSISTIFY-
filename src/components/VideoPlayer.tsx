@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RotateCcw, RotateCw } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RotateCcw, RotateCw, RectangleHorizontal } from "lucide-react";
 import HlsVideo from "./HlsVideo";
 
 type Fit = "contain" | "cover";
@@ -266,7 +266,17 @@ const VideoPlayer = ({
               >
                 {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
+              {allowRotate && !isFs && (
+                <button
+                  aria-label="Watch in landscape"
+                  onClick={toggleFs}
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                >
+                  <RectangleHorizontal size={16} />
+                </button>
+              )}
               <button
+
                 aria-label={isFs ? "Exit fullscreen" : "Enter fullscreen"}
                 onClick={toggleFs}
                 className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
