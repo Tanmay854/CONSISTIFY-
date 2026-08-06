@@ -131,10 +131,17 @@ const VideoPlayer = ({
 
 
   useEffect(() => {
-    const onFs = () => setIsFs(!!document.fullscreenElement);
+    const onFs = () => {
+      const fs = !!document.fullscreenElement;
+      setIsFs(fs);
+      if (!fs) {
+        try { (screen.orientation as ScreenOrientation & { unlock?: () => void })?.unlock?.(); } catch { /* empty */ }
+      }
+    };
     document.addEventListener("fullscreenchange", onFs);
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
+
 
   const onBarPointer = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
