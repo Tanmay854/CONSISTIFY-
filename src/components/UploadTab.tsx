@@ -28,7 +28,11 @@ const UploadTab = () => {
   const [videoCategory, setVideoCategory] = useState("Motivation");
   const [videoFeed, setVideoFeed] = useState<string>("quick_spark");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbFile, setThumbFile] = useState<File | null>(null);
+  const thumbPreviewUrl = useMemo(() => (thumbFile ? URL.createObjectURL(thumbFile) : null), [thumbFile]);
+  useEffect(() => () => { if (thumbPreviewUrl) URL.revokeObjectURL(thumbPreviewUrl); }, [thumbPreviewUrl]);
   const [videoFit, setVideoFit] = useState<"cover" | "contain" | "fill">("cover");
+
   // Only build a preview URL for files that can be decoded in the WebView without
   // crashing. Modern phones handle ~200 MB H.264 fine; very large files still skip preview.
   const PREVIEW_MAX_BYTES = 200 * 1024 * 1024; // 200 MB
