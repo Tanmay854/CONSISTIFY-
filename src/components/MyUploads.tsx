@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Check, X, Scissors, Trash2, Film, Image as ImageIcon, Search, Eye, BarChart3, Clock } from "lucide-react";
+import { Pencil, Check, X, Scissors, Trash2, Film, Image as ImageIcon, ImagePlus, Search, Eye, BarChart3, Clock } from "lucide-react";
+import { getVideoThumbnail } from "@/lib/thumbUrl";
+
 
 const formatDateTime = (iso: string) => {
   try {
