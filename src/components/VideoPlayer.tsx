@@ -42,7 +42,9 @@ const VideoPlayer = ({
   fit = "contain",
   className = "",
   fill = false,
+  allowRotate = false,
 }: Props) => {
+
   const wrapperRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hideTimer = useRef<number | null>(null);
