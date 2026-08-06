@@ -448,6 +448,7 @@ export type Database = {
           feed: string
           id: string
           public_id: string
+          thumbnail_url: string | null
           title: string | null
           trim_end: number | null
           trim_start: number | null
@@ -465,6 +466,7 @@ export type Database = {
           feed?: string
           id?: string
           public_id?: string
+          thumbnail_url?: string | null
           title?: string | null
           trim_end?: number | null
           trim_start?: number | null
@@ -482,6 +484,7 @@ export type Database = {
           feed?: string
           id?: string
           public_id?: string
+          thumbnail_url?: string | null
           title?: string | null
           trim_end?: number | null
           trim_start?: number | null
