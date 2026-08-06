@@ -224,6 +224,14 @@ const MyUploads = () => {
 
   return (
     <div className="px-5 py-4 space-y-3">
+      <input
+        ref={thumbInput}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => { handleThumbnail(e.target.files?.[0] || null); e.target.value = ""; }}
+      />
+
       <div className="relative">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
