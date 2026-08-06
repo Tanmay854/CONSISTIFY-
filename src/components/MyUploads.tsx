@@ -24,6 +24,8 @@ interface Reel {
   description: string | null;
   category: string | null;
   video_url: string;
+  thumbnail_url: string | null;
+  feed: string | null;
   bunny_video_guid: string | null;
   bunny_library_id: string | null;
   created_at: string;
@@ -31,6 +33,7 @@ interface Reel {
   trim_start: number | null;
   trim_end: number | null;
 }
+
 interface Quote {
   id: string;
   public_id: string | null;
