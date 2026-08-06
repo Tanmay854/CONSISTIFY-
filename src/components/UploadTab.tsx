@@ -28,7 +28,11 @@ const UploadTab = () => {
   const [videoCategory, setVideoCategory] = useState("Motivation");
   const [videoFeed, setVideoFeed] = useState<string>("quick_spark");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbFile, setThumbFile] = useState<File | null>(null);
+  const thumbPreviewUrl = useMemo(() => (thumbFile ? URL.createObjectURL(thumbFile) : null), [thumbFile]);
+  useEffect(() => () => { if (thumbPreviewUrl) URL.revokeObjectURL(thumbPreviewUrl); }, [thumbPreviewUrl]);
   const [videoFit, setVideoFit] = useState<"cover" | "contain" | "fill">("cover");
+
   // Only build a preview URL for files that can be decoded in the WebView without
   // crashing. Modern phones handle ~200 MB H.264 fine; very large files still skip preview.
   const PREVIEW_MAX_BYTES = 200 * 1024 * 1024; // 200 MB
@@ -82,10 +86,11 @@ const UploadTab = () => {
   };
 
   const resetFields = () => {
-    setVideoTitle(""); setVideoDescription(""); setVideoFile(null);
+    setVideoTitle(""); setVideoDescription(""); setVideoFile(null); setThumbFile(null);
     setPhotoTitle(""); setPhotoDescription(""); setPhotoFiles([]);
     setAdTitle(""); setAdLink(""); setAdUrl(""); setAdFile(null);
   };
+
 
   const uploadFileToBucket = async (bucket: string, file: File): Promise<string | null> => {
     const ext = file.name.split(".").pop() || "bin";
@@ -165,10 +170,11 @@ const UploadTab = () => {
         const uploadErr = await new Promise<string | null>((resolve) => {
           const upload = new tus.Upload(videoFile, {
             endpoint: ticket.tusEndpoint,
-            // Larger chunks = far fewer round-trips to Bunny (big win for
-            // long-form uploads from high-latency mobile networks).
-            chunkSize: 32 * 1024 * 1024,
-            retryDelays: [0, 1000, 3000, 5000, 10000, 20000],
+            // Stream the whole file over a single connection: no per-chunk
+            // round-trips, which is what actually caps throughput on slower
+            // (~9 Mbps) home connections. Retries resume from Bunny's offset.
+            chunkSize: Infinity,
+            retryDelays: [0, 1000, 3000, 5000, 10000, 20000, 30000],
             storeFingerprintForResuming: false,
             removeFingerprintOnSuccess: true,
             headers: {
@@ -186,10 +192,17 @@ const UploadTab = () => {
         });
         if (uploadErr) { setError("Upload failed: " + uploadErr); setLoading(false); return; }
 
+        // 2b. Optional custom thumbnail (Long Game / Calm State)
+        let customThumb: string | null = null;
+        if (thumbFile) {
+          const up = await uploadToBunny(thumbFile, "image");
+          if (up) customThumb = up.url;
+        }
 
         // 3. Save Bunny playback URL and exact Stream identifiers into reels
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim() || null, description: videoDescription.trim() || null, video_url: ticket.playbackUrl, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, feed: videoFeed, video_fit: videoFit, uploaded_by: user?.id });
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim() || null, description: videoDescription.trim() || null, video_url: ticket.playbackUrl, thumbnail_url: customThumb, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, feed: videoFeed, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
+
 
       } else if (activeType === "photo") {
         if (photoFiles.length === 0) { setError("Select at least one image"); setLoading(false); return; }
@@ -389,6 +402,23 @@ const UploadTab = () => {
                   />
                   {videoFile && <p className="text-muted-foreground text-[10px] mt-1">{videoFile.name}</p>}
                 </div>
+
+                {videoFeed !== "quick_spark" && (
+                  <div>
+                    <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Thumbnail <span className="text-muted-foreground/60 normal-case">(optional, 16:9)</span></label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setThumbFile(e.target.files?.[0] || null)}
+                      className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
+                    />
+                    {thumbPreviewUrl && (
+                      <img src={thumbPreviewUrl} alt="Thumbnail preview" className="mt-2 w-40 aspect-video object-cover rounded-lg" />
+                    )}
+                  </div>
+                )}
+
+
 
                 {videoFile && (
                   <div>

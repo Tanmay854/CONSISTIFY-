@@ -36,8 +36,10 @@ const TabMediaManager = () => {
 
   // Quotes
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
-  const [bulk, setBulk] = useState("");
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [totalQuotes, setTotalQuotes] = useState(0);
   const [bulkAll, setBulkAll] = useState("");
+
 
   const [qCat, setQCat] = useState<string>(QUOTE_CATEGORIES[0].id);
   const [qSub, setQSub] = useState<string>(QUOTE_CATEGORIES[0].subs[0].id);
@@ -47,16 +49,25 @@ const TabMediaManager = () => {
   const [message, setMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [b, bg, q] = await Promise.all([
+    const [b, bg, q, all] = await Promise.all([
       supabase.from("tab_banners").select("id,tab,image_url,position").order("position"),
       supabase.from("quote_backgrounds").select("id,image_url,name,position").order("position"),
       supabase.from("daily_quotes").select("id,text,author,category,subcategory").order("created_at", { ascending: false }).limit(1000),
+      supabase.from("daily_quotes").select("category,subcategory").limit(50000),
     ]);
 
     setBanners((b.data as BannerRow[]) || []);
     setBackgrounds((bg.data as BgRow[]) || []);
     setQuotes((q.data as QuoteRow[]) || []);
+    const map: Record<string, number> = {};
+    (all.data ?? []).forEach((r) => {
+      const key = `${r.category}|${r.subcategory}`;
+      map[key] = (map[key] || 0) + 1;
+    });
+    setCounts(map);
+    setTotalQuotes((all.data ?? []).length);
   }, []);
+
 
   useEffect(() => { load(); }, [load]);
 
@@ -97,50 +108,54 @@ const TabMediaManager = () => {
     setBusy(false);
   };
 
-  const addQuotes = async () => {
-    const lines = bulk.split("\n").map((l) => l.trim()).filter(Boolean);
-    if (!lines.length) return;
-    setBusy(true); setMessage(null);
-    const rows = lines.map((line) => {
-      const parts = line.replace(/^\d+[.)]\s*/, "").split(/\s+[—-]\s+/);
-      const author = parts.length > 1 ? parts.pop()!.trim() : null;
-      return {
-        text: parts.join(" - ").replace(/^["“]|["”]$/g, "").trim(),
-        author,
-        category: qCat,
-        subcategory: qSub,
-        created_by: user?.id,
-      };
-    });
-    const { error } = await supabase.from("daily_quotes").insert(rows);
-    if (error) setMessage(error.message);
-    else { setBulk(""); setMessage(`Added ${rows.length} quotes`); }
-    await load();
-    setBusy(false);
+  /**
+   * Inserts quotes while guaranteeing no duplicates: text is de-duplicated
+   * within the batch and against everything already stored (case/whitespace
+   * insensitive). The database also enforces this with a unique index.
+   */
+  const insertUnique = async (
+    parsed: { text: string; category: string; subcategory: string }[],
+  ): Promise<{ added: number; skipped: number; error?: string }> => {
+    const { data: existing } = await supabase.from("daily_quotes").select("text").limit(50000);
+    const seen = new Set((existing ?? []).map((e) => (e.text || "").trim().toLowerCase()));
+    const rows: { text: string; category: string; subcategory: string; author: null; created_by?: string }[] = [];
+    for (const p of parsed) {
+      const key = p.text.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      rows.push({ ...p, text: p.text.trim(), author: null, created_by: user?.id });
+    }
+    let added = 0;
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error } = await supabase.from("daily_quotes").insert(rows.slice(i, i + 200));
+      if (error) return { added, skipped: parsed.length - rows.length, error: error.message };
+      added += Math.min(200, rows.length - i);
+    }
+    return { added, skipped: parsed.length - rows.length };
   };
 
   const importPdfs = async (files: FileList | null) => {
     if (!files?.length) return;
     setBusy(true); setMessage("Reading PDFs...");
     let total = 0;
+    let skipped = 0;
     for (const file of Array.from(files)) {
       try {
         const parsed = await parseQuotePdf(file);
         if (!parsed.length) { setMessage(`No quotes found in ${file.name}`); continue; }
-        for (let i = 0; i < parsed.length; i += 200) {
-          const chunk = parsed.slice(i, i + 200).map((p) => ({ ...p, author: null, created_by: user?.id }));
-          const { error } = await supabase.from("daily_quotes").insert(chunk);
-          if (error) { setMessage(error.message); break; }
-          total += chunk.length;
-        }
+        const res = await insertUnique(parsed);
+        total += res.added;
+        skipped += res.skipped;
+        if (res.error) { setMessage(res.error); break; }
       } catch (e) {
         setMessage(`Failed to read ${file.name}: ${(e as Error).message}`);
       }
     }
-    if (total) setMessage(`Imported ${total} quotes`);
+    if (total || skipped) setMessage(`Imported ${total} quotes (${skipped} duplicates skipped)`);
     await load();
     setBusy(false);
   };
+
   // Bulk import across every category / subcategory at once
   const importAllTopics = async () => {
     const parsed = parseQuoteText(bulkAll);
@@ -149,35 +164,17 @@ const TabMediaManager = () => {
       return;
     }
     setBusy(true); setMessage("Importing...");
-    const { data: existing } = await supabase
-      .from("daily_quotes")
-      .select("text,category,subcategory")
-      .limit(10000);
-    const seen = new Set(
-      (existing ?? []).map((e) => `${e.category}|${e.subcategory}|${(e.text || "").trim().toLowerCase()}`)
-    );
-    const rows = parsed
-      .filter((p) => !seen.has(`${p.category}|${p.subcategory}|${p.text.toLowerCase()}`))
-      .map((p) => ({ ...p, author: null, created_by: user?.id }));
-    if (!rows.length) {
-      setMessage(`All ${parsed.length} quotes already exist.`);
-      setBusy(false);
-      return;
-    }
-    let total = 0;
-    for (let i = 0; i < rows.length; i += 200) {
-      const { error } = await supabase.from("daily_quotes").insert(rows.slice(i, i + 200));
-      if (error) { setMessage(error.message); break; }
-      total += Math.min(200, rows.length - i);
-    }
-    if (total) {
-      const topics = new Set(rows.slice(0, total).map((r) => `${r.category}/${r.subcategory}`));
+    const res = await insertUnique(parsed);
+    if (res.error) setMessage(res.error);
+    else if (!res.added) setMessage(`All ${parsed.length} quotes already exist.`);
+    else {
       setBulkAll("");
-      setMessage(`Imported ${total} quotes across ${topics.size} sub-topics (${parsed.length - rows.length} duplicates skipped).`);
+      setMessage(`Imported ${res.added} quotes (${res.skipped} duplicates skipped).`);
     }
     await load();
     setBusy(false);
   };
+
 
 
 
@@ -343,24 +340,32 @@ const TabMediaManager = () => {
             </button>
           </div>
 
+          <div className="rounded-xl border border-border p-3 space-y-2">
+            <div className="flex items-baseline justify-between">
+              <p className="text-foreground text-xs font-semibold">Library</p>
+              <p className="text-muted-foreground text-[11px]">{totalQuotes} quotes total</p>
+            </div>
+            <div className="max-h-[28vh] overflow-y-auto space-y-2">
+              {QUOTE_CATEGORIES.map((c) => {
+                const catTotal = c.subs.reduce((n, s) => n + (counts[`${c.id}|${s.id}`] || 0), 0);
+                return (
+                  <div key={c.id}>
+                    <div className="flex justify-between text-[11px] text-foreground font-semibold">
+                      <span>{c.label}</span>
+                      <span>{catTotal}</span>
+                    </div>
+                    {c.subs.map((s) => (
+                      <div key={s.id} className="flex justify-between text-[10px] text-muted-foreground pl-2">
+                        <span>{s.label}</span>
+                        <span>{counts[`${c.id}|${s.id}`] || 0}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-          <p className="text-muted-foreground text-[11px]">
-            Or one quote per line for the selected topic. Add an author with an em dash: <em>Discipline equals freedom — Jocko</em>
-          </p>
-          <textarea
-            value={bulk}
-            onChange={(e) => setBulk(e.target.value)}
-            rows={5}
-            placeholder={"Discipline equals freedom — Jocko Willink\nStay hard — David Goggins"}
-            className="w-full bg-secondary text-foreground rounded-xl px-3 py-2.5 text-xs placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary resize-none"
-          />
-          <button
-            onClick={addQuotes}
-            disabled={busy || !bulk.trim()}
-            className="w-full bg-primary text-primary-foreground rounded-xl py-2.5 text-xs font-semibold disabled:opacity-50"
-          >
-            {busy ? "Saving..." : "Add quotes"}
-          </button>
           <div className="max-h-[35vh] overflow-y-auto space-y-1.5">
             {quotes.map((q) => (
               <div key={q.id} className="flex items-start gap-2 bg-secondary rounded-lg px-3 py-2">

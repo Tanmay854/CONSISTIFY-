@@ -73,11 +73,12 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
   return (
     <div className="h-[100dvh] w-full bg-background overflow-y-auto scrollbar-hide">
       <header className="px-5 pt-16 pb-5">
-        <h1 className="text-foreground font-extrabold uppercase tracking-tight text-[2rem] leading-none">
-          Categories
+        <h1 className="text-foreground font-brand text-[2rem] leading-none">
+          Home
         </h1>
         <p className="text-muted-foreground text-sm mt-2">Choose what inspires you today.</p>
       </header>
+
 
       <div className="px-4 pb-32 space-y-4">
         {VIDEO_FEEDS.map((f) => (

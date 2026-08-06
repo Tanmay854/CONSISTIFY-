@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, Check, X, Scissors, Trash2, Film, Image as ImageIcon, Search, Eye, BarChart3, Clock } from "lucide-react";
+import { Pencil, Check, X, Scissors, Trash2, Film, Image as ImageIcon, ImagePlus, Search, Eye, BarChart3, Clock } from "lucide-react";
+import { getVideoThumbnail } from "@/lib/thumbUrl";
+
 
 const formatDateTime = (iso: string) => {
   try {
@@ -24,6 +26,8 @@ interface Reel {
   description: string | null;
   category: string | null;
   video_url: string;
+  thumbnail_url: string | null;
+  feed: string | null;
   bunny_video_guid: string | null;
   bunny_library_id: string | null;
   created_at: string;
@@ -31,6 +35,7 @@ interface Reel {
   trim_start: number | null;
   trim_end: number | null;
 }
+
 interface Quote {
   id: string;
   public_id: string | null;
@@ -104,6 +109,9 @@ const MyUploads = () => {
   const [query, setQuery] = useState("");
   const [views, setViews] = useState<Record<string, number>>({});
   const [statsOpen, setStatsOpen] = useState<string | null>(null);
+  const thumbInput = useRef<HTMLInputElement>(null);
+  const [thumbTargetId, setThumbTargetId] = useState<string | null>(null);
+
 
   const q = query.trim().toLowerCase();
   const filterFn = <T extends { title: string | null }>(items: T[], extra?: (i: T) => string) =>
@@ -173,6 +181,30 @@ const MyUploads = () => {
     setBusy(false);
   };
 
+  const handleThumbnail = async (file: File | null) => {
+    const id = thumbTargetId;
+    setThumbTargetId(null);
+    if (!file || !id) return;
+    setBusy(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setBusy(false); return; }
+    const form = new FormData();
+    form.append("file", file);
+    form.append("kind", "image");
+    const res = await fetch(
+      `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bunny-storage-upload`,
+      { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` }, body: form },
+    );
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.url) { alert(json.error || "Thumbnail upload failed"); setBusy(false); return; }
+    const { error } = await supabase.from("reels").update({ thumbnail_url: json.url }).eq("id", id);
+    if (error) alert(error.message);
+    await fetchAll();
+    setBusy(false);
+  };
+
+
+
   const handleDelete = async (table: "reels" | "quotes", id: string, fileUrl: string | null, bucket: string | null, bunnyRef = {}) => {
     if (!confirm("Delete this item permanently?")) return;
     setBusy(true);
@@ -192,6 +224,14 @@ const MyUploads = () => {
 
   return (
     <div className="px-5 py-4 space-y-3">
+      <input
+        ref={thumbInput}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => { handleThumbnail(e.target.files?.[0] || null); e.target.value = ""; }}
+      />
+
       <div className="relative">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -227,15 +267,26 @@ const MyUploads = () => {
             fReels.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos yet."}</p> :
             fReels.map((reel) => {
               const ytId = getYoutubeId(reel.video_url);
-              const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : null;
+              const thumb = ytId
+                ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`
+                : getVideoThumbnail(reel.video_url, reel.thumbnail_url);
               const isEditing = editingId === reel.id;
               const isTrimming = trimmingId === reel.id;
               return (
                 <div key={reel.id} className="bg-secondary rounded-xl p-3">
                   <div className="flex gap-3">
-                    <div className="w-24 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { setThumbTargetId(reel.id); thumbInput.current?.click(); }}
+                      title="Change thumbnail"
+                      className="relative w-24 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0"
+                    >
                       {thumb ? <img src={thumb} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Video</div>}
-                    </div>
+                      <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
+                        <ImagePlus size={10} /> Thumbnail
+                      </span>
+                    </button>
+
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
                         <div className="space-y-2">

@@ -1,7 +1,7 @@
 type Tab = "reels" | "books" | "music" | "quotes" | "courses";
 
 const ICONS: Record<Tab, { viewBox: string; path: string }> = {
-  reels:   { viewBox: "0 0 24 24", path: "M8 5v14l11-7z" },
+  reels:   { viewBox: "0 0 24 24", path: "M12 3.2 2.4 11.1a1 1 0 0 0 .64 1.77H4.6v7.03a1.1 1.1 0 0 0 1.1 1.1h3.7v-5.4a2.6 2.6 0 0 1 5.2 0V21h3.7a1.1 1.1 0 0 0 1.1-1.1v-7.03h1.56a1 1 0 0 0 .64-1.77L12 3.2z" },
   books:   { viewBox: "0 0 24 24", path: "M12 6.5c-1.74-1.36-4.02-2-6.5-2-1.44 0-2.83.22-4 .68v13.32c1.17-.46 2.56-.68 4-.68 2.15 0 4.29.5 6 1.5V6.5zm0 0c1.74-1.36 4.02-2 6.5-2 1.44 0 2.83.22 4 .68v13.32c-1.17-.46-2.56-.68-4-.68-2.15 0-4.29.5-6 1.5V6.5z" },
   music:   { viewBox: "0 0 28 24", path: "M8 3v11.55A4 4 0 1 0 10 18V8.1l10-2v6.45A4 4 0 1 0 22 16V1l-14 2.8V3z" },
   quotes:  { viewBox: "0 0 24 24", path: "M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z" },
@@ -9,7 +9,8 @@ const ICONS: Record<Tab, { viewBox: string; path: string }> = {
 };
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "reels",   label: "VIDEOS" },
+  { id: "reels",   label: "HOME" },
+
   { id: "books",   label: "BOOKS" },
   { id: "music",   label: "MUSIC" },
   { id: "quotes",  label: "QUOTES" },

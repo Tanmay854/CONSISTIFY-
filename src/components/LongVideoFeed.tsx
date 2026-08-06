@@ -12,9 +12,11 @@ interface LongVideo {
   title: string | null;
   description: string | null;
   video_url: string;
+  thumbnail_url: string | null;
   category: string;
   created_at: string;
 }
+
 
 const timeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
@@ -28,7 +30,7 @@ const timeAgo = (iso: string) => {
 
 /** YouTube-style card: full-width 16:9 thumbnail, title below, meta line. */
 const VideoCard = ({ v, onOpen, compact = false }: { v: LongVideo; onOpen: () => void; compact?: boolean }) => {
-  const thumb = getVideoThumbnail(v.video_url);
+  const thumb = getVideoThumbnail(v.video_url, v.thumbnail_url);
   if (compact) {
     return (
       <button onClick={onOpen} className="w-full flex gap-2.5 text-left active:opacity-70 transition-opacity">
@@ -65,7 +67,7 @@ const LongVideoFeed = ({ feed, heading, blurb }: { feed: string; heading: string
     let cancelled = false;
     supabase
       .from("reels")
-      .select("id,title,description,video_url,category,created_at")
+      .select("id,title,description,video_url,thumbnail_url,category,created_at")
       .eq("feed", feed)
       .order("created_at", { ascending: false })
       .limit(100)
@@ -93,7 +95,7 @@ const LongVideoFeed = ({ feed, heading, blurb }: { feed: string; heading: string
       <div className="pt-16">
         <div className="px-4">
           <TabBanner tab={feed} className="mb-4" />
-          <h2 className="text-foreground font-display text-xl font-bold tracking-tight">{heading}</h2>
+          <h2 className="text-foreground font-brand text-lg">{heading}</h2>
           <p className="text-muted-foreground text-xs mt-1 mb-3">{blurb}</p>
         </div>
 
@@ -124,12 +126,14 @@ const LongVideoFeed = ({ feed, heading, blurb }: { feed: string; heading: string
             <VideoPlayer
               key={active.id}
               src={getPlayableVideoUrl(active.video_url)}
-              poster={getVideoThumbnail(active.video_url) || undefined}
+              poster={getVideoThumbnail(active.video_url, active.thumbnail_url) || undefined}
               autoPlay
               fill
               fit="contain"
+              allowRotate
               className="h-full"
             />
+
             <button
               onClick={() => setActive(null)}
               aria-label="Close player"
@@ -143,6 +147,7 @@ const LongVideoFeed = ({ feed, heading, blurb }: { feed: string; heading: string
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
             <div className="px-4 pt-3">
               <h1 className="text-foreground text-base font-semibold leading-snug">{active.title || "Untitled"}</h1>
+
               <p className="text-muted-foreground text-xs mt-1">{active.category} · {timeAgo(active.created_at)}</p>
 
               {active.description && (

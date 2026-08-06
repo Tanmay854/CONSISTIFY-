@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RotateCcw, RotateCw } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RotateCcw, RotateCw, RectangleHorizontal } from "lucide-react";
 import HlsVideo from "./HlsVideo";
 
 type Fit = "contain" | "cover";
@@ -16,6 +16,9 @@ type Props = {
    * When true, the player fills the wrapping container. When false, uses aspect-video.
    */
   fill?: boolean;
+  /** Show a rotate-to-landscape control (long-form videos). */
+  allowRotate?: boolean;
+
 };
 
 const fmt = (s: number) => {
@@ -39,7 +42,9 @@ const VideoPlayer = ({
   fit = "contain",
   className = "",
   fill = false,
+  allowRotate = false,
 }: Props) => {
+
   const wrapperRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hideTimer = useRef<number | null>(null);
@@ -101,24 +106,42 @@ const VideoPlayer = ({
     revealControls();
   };
 
+  type OrientationLock = ScreenOrientation & {
+    lock?: (o: string) => Promise<void>;
+    unlock?: () => void;
+  };
+
   const toggleFs = async () => {
     const el = wrapperRef.current;
     if (!el) return;
+    const orientation = (typeof screen !== "undefined" ? screen.orientation : undefined) as OrientationLock | undefined;
     try {
       if (!document.fullscreenElement) {
         await el.requestFullscreen?.();
+        if (allowRotate) {
+          try { await orientation?.lock?.("landscape"); } catch { /* not supported */ }
+        }
       } else {
+        try { orientation?.unlock?.(); } catch { /* not supported */ }
         await document.exitFullscreen?.();
       }
     } catch { /* empty */ }
     revealControls();
   };
 
+
   useEffect(() => {
-    const onFs = () => setIsFs(!!document.fullscreenElement);
+    const onFs = () => {
+      const fs = !!document.fullscreenElement;
+      setIsFs(fs);
+      if (!fs) {
+        try { (screen.orientation as ScreenOrientation & { unlock?: () => void })?.unlock?.(); } catch { /* empty */ }
+      }
+    };
     document.addEventListener("fullscreenchange", onFs);
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
+
 
   const onBarPointer = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
@@ -243,7 +266,17 @@ const VideoPlayer = ({
               >
                 {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
+              {allowRotate && !isFs && (
+                <button
+                  aria-label="Watch in landscape"
+                  onClick={toggleFs}
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                >
+                  <RectangleHorizontal size={16} />
+                </button>
+              )}
               <button
+
                 aria-label={isFs ? "Exit fullscreen" : "Enter fullscreen"}
                 onClick={toggleFs}
                 className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
