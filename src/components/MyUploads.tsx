@@ -257,15 +257,26 @@ const MyUploads = () => {
             fReels.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos yet."}</p> :
             fReels.map((reel) => {
               const ytId = getYoutubeId(reel.video_url);
-              const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : null;
+              const thumb = ytId
+                ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`
+                : getVideoThumbnail(reel.video_url, reel.thumbnail_url);
               const isEditing = editingId === reel.id;
               const isTrimming = trimmingId === reel.id;
               return (
                 <div key={reel.id} className="bg-secondary rounded-xl p-3">
                   <div className="flex gap-3">
-                    <div className="w-24 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { setThumbTargetId(reel.id); thumbInput.current?.click(); }}
+                      title="Change thumbnail"
+                      className="relative w-24 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0"
+                    >
                       {thumb ? <img src={thumb} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Video</div>}
-                    </div>
+                      <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
+                        <ImagePlus size={10} /> Thumbnail
+                      </span>
+                    </button>
+
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
                         <div className="space-y-2">
