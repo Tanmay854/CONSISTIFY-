@@ -65,9 +65,18 @@
 }
 
 @layer utilities {
+  /* Wide-tracked uppercase wordmark style used for section headers */
+  .font-brand {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+  }
+
   .font-display {
     font-family: 'Playfair Display', serif;
   }
+
 
   .text-gold {
     color: hsl(var(--primary));
