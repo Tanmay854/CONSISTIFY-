@@ -106,18 +106,29 @@ const VideoPlayer = ({
     revealControls();
   };
 
+  type OrientationLock = ScreenOrientation & {
+    lock?: (o: string) => Promise<void>;
+    unlock?: () => void;
+  };
+
   const toggleFs = async () => {
     const el = wrapperRef.current;
     if (!el) return;
+    const orientation = (typeof screen !== "undefined" ? screen.orientation : undefined) as OrientationLock | undefined;
     try {
       if (!document.fullscreenElement) {
         await el.requestFullscreen?.();
+        if (allowRotate) {
+          try { await orientation?.lock?.("landscape"); } catch { /* not supported */ }
+        }
       } else {
+        try { orientation?.unlock?.(); } catch { /* not supported */ }
         await document.exitFullscreen?.();
       }
     } catch { /* empty */ }
     revealControls();
   };
+
 
   useEffect(() => {
     const onFs = () => setIsFs(!!document.fullscreenElement);
