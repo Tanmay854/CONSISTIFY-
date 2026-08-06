@@ -164,35 +164,17 @@ const TabMediaManager = () => {
       return;
     }
     setBusy(true); setMessage("Importing...");
-    const { data: existing } = await supabase
-      .from("daily_quotes")
-      .select("text,category,subcategory")
-      .limit(10000);
-    const seen = new Set(
-      (existing ?? []).map((e) => `${e.category}|${e.subcategory}|${(e.text || "").trim().toLowerCase()}`)
-    );
-    const rows = parsed
-      .filter((p) => !seen.has(`${p.category}|${p.subcategory}|${p.text.toLowerCase()}`))
-      .map((p) => ({ ...p, author: null, created_by: user?.id }));
-    if (!rows.length) {
-      setMessage(`All ${parsed.length} quotes already exist.`);
-      setBusy(false);
-      return;
-    }
-    let total = 0;
-    for (let i = 0; i < rows.length; i += 200) {
-      const { error } = await supabase.from("daily_quotes").insert(rows.slice(i, i + 200));
-      if (error) { setMessage(error.message); break; }
-      total += Math.min(200, rows.length - i);
-    }
-    if (total) {
-      const topics = new Set(rows.slice(0, total).map((r) => `${r.category}/${r.subcategory}`));
+    const res = await insertUnique(parsed);
+    if (res.error) setMessage(res.error);
+    else if (!res.added) setMessage(`All ${parsed.length} quotes already exist.`);
+    else {
       setBulkAll("");
-      setMessage(`Imported ${total} quotes across ${topics.size} sub-topics (${parsed.length - rows.length} duplicates skipped).`);
+      setMessage(`Imported ${res.added} quotes (${res.skipped} duplicates skipped).`);
     }
     await load();
     setBusy(false);
   };
+
 
 
 
