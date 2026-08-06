@@ -36,8 +36,10 @@ const TabMediaManager = () => {
 
   // Quotes
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
-  const [bulk, setBulk] = useState("");
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [totalQuotes, setTotalQuotes] = useState(0);
   const [bulkAll, setBulkAll] = useState("");
+
 
   const [qCat, setQCat] = useState<string>(QUOTE_CATEGORIES[0].id);
   const [qSub, setQSub] = useState<string>(QUOTE_CATEGORIES[0].subs[0].id);
