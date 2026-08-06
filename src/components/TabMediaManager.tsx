@@ -49,16 +49,25 @@ const TabMediaManager = () => {
   const [message, setMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [b, bg, q] = await Promise.all([
+    const [b, bg, q, all] = await Promise.all([
       supabase.from("tab_banners").select("id,tab,image_url,position").order("position"),
       supabase.from("quote_backgrounds").select("id,image_url,name,position").order("position"),
       supabase.from("daily_quotes").select("id,text,author,category,subcategory").order("created_at", { ascending: false }).limit(1000),
+      supabase.from("daily_quotes").select("category,subcategory").limit(50000),
     ]);
 
     setBanners((b.data as BannerRow[]) || []);
     setBackgrounds((bg.data as BgRow[]) || []);
     setQuotes((q.data as QuoteRow[]) || []);
+    const map: Record<string, number> = {};
+    (all.data ?? []).forEach((r) => {
+      const key = `${r.category}|${r.subcategory}`;
+      map[key] = (map[key] || 0) + 1;
+    });
+    setCounts(map);
+    setTotalQuotes((all.data ?? []).length);
   }, []);
+
 
   useEffect(() => { load(); }, [load]);
 
