@@ -107,6 +107,9 @@ const MyUploads = () => {
   const [query, setQuery] = useState("");
   const [views, setViews] = useState<Record<string, number>>({});
   const [statsOpen, setStatsOpen] = useState<string | null>(null);
+  const thumbInput = useRef<HTMLInputElement>(null);
+  const [thumbTargetId, setThumbTargetId] = useState<string | null>(null);
+
 
   const q = query.trim().toLowerCase();
   const filterFn = <T extends { title: string | null }>(items: T[], extra?: (i: T) => string) =>
@@ -175,6 +178,30 @@ const MyUploads = () => {
     await fetchAll();
     setBusy(false);
   };
+
+  const handleThumbnail = async (file: File | null) => {
+    const id = thumbTargetId;
+    setThumbTargetId(null);
+    if (!file || !id) return;
+    setBusy(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setBusy(false); return; }
+    const form = new FormData();
+    form.append("file", file);
+    form.append("kind", "image");
+    const res = await fetch(
+      `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bunny-storage-upload`,
+      { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` }, body: form },
+    );
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.url) { alert(json.error || "Thumbnail upload failed"); setBusy(false); return; }
+    const { error } = await supabase.from("reels").update({ thumbnail_url: json.url }).eq("id", id);
+    if (error) alert(error.message);
+    await fetchAll();
+    setBusy(false);
+  };
+
+
 
   const handleDelete = async (table: "reels" | "quotes", id: string, fileUrl: string | null, bucket: string | null, bunnyRef = {}) => {
     if (!confirm("Delete this item permanently?")) return;
