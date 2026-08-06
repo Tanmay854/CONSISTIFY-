@@ -16,6 +16,9 @@ type Props = {
    * When true, the player fills the wrapping container. When false, uses aspect-video.
    */
   fill?: boolean;
+  /** Show a rotate-to-landscape control (long-form videos). */
+  allowRotate?: boolean;
+
 };
 
 const fmt = (s: number) => {
