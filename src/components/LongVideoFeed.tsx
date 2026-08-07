@@ -39,7 +39,7 @@ const VideoCard = ({ v, onOpen, compact = false }: { v: LongVideo; onOpen: () =>
         </div>
         <div className="min-w-0 flex-1 pr-1">
           <p className="text-foreground text-[13px] font-medium leading-snug line-clamp-2">{v.title || "Untitled"}</p>
-          <p className="text-muted-foreground text-[11px] mt-1 truncate">{v.category} · {timeAgo(v.created_at)}</p>
+          <p className="text-muted-foreground text-[11px] mt-1 truncate">{timeAgo(v.created_at)}</p>
         </div>
       </button>
     );
@@ -51,7 +51,7 @@ const VideoCard = ({ v, onOpen, compact = false }: { v: LongVideo; onOpen: () =>
       </div>
       <div className="px-3 py-2.5">
         <p className="text-foreground text-[15px] font-medium leading-snug line-clamp-2">{v.title || "Untitled"}</p>
-        <p className="text-muted-foreground text-xs mt-1 truncate">{v.category} · {timeAgo(v.created_at)}</p>
+        <p className="text-muted-foreground text-xs mt-1 truncate">{timeAgo(v.created_at)}</p>
       </div>
     </button>
   );
@@ -148,7 +148,7 @@ const LongVideoFeed = ({ feed, heading, blurb }: { feed: string; heading: string
             <div className="px-4 pt-3">
               <h1 className="text-foreground text-base font-semibold leading-snug">{active.title || "Untitled"}</h1>
 
-              <p className="text-muted-foreground text-xs mt-1">{active.category} · {timeAgo(active.created_at)}</p>
+              <p className="text-muted-foreground text-xs mt-1">{timeAgo(active.created_at)}</p>
 
               {active.description && (
                 <button
