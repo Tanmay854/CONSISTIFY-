@@ -193,7 +193,7 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
                     tab === t ? "text-white" : "text-white/40"
                   }`}
                 >
-                  {t === "reels" ? "Videos" : "Photos"}
+                  {t === "reels" ? "Long Game" : "Quick Clips"}
                 </button>
               ))}
               {/* Base line */}
