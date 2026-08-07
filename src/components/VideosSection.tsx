@@ -5,7 +5,7 @@ import LongVideoFeed from "@/components/LongVideoFeed";
 import LongGameSection from "@/components/LongGameSection";
 import DailyQuotesFeed from "@/components/DailyQuotesFeed";
 import TabBanner from "@/components/TabBanner";
-import { VIDEO_FEEDS, type FeedDef, type FeedId } from "@/lib/videoFeeds";
+import { VIDEO_FEEDS, HOME_FEEDS, type FeedDef, type FeedId } from "@/lib/videoFeeds";
 
 const CategoryCard = ({ feed, onOpen }: { feed: FeedDef; onOpen: () => void }) => (
   <button
