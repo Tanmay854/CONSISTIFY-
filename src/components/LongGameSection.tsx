@@ -99,7 +99,17 @@ const RankRow = ({ items, onOpen }: { items: Item[]; onOpen: OpenFn }) => (
   </div>
 );
 
-const LongGameSection = ({ feed = "long_game", heading = "Long Game" }: { feed?: string; heading?: string }) => {
+const LongGameSection = ({
+  feed = "long_game",
+  feeds,
+  heading = "Long Game",
+  topInset = 56,
+}: {
+  feed?: string;
+  feeds?: string[];
+  heading?: string;
+  topInset?: number;
+}) => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Item | null>(null);
@@ -115,13 +125,16 @@ const LongGameSection = ({ feed = "long_game", heading = "Long Game" }: { feed?:
   const tickingRef = useRef(false);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
+  const feedKey = (feeds ?? [feed]).join(",");
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const list = feedKey.split(",");
       const { data } = await supabase
         .from("reels")
         .select("id,title,description,video_url,thumbnail_url,category,created_at,uploaded_by")
-        .eq("feed", feed)
+        .in("feed", list)
         .order("created_at", { ascending: false })
         .limit(100);
       const rows = data || [];
@@ -138,7 +151,8 @@ const LongGameSection = ({ feed = "long_game", heading = "Long Game" }: { feed?:
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [feed]);
+  }, [feedKey]);
+
 
   const computeTransform = (r: DOMRect) => ({
     tx: r.left,
@@ -249,7 +263,7 @@ const LongGameSection = ({ feed = "long_game", heading = "Long Game" }: { feed?:
   return (
     <div className="relative h-[100dvh] w-full bg-background text-foreground overflow-hidden">
       <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain">
-        <div className="flex items-center justify-between pt-14 px-5 pb-5 bg-background">
+        <div className="flex items-center justify-between px-5 pb-5 bg-background" style={{ paddingTop: topInset }}>
           <span className="text-[22px] font-black tracking-tight">{heading}</span>
           <button
             type="button"
