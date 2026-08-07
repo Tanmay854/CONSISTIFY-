@@ -168,6 +168,7 @@ const MyUploads = () => {
 
   const handleThumbnail = async (file: File | null) => {
     const id = thumbTargetId;
+    const kind = thumbKind;
     setThumbTargetId(null);
     if (!file || !id) return;
     setBusy(true);
@@ -182,10 +183,19 @@ const MyUploads = () => {
     );
     const json = await res.json().catch(() => ({}));
     if (!res.ok || !json.url) { alert(json.error || "Thumbnail upload failed"); setBusy(false); return; }
-    const { error } = await supabase.from("reels").update({ thumbnail_url: json.url }).eq("id", id);
+    const payload = kind === "portrait"
+      ? { thumbnail_portrait_url: json.url as string }
+      : { thumbnail_landscape_url: json.url as string, thumbnail_url: json.url as string };
+    const { error } = await supabase.from("reels").update(payload).eq("id", id);
     if (error) alert(error.message);
     await fetchAll();
     setBusy(false);
+  };
+
+  const pickThumb = (id: string, kind: ThumbKind) => {
+    setThumbTargetId(id);
+    setThumbKind(kind);
+    thumbInput.current?.click();
   };
 
 
@@ -199,13 +209,14 @@ const MyUploads = () => {
     setBusy(false);
   };
 
-  const fReels = filterFn(reels);
-  const fQuotes = filterFn(quotes, (q) => q.category);
+  const isLong = (feed: string | null) => feed !== "quick_spark";
+  const fReels = filterFn(reels.filter((r) => (tab === "long_game" ? isLong(r.feed) : r.feed === "quick_spark")));
 
   const tabs: { id: Tab; label: string; icon: typeof Film; count: number }[] = [
-    { id: "videos", label: "Videos", icon: Film, count: fReels.length },
-    { id: "photos", label: "Photos", icon: ImageIcon, count: fQuotes.length },
+    { id: "long_game", label: "Long Game", icon: Film, count: reels.filter((r) => isLong(r.feed)).length },
+    { id: "quick_spark", label: "Quick Clips", icon: Film, count: reels.filter((r) => r.feed === "quick_spark").length },
   ];
+
 
   return (
     <div className="px-5 py-4 space-y-3">
