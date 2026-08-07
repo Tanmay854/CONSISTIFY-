@@ -172,8 +172,8 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
               <div className="mt-6 w-full max-w-xs grid grid-cols-3">
                 {[
                   { label: "Posts", value: totalPosts },
-                  { label: "Reels", value: reels.length },
-                  { label: "Photos", value: quoteSets.length },
+                  { label: "Long Game", value: reels.length },
+                  { label: "Quick Clips", value: quoteSets.length },
                 ].map((s) => (
                   <div key={s.label} className="flex flex-col items-center">
                     <span className="text-white text-lg font-semibold tabular-nums">{s.value}</span>
@@ -193,7 +193,7 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
                     tab === t ? "text-white" : "text-white/40"
                   }`}
                 >
-                  {t === "reels" ? "Videos" : "Photos"}
+                  {t === "reels" ? "Long Game" : "Quick Clips"}
                 </button>
               ))}
               {/* Base line */}
@@ -214,7 +214,7 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
                 <div className="p-10 text-center text-white/50 text-sm">Loading…</div>
               ) : tab === "reels" ? (
                 reels.length === 0 ? (
-                  <div className="p-10 text-center text-white/50 text-sm">No videos yet</div>
+                  <div className="p-10 text-center text-white/50 text-sm">No long game videos yet</div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2.5">
                     {reels.map((r) => {
@@ -245,7 +245,7 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
                 )
               ) : (
                 quoteSets.length === 0 ? (
-                  <div className="p-10 text-center text-white/50 text-sm">No photos yet</div>
+                  <div className="p-10 text-center text-white/50 text-sm">No quick clips yet</div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2.5">
                     {quoteSets.map((q) => (

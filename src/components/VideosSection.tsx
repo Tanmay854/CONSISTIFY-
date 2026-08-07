@@ -31,9 +31,9 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
                 key={t.id}
                 type="button"
                 onClick={() => setView(t.id)}
-                className={`px-4 h-9 rounded-full text-[12px] font-black uppercase tracking-[0.12em] font-['Montserrat',sans-serif] transition-all duration-300 ${
+                className={`px-3.5 h-8 rounded-full text-[11px] font-black uppercase tracking-[0.12em] font-['Montserrat',sans-serif] transition-all duration-300 ${
                   active
-                    ? "bg-[hsl(var(--foreground)/0.10)] text-foreground ring-1 ring-foreground/10 shadow-[0_0_18px_rgba(255,255,255,0.18)] drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]"
+                    ? "bg-[hsl(var(--foreground)/0.10)] text-foreground drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]"
                     : "text-muted-foreground"
                 }`}
               >
