@@ -196,16 +196,22 @@ const UploadTab = () => {
         });
         if (uploadErr) { setError("Upload failed: " + uploadErr); setLoading(false); return; }
 
-        // 2b. Optional custom thumbnail (Long Game / Calm State)
+        // 2b. Optional custom thumbnails (Long Game / Calm State): landscape + portrait
         let customThumb: string | null = null;
+        let portraitThumb: string | null = null;
         if (thumbFile) {
           const up = await uploadToBunny(thumbFile, "image");
           if (up) customThumb = up.url;
         }
+        if (portraitThumbFile) {
+          const up = await uploadToBunny(portraitThumbFile, "image");
+          if (up) portraitThumb = up.url;
+        }
 
         // 3. Save Bunny playback URL and exact Stream identifiers into reels
-        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim() || null, description: videoDescription.trim() || null, video_url: ticket.playbackUrl, thumbnail_url: customThumb, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, feed: videoFeed, video_fit: videoFit, uploaded_by: user?.id });
+        const { error: insertErr } = await supabase.from("reels").insert({ title: videoTitle.trim() || null, description: videoDescription.trim() || null, video_url: ticket.playbackUrl, thumbnail_url: customThumb, thumbnail_landscape_url: customThumb, thumbnail_portrait_url: portraitThumb, bunny_video_guid: ticket.guid, bunny_library_id: String(ticket.libraryId), category: videoCategory, feed: videoFeed, video_fit: videoFit, uploaded_by: user?.id });
         if (insertErr) { setError(insertErr.message); setLoading(false); return; }
+
 
 
       } else if (activeType === "photo") {
