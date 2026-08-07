@@ -469,16 +469,6 @@ const UploadTab = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Category</label>
-                  <select
-                    value={photoCategory}
-                    onChange={(e) => setPhotoCategory(e.target.value)}
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
                   <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Description</label>
                   <textarea
                     value={photoDescription}
