@@ -27,6 +27,8 @@ interface Reel {
   category: string | null;
   video_url: string;
   thumbnail_url: string | null;
+  thumbnail_portrait_url: string | null;
+  thumbnail_landscape_url: string | null;
   feed: string | null;
   bunny_video_guid: string | null;
   bunny_library_id: string | null;
@@ -36,25 +38,14 @@ interface Reel {
   trim_end: number | null;
 }
 
-interface Quote {
-  id: string;
-  public_id: string | null;
-  title: string | null;
-  description: string | null;
-  category: string;
-  image_url: string;
-  bunny_storage_path: string | null;
-  created_at: string;
-  uploaded_by: string | null;
-}
-
-
-type Tab = "videos" | "photos";
+type Tab = "long_game" | "quick_spark";
+type ThumbKind = "portrait" | "landscape";
 
 const getYoutubeId = (url: string): string | null => {
   const m = url.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
 };
+
 
 const VideoTrimmer = ({ reel, onSave }: { reel: Reel; onSave: (start: number, end: number) => void }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -96,9 +87,8 @@ const VideoTrimmer = ({ reel, onSave }: { reel: Reel; onSave: (start: number, en
 
 const MyUploads = () => {
   const { user, isAdmin } = useAuth();
-  const [tab, setTab] = useState<Tab>("videos");
+  const [tab, setTab] = useState<Tab>("long_game");
   const [reels, setReels] = useState<Reel[]>([]);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -111,6 +101,7 @@ const MyUploads = () => {
   const [statsOpen, setStatsOpen] = useState<string | null>(null);
   const thumbInput = useRef<HTMLInputElement>(null);
   const [thumbTargetId, setThumbTargetId] = useState<string | null>(null);
+  const [thumbKind, setThumbKind] = useState<ThumbKind>("landscape");
 
 
   const q = query.trim().toLowerCase();
@@ -121,23 +112,16 @@ const MyUploads = () => {
   const fetchAll = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const filterOwn = (q: ReturnType<typeof supabase.from>) => isAdmin ? q : q.eq("uploaded_by", user.id);
-    const [r, q] = await Promise.all([
-      filterOwn(supabase.from("reels").select("*").order("created_at", { ascending: false })),
-      filterOwn(supabase.from("quotes").select("*").order("created_at", { ascending: false })),
-    ]);
-    setReels((r.data as Reel[]) || []);
-    setQuotes((q.data as Quote[]) || []);
+    const base = supabase.from("reels").select("*").order("created_at", { ascending: false });
+    const r = await (isAdmin ? base : base.eq("uploaded_by", user.id));
+    const rows = (r.data as Reel[]) || [];
+    setReels(rows);
 
-    const ids = [
-      ...((r.data as Reel[]) || []).map((x) => ({ t: "reel", id: x.id })),
-      ...((q.data as Quote[]) || []).map((x) => ({ t: "quote", id: x.id })),
-    ];
-    if (ids.length) {
+    if (rows.length) {
       const { data: vData } = await supabase
         .from("content_views")
         .select("content_type, content_id")
-        .in("content_id", ids.map((i) => i.id));
+        .in("content_id", rows.map((i) => i.id));
       const counts: Record<string, number> = {};
       (vData || []).forEach((v) => {
         const key = `${v.content_type}:${v.content_id}`;
@@ -149,6 +133,7 @@ const MyUploads = () => {
     }
     setLoading(false);
   }, [user, isAdmin]);
+
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -183,6 +168,7 @@ const MyUploads = () => {
 
   const handleThumbnail = async (file: File | null) => {
     const id = thumbTargetId;
+    const kind = thumbKind;
     setThumbTargetId(null);
     if (!file || !id) return;
     setBusy(true);
@@ -197,10 +183,19 @@ const MyUploads = () => {
     );
     const json = await res.json().catch(() => ({}));
     if (!res.ok || !json.url) { alert(json.error || "Thumbnail upload failed"); setBusy(false); return; }
-    const { error } = await supabase.from("reels").update({ thumbnail_url: json.url }).eq("id", id);
+    const payload = kind === "portrait"
+      ? { thumbnail_portrait_url: json.url as string }
+      : { thumbnail_landscape_url: json.url as string, thumbnail_url: json.url as string };
+    const { error } = await supabase.from("reels").update(payload).eq("id", id);
     if (error) alert(error.message);
     await fetchAll();
     setBusy(false);
+  };
+
+  const pickThumb = (id: string, kind: ThumbKind) => {
+    setThumbTargetId(id);
+    setThumbKind(kind);
+    thumbInput.current?.click();
   };
 
 
@@ -214,13 +209,14 @@ const MyUploads = () => {
     setBusy(false);
   };
 
-  const fReels = filterFn(reels);
-  const fQuotes = filterFn(quotes, (q) => q.category);
+  const isLong = (feed: string | null) => feed !== "quick_spark";
+  const fReels = filterFn(reels.filter((r) => (tab === "long_game" ? isLong(r.feed) : r.feed === "quick_spark")));
 
   const tabs: { id: Tab; label: string; icon: typeof Film; count: number }[] = [
-    { id: "videos", label: "Videos", icon: Film, count: fReels.length },
-    { id: "photos", label: "Photos", icon: ImageIcon, count: fQuotes.length },
+    { id: "long_game", label: "Long Game", icon: Film, count: reels.filter((r) => isLong(r.feed)).length },
+    { id: "quick_spark", label: "Quick Clips", icon: Film, count: reels.filter((r) => r.feed === "quick_spark").length },
   ];
+
 
   return (
     <div className="px-5 py-4 space-y-3">
@@ -263,29 +259,44 @@ const MyUploads = () => {
         <div className="animate-pulse space-y-3">{[1,2,3].map((i) => <div key={i} className="h-20 bg-secondary rounded-xl" />)}</div>
       ) : (
         <>
-          {tab === "videos" && (
+          {(
             fReels.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos yet."}</p> :
             fReels.map((reel) => {
               const ytId = getYoutubeId(reel.video_url);
-              const thumb = ytId
+              const landscape = reel.thumbnail_landscape_url || (ytId
                 ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`
-                : getVideoThumbnail(reel.video_url, reel.thumbnail_url);
+                : getVideoThumbnail(reel.video_url, reel.thumbnail_url));
+              const portrait = reel.thumbnail_portrait_url;
               const isEditing = editingId === reel.id;
               const isTrimming = trimmingId === reel.id;
               return (
                 <div key={reel.id} className="bg-secondary rounded-xl p-3">
                   <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => { setThumbTargetId(reel.id); thumbInput.current?.click(); }}
-                      title="Change thumbnail"
-                      className="relative w-24 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0"
-                    >
-                      {thumb ? <img src={thumb} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Video</div>}
-                      <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
-                        <ImagePlus size={10} /> Thumbnail
-                      </span>
-                    </button>
+                    <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => pickThumb(reel.id, "landscape")}
+                        title="Change landscape thumbnail"
+                        className="relative w-24 h-14 rounded-lg overflow-hidden bg-muted"
+                      >
+                        {landscape ? <img src={landscape} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">Landscape</div>}
+                        <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
+                          <ImagePlus size={10} /> 16:9
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => pickThumb(reel.id, "portrait")}
+                        title="Change portrait thumbnail"
+                        className="relative w-24 h-[84px] rounded-lg overflow-hidden bg-muted"
+                      >
+                        {portrait ? <img src={portrait} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">Portrait</div>}
+                        <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
+                          <ImagePlus size={10} /> 2:3
+                        </span>
+                      </button>
+                    </div>
+
 
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
@@ -325,54 +336,7 @@ const MyUploads = () => {
             })
           )}
 
-          {tab === "photos" && (
-            fQuotes.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No photos yet."}</p> :
-            fQuotes.map((q) => {
-              const isEditing = editingId === q.id;
-              return (
-                <div key={q.id} className="bg-secondary rounded-xl p-3">
-                  <div className="flex gap-3">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      <img src={q.image_url} alt={q.title || "photo"} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      {isEditing ? (
-                        <div className="space-y-2">
-                          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Title" className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary" autoFocus />
-                          <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" rows={2} className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary resize-none" />
-                          <div className="flex gap-2 justify-end">
-                            <button onClick={() => setEditingId(null)} className="text-xs px-3 py-1.5 rounded-lg bg-muted text-muted-foreground flex items-center gap-1"><X size={13} /> Cancel</button>
-                            <button onClick={() => handleSaveEdit("quotes", q.id)} disabled={busy} className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground flex items-center gap-1"><Check size={13} /> Save</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              {q.public_id && <span className="font-mono text-[10px] tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">#{q.public_id}</span>}
-                              <p className="text-foreground text-sm font-medium truncate">{q.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
-                            </div>
 
-                            <p className="text-muted-foreground text-xs truncate flex items-center gap-2 flex-wrap">
-                              
-                              <span className="flex items-center gap-1"><Clock size={11} /> {formatDateTime(q.created_at)}</span>
-                              <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
-                            </p>
-                          </div>
-                          <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => startEdit({ ...q, description: q.description ?? null })} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
-                            <button onClick={() => setStatsOpen(statsOpen === `quote:${q.id}` ? null : `quote:${q.id}`)} className={statsOpen === `quote:${q.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
-                            <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images", { storagePath: q.bunny_storage_path })} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {statsOpen === `quote:${q.id}` && <StatsChart contentType="quote" contentId={q.id} />}
-                </div>
-              );
-            })
-          )}
         </>
       )}
     </div>
