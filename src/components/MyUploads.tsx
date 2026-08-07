@@ -27,6 +27,8 @@ interface Reel {
   category: string | null;
   video_url: string;
   thumbnail_url: string | null;
+  thumbnail_portrait_url: string | null;
+  thumbnail_landscape_url: string | null;
   feed: string | null;
   bunny_video_guid: string | null;
   bunny_library_id: string | null;
@@ -36,25 +38,14 @@ interface Reel {
   trim_end: number | null;
 }
 
-interface Quote {
-  id: string;
-  public_id: string | null;
-  title: string | null;
-  description: string | null;
-  category: string;
-  image_url: string;
-  bunny_storage_path: string | null;
-  created_at: string;
-  uploaded_by: string | null;
-}
-
-
-type Tab = "videos" | "photos";
+type Tab = "long_game" | "quick_spark";
+type ThumbKind = "portrait" | "landscape";
 
 const getYoutubeId = (url: string): string | null => {
   const m = url.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
 };
+
 
 const VideoTrimmer = ({ reel, onSave }: { reel: Reel; onSave: (start: number, end: number) => void }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
