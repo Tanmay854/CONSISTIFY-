@@ -125,13 +125,16 @@ const LongGameSection = ({
   const tickingRef = useRef(false);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
+  const feedKey = (feeds ?? [feed]).join(",");
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const list = feedKey.split(",");
       const { data } = await supabase
         .from("reels")
         .select("id,title,description,video_url,thumbnail_url,category,created_at,uploaded_by")
-        .eq("feed", feed)
+        .in("feed", list)
         .order("created_at", { ascending: false })
         .limit(100);
       const rows = data || [];
@@ -148,7 +151,8 @@ const LongGameSection = ({
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [feed]);
+  }, [feedKey]);
+
 
   const computeTransform = (r: DOMRect) => ({
     tx: r.left,
