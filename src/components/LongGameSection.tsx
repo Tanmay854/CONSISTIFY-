@@ -263,7 +263,7 @@ const LongGameSection = ({
   return (
     <div className="relative h-[100dvh] w-full bg-background text-foreground overflow-hidden">
       <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain">
-        <div className="flex items-center justify-between pt-14 px-5 pb-5 bg-background">
+        <div className="flex items-center justify-between px-5 pb-5 bg-background" style={{ paddingTop: topInset }}>
           <span className="text-[22px] font-black tracking-tight">{heading}</span>
           <button
             type="button"
