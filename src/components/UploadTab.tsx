@@ -404,19 +404,34 @@ const UploadTab = () => {
                 </div>
 
                 {videoFeed !== "quick_spark" && (
-                  <div>
-                    <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Thumbnail <span className="text-muted-foreground/60 normal-case">(optional, 16:9)</span></label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setThumbFile(e.target.files?.[0] || null)}
-                      className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
-                    />
-                    {thumbPreviewUrl && (
-                      <img src={thumbPreviewUrl} alt="Thumbnail preview" className="mt-2 w-40 aspect-video object-cover rounded-lg" />
-                    )}
-                  </div>
+                  <>
+                    <div>
+                      <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Portrait thumbnail <span className="text-muted-foreground/60 normal-case">(grid, 2:3)</span></label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setPortraitThumbFile(e.target.files?.[0] || null)}
+                        className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
+                      />
+                      {portraitPreviewUrl && (
+                        <img src={portraitPreviewUrl} alt="Portrait thumbnail preview" className="mt-2 w-24 aspect-[2/3] object-cover rounded-lg" />
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Landscape thumbnail <span className="text-muted-foreground/60 normal-case">(continue watching, 16:9)</span></label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setThumbFile(e.target.files?.[0] || null)}
+                        className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs"
+                      />
+                      {thumbPreviewUrl && (
+                        <img src={thumbPreviewUrl} alt="Landscape thumbnail preview" className="mt-2 w-40 aspect-video object-cover rounded-lg" />
+                      )}
+                    </div>
+                  </>
                 )}
+
 
 
 
