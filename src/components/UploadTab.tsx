@@ -1,6 +1,6 @@
 import { UPLOAD_FEEDS } from "@/lib/videoFeeds";
 import { useEffect, useMemo, useState } from "react";
-import { Film, Image, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
+import { Film, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
 import * as tus from "tus-js-client";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -273,10 +273,9 @@ const UploadTab = () => {
 
   const types: { id: UploadType; label: string; icon: typeof Film }[] = [
     { id: "video", label: "Video", icon: Film },
-    
-    { id: "photo", label: "Photo", icon: Image },
     ...(isAdmin ? [{ id: "ad" as UploadType, label: "Ad", icon: Megaphone }] : []),
   ];
+
 
   const SourceToggle = ({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { id: string; label: string; icon: typeof Link2 }[] }) => (
     <div className="flex gap-2 mb-3">
