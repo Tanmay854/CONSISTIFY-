@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Volume2, VolumeX } from "lucide-react";
 import ReelsTab from "@/components/ReelsTab";
 import LongVideoFeed from "@/components/LongVideoFeed";
+import LongGameSection from "@/components/LongGameSection";
 import DailyQuotesFeed from "@/components/DailyQuotesFeed";
 import TabBanner from "@/components/TabBanner";
 import { VIDEO_FEEDS, type FeedDef, type FeedId } from "@/lib/videoFeeds";
