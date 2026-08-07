@@ -3,7 +3,6 @@ import { Volume2, VolumeX } from "lucide-react";
 import ReelsTab from "@/components/ReelsTab";
 import LongGameSection from "@/components/LongGameSection";
 import { LONG_GAME_FEEDS } from "@/lib/videoFeeds";
-import homeIcon from "@/assets/home-glass-icon.png";
 
 type HomeView = "long_game" | "quick_spark";
 
@@ -22,16 +21,9 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
 
   return (
     <div className="relative h-[100dvh] w-full bg-background overflow-hidden">
-      {/* Glass mark + pill navigation */}
-      <div className="absolute top-0 left-0 right-0 z-40 flex flex-col items-center pt-3 pointer-events-none">
-        <img
-          src={homeIcon}
-          alt="App mark"
-          width={816}
-          height={816}
-          className="w-12 h-12 object-contain drop-shadow-[0_0_18px_rgba(255,255,255,0.25)]"
-        />
-        <div className="pointer-events-auto mt-2 flex items-center gap-1 p-1 rounded-full bg-foreground/[0.08] backdrop-blur-xl ring-1 ring-foreground/10">
+      {/* Pill navigation */}
+      <div className="absolute top-0 left-0 right-0 z-40 flex justify-center pt-3 pointer-events-none">
+        <div className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-full bg-[hsl(var(--foreground)/0.07)] backdrop-blur-xl ring-1 ring-foreground/[0.06] shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
           {TABS.map((t) => {
             const active = view === t.id;
             return (
@@ -39,9 +31,9 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
                 key={t.id}
                 type="button"
                 onClick={() => setView(t.id)}
-                className={`px-4 h-9 rounded-full text-[13px] font-semibold tracking-[0.02em] transition-colors duration-200 ${
+                className={`px-6 h-10 rounded-full text-[13px] font-extrabold uppercase tracking-[0.14em] transition-all duration-300 ${
                   active
-                    ? "bg-foreground text-background"
+                    ? "bg-[hsl(var(--foreground)/0.10)] text-foreground ring-1 ring-foreground/10 shadow-[0_0_18px_rgba(255,255,255,0.18)] drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]"
                     : "text-muted-foreground"
                 }`}
               >
@@ -52,8 +44,9 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
         </div>
       </div>
 
+
       {view === "long_game" ? (
-        <LongGameSection feeds={LONG_GAME_FEEDS} heading="Long Game" topInset={122} />
+        <LongGameSection feeds={LONG_GAME_FEEDS} heading="Long Game" topInset={82} />
       ) : (
         <>
           <ReelsTab muted={muted} feed="quick_spark" active />

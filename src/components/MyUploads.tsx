@@ -292,10 +292,6 @@ const MyUploads = () => {
                         <div className="space-y-2">
                           <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Title" className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary" autoFocus />
                           <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" rows={2} className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary resize-none" />
-                          <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary">
-                            <option value="">Select category</option>
-                            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                          </select>
                           <div className="flex gap-2 justify-end">
                             <button onClick={() => setEditingId(null)} className="text-xs px-3 py-1.5 rounded-lg bg-muted text-muted-foreground flex items-center gap-1"><X size={13} /> Cancel</button>
                             <button onClick={() => handleSaveEdit("reels", reel.id)} disabled={busy} className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground flex items-center gap-1"><Check size={13} /> Save</button>
@@ -344,10 +340,6 @@ const MyUploads = () => {
                         <div className="space-y-2">
                           <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Title" className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary" autoFocus />
                           <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" rows={2} className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary resize-none" />
-                          <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary">
-                            <option value="">Select category</option>
-                            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                          </select>
                           <div className="flex gap-2 justify-end">
                             <button onClick={() => setEditingId(null)} className="text-xs px-3 py-1.5 rounded-lg bg-muted text-muted-foreground flex items-center gap-1"><X size={13} /> Cancel</button>
                             <button onClick={() => handleSaveEdit("quotes", q.id)} disabled={busy} className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground flex items-center gap-1"><Check size={13} /> Save</button>
@@ -362,7 +354,7 @@ const MyUploads = () => {
                             </div>
 
                             <p className="text-muted-foreground text-xs truncate flex items-center gap-2 flex-wrap">
-                              <span>{q.category}</span>
+                              
                               <span className="flex items-center gap-1"><Clock size={11} /> {formatDateTime(q.created_at)}</span>
                               <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
                             </p>

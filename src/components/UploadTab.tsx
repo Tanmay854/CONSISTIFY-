@@ -382,16 +382,7 @@ const UploadTab = () => {
                   </p>
                 </div>
                 <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Interest / Category</label>
-                  <select
-                    value={videoCategory}
-                    onChange={(e) => setVideoCategory(e.target.value)}
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
+
                   <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">{`Video file (from device, max ${videoFeed === "quick_spark" ? "3" : "45"} min)`}</label>
                   <input
                     type="file"
@@ -476,16 +467,6 @@ const UploadTab = () => {
                     placeholder="Quote title"
                     className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
                   />
-                </div>
-                <div>
-                  <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Category</label>
-                  <select
-                    value={photoCategory}
-                    onChange={(e) => setPhotoCategory(e.target.value)}
-                    className="w-full bg-secondary text-foreground rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
                 </div>
                 <div>
                   <label className="text-muted-foreground text-xs uppercase tracking-wider mb-1.5 block">Description</label>

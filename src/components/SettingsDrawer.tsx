@@ -209,39 +209,8 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
             )}
           </div>
 
-          {/* Categories */}
-          <div className="px-5 py-5">
-            <h3 className="text-muted-foreground text-xs uppercase tracking-wider font-semibold mb-3">
-              Your Interests
-            </h3>
-            <p className="text-muted-foreground text-xs mb-4">
-              Select categories to personalize your feed
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {CATEGORIES.map((cat) => {
-                const isSelected = selectedCategories.includes(cat);
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => toggleCategory(cat)}
-                    className={`relative px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isSelected
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                    }`}
-                  >
-                    {cat}
-                    {isSelected && (
-                      <Check size={14} className="absolute top-1.5 right-1.5" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {saving && (
-              <p className="text-muted-foreground text-[10px] mt-2 text-center">Saving...</p>
-            )}
-          </div>
+
+
 
           {/* Public profile editor (uploaders / admins) */}
           {user && canUpload && (

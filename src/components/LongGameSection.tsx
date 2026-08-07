@@ -38,9 +38,8 @@ const PosterArt = ({ item, big, showText = true }: { item: Item; big?: boolean; 
           className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 text-center px-6 select-none transition-opacity duration-150"
           style={{ top: "40%", opacity: showText ? 1 : 0 }}
         >
-          <div className="text-[10px] font-bold uppercase tracking-[0.25em] mb-2 text-muted-foreground">
-            {item.category}
-          </div>
+
+
           <div className="text-[42px] font-black leading-[0.95] tracking-tight text-foreground">
             {item.title || "Untitled"}
           </div>
@@ -367,10 +366,9 @@ const LongGameSection = ({
               </span>
 
               <div className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground mb-5">
-                <span>{open.category}</span>
-                <span className="w-[3px] h-[3px] rounded-full bg-foreground/30" />
                 <span>{open.sharedBy}</span>
               </div>
+
 
               <div className="flex items-center gap-3 mb-5">
                 <button
