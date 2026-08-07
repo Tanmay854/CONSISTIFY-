@@ -99,7 +99,7 @@ const RankRow = ({ items, onOpen }: { items: Item[]; onOpen: OpenFn }) => (
   </div>
 );
 
-const LongGameSection = () => {
+const LongGameSection = ({ feed = "long_game", heading = "Long Game" }: { feed?: string; heading?: string }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Item | null>(null);
@@ -121,7 +121,7 @@ const LongGameSection = () => {
       const { data } = await supabase
         .from("reels")
         .select("id,title,description,video_url,thumbnail_url,category,created_at,uploaded_by")
-        .eq("feed", "long_game")
+        .eq("feed", feed)
         .order("created_at", { ascending: false })
         .limit(100);
       const rows = data || [];
@@ -138,7 +138,7 @@ const LongGameSection = () => {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [feed]);
 
   const computeTransform = (r: DOMRect) => ({
     tx: r.left,
@@ -250,7 +250,7 @@ const LongGameSection = () => {
     <div className="relative h-[100dvh] w-full bg-background text-foreground overflow-hidden">
       <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain">
         <div className="flex items-center justify-between pt-14 px-5 pb-5 bg-background">
-          <span className="text-[22px] font-black tracking-tight">Long Game</span>
+          <span className="text-[22px] font-black tracking-tight">{heading}</span>
           <button
             type="button"
             aria-label="Search"
