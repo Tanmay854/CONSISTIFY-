@@ -63,6 +63,8 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
           <ReelsTab muted={muted} feed={active.id} active />
         ) : active.kind === "quotes" ? (
           <DailyQuotesFeed />
+        ) : active.id === "long_game" ? (
+          <LongGameSection />
         ) : (
           <LongVideoFeed feed={active.id} heading={active.label} blurb={active.blurb} />
         )}
