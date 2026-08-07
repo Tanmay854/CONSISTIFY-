@@ -84,7 +84,7 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
 
 
       <div className="px-4 pb-32 space-y-4">
-        {VIDEO_FEEDS.map((f) => (
+        {HOME_FEEDS.map((f) => (
           <CategoryCard key={f.id} feed={f} onOpen={() => setOpen(f.id)} />
         ))}
       </div>

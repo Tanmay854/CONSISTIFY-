@@ -18,6 +18,10 @@ export const VIDEO_FEEDS: FeedDef[] = [
 // Feeds that videos can be uploaded into.
 export const UPLOAD_FEEDS = VIDEO_FEEDS.filter((f) => f.kind !== "quotes");
 
+// Feeds shown on the Home landing screen (Daily Quotes lives in the Quotes tab).
+export const HOME_FEEDS = VIDEO_FEEDS.filter((f) => f.kind !== "quotes");
+
+
 export const feedLabel = (id: string) =>
   VIDEO_FEEDS.find((f) => f.id === id)?.label ?? "Quick Spark";
 
