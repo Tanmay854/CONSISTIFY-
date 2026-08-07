@@ -3,7 +3,6 @@ import { Volume2, VolumeX } from "lucide-react";
 import ReelsTab from "@/components/ReelsTab";
 import LongGameSection from "@/components/LongGameSection";
 import { LONG_GAME_FEEDS } from "@/lib/videoFeeds";
-import homeIcon from "@/assets/home-glass-icon.png";
 
 type HomeView = "long_game" | "quick_spark";
 
@@ -47,7 +46,7 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
 
 
       {view === "long_game" ? (
-        <LongGameSection feeds={LONG_GAME_FEEDS} heading="Long Game" topInset={122} />
+        <LongGameSection feeds={LONG_GAME_FEEDS} heading="Long Game" topInset={82} />
       ) : (
         <>
           <ReelsTab muted={muted} feed="quick_spark" active />
