@@ -259,29 +259,44 @@ const MyUploads = () => {
         <div className="animate-pulse space-y-3">{[1,2,3].map((i) => <div key={i} className="h-20 bg-secondary rounded-xl" />)}</div>
       ) : (
         <>
-          {tab === "videos" && (
+          {(
             fReels.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No videos yet."}</p> :
             fReels.map((reel) => {
               const ytId = getYoutubeId(reel.video_url);
-              const thumb = ytId
+              const landscape = reel.thumbnail_landscape_url || (ytId
                 ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`
-                : getVideoThumbnail(reel.video_url, reel.thumbnail_url);
+                : getVideoThumbnail(reel.video_url, reel.thumbnail_url));
+              const portrait = reel.thumbnail_portrait_url;
               const isEditing = editingId === reel.id;
               const isTrimming = trimmingId === reel.id;
               return (
                 <div key={reel.id} className="bg-secondary rounded-xl p-3">
                   <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => { setThumbTargetId(reel.id); thumbInput.current?.click(); }}
-                      title="Change thumbnail"
-                      className="relative w-24 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0"
-                    >
-                      {thumb ? <img src={thumb} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">Video</div>}
-                      <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
-                        <ImagePlus size={10} /> Thumbnail
-                      </span>
-                    </button>
+                    <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => pickThumb(reel.id, "landscape")}
+                        title="Change landscape thumbnail"
+                        className="relative w-24 h-14 rounded-lg overflow-hidden bg-muted"
+                      >
+                        {landscape ? <img src={landscape} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">Landscape</div>}
+                        <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
+                          <ImagePlus size={10} /> 16:9
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => pickThumb(reel.id, "portrait")}
+                        title="Change portrait thumbnail"
+                        className="relative w-24 h-[84px] rounded-lg overflow-hidden bg-muted"
+                      >
+                        {portrait ? <img src={portrait} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">Portrait</div>}
+                        <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
+                          <ImagePlus size={10} /> 2:3
+                        </span>
+                      </button>
+                    </div>
+
 
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
