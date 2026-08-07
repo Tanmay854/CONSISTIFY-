@@ -378,7 +378,7 @@ const UploadTab = () => {
                     ))}
                   </div>
                   <p className="text-muted-foreground text-[10px] mt-1">
-                    Quick Spark is the short vertical feed. Long Game and Calm State hold full sessions up to 45 minutes.
+                    Quick Clips is the short vertical feed. Long Game and Calm State hold full sessions up to 45 minutes (both appear under Long Game).
                   </p>
                 </div>
                 <div>
