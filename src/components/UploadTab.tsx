@@ -90,7 +90,7 @@ const UploadTab = () => {
   };
 
   const resetFields = () => {
-    setVideoTitle(""); setVideoDescription(""); setVideoFile(null); setThumbFile(null);
+    setVideoTitle(""); setVideoDescription(""); setVideoFile(null); setThumbFile(null); setPortraitThumbFile(null);
     setPhotoTitle(""); setPhotoDescription(""); setPhotoFiles([]);
     setAdTitle(""); setAdLink(""); setAdUrl(""); setAdFile(null);
   };
