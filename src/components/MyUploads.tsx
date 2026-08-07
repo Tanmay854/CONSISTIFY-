@@ -336,54 +336,7 @@ const MyUploads = () => {
             })
           )}
 
-          {tab === "photos" && (
-            fQuotes.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">{query ? "No matches." : "No photos yet."}</p> :
-            fQuotes.map((q) => {
-              const isEditing = editingId === q.id;
-              return (
-                <div key={q.id} className="bg-secondary rounded-xl p-3">
-                  <div className="flex gap-3">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      <img src={q.image_url} alt={q.title || "photo"} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      {isEditing ? (
-                        <div className="space-y-2">
-                          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Title" className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary" autoFocus />
-                          <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" rows={2} className="w-full bg-background text-foreground rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary resize-none" />
-                          <div className="flex gap-2 justify-end">
-                            <button onClick={() => setEditingId(null)} className="text-xs px-3 py-1.5 rounded-lg bg-muted text-muted-foreground flex items-center gap-1"><X size={13} /> Cancel</button>
-                            <button onClick={() => handleSaveEdit("quotes", q.id)} disabled={busy} className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground flex items-center gap-1"><Check size={13} /> Save</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              {q.public_id && <span className="font-mono text-[10px] tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded flex-shrink-0">#{q.public_id}</span>}
-                              <p className="text-foreground text-sm font-medium truncate">{q.title || <span className="text-muted-foreground italic">Untitled</span>}</p>
-                            </div>
 
-                            <p className="text-muted-foreground text-xs truncate flex items-center gap-2 flex-wrap">
-                              
-                              <span className="flex items-center gap-1"><Clock size={11} /> {formatDateTime(q.created_at)}</span>
-                              <span className="flex items-center gap-1"><Eye size={11} /> {views[`quote:${q.id}`] || 0}</span>
-                            </p>
-                          </div>
-                          <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => startEdit({ ...q, description: q.description ?? null })} className="text-muted-foreground hover:text-primary"><Pencil size={14} /></button>
-                            <button onClick={() => setStatsOpen(statsOpen === `quote:${q.id}` ? null : `quote:${q.id}`)} className={statsOpen === `quote:${q.id}` ? "text-primary" : "text-muted-foreground hover:text-primary"}><BarChart3 size={14} /></button>
-                            <button onClick={() => handleDelete("quotes", q.id, q.image_url, "quote-images", { storagePath: q.bunny_storage_path })} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {statsOpen === `quote:${q.id}` && <StatsChart contentType="quote" contentId={q.id} />}
-                </div>
-              );
-            })
-          )}
         </>
       )}
     </div>
