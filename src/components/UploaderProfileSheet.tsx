@@ -214,7 +214,7 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
                 <div className="p-10 text-center text-white/50 text-sm">Loading…</div>
               ) : tab === "reels" ? (
                 reels.length === 0 ? (
-                  <div className="p-10 text-center text-white/50 text-sm">No videos yet</div>
+                  <div className="p-10 text-center text-white/50 text-sm">No long game videos yet</div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2.5">
                     {reels.map((r) => {
@@ -245,7 +245,7 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
                 )
               ) : (
                 quoteSets.length === 0 ? (
-                  <div className="p-10 text-center text-white/50 text-sm">No photos yet</div>
+                  <div className="p-10 text-center text-white/50 text-sm">No quick clips yet</div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2.5">
                     {quoteSets.map((q) => (
