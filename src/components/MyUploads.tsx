@@ -87,9 +87,8 @@ const VideoTrimmer = ({ reel, onSave }: { reel: Reel; onSave: (start: number, en
 
 const MyUploads = () => {
   const { user, isAdmin } = useAuth();
-  const [tab, setTab] = useState<Tab>("videos");
+  const [tab, setTab] = useState<Tab>("long_game");
   const [reels, setReels] = useState<Reel[]>([]);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -102,6 +101,7 @@ const MyUploads = () => {
   const [statsOpen, setStatsOpen] = useState<string | null>(null);
   const thumbInput = useRef<HTMLInputElement>(null);
   const [thumbTargetId, setThumbTargetId] = useState<string | null>(null);
+  const [thumbKind, setThumbKind] = useState<ThumbKind>("landscape");
 
 
   const q = query.trim().toLowerCase();
@@ -112,23 +112,16 @@ const MyUploads = () => {
   const fetchAll = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const filterOwn = (q: ReturnType<typeof supabase.from>) => isAdmin ? q : q.eq("uploaded_by", user.id);
-    const [r, q] = await Promise.all([
-      filterOwn(supabase.from("reels").select("*").order("created_at", { ascending: false })),
-      filterOwn(supabase.from("quotes").select("*").order("created_at", { ascending: false })),
-    ]);
-    setReels((r.data as Reel[]) || []);
-    setQuotes((q.data as Quote[]) || []);
+    const base = supabase.from("reels").select("*").order("created_at", { ascending: false });
+    const r = await (isAdmin ? base : base.eq("uploaded_by", user.id));
+    const rows = (r.data as Reel[]) || [];
+    setReels(rows);
 
-    const ids = [
-      ...((r.data as Reel[]) || []).map((x) => ({ t: "reel", id: x.id })),
-      ...((q.data as Quote[]) || []).map((x) => ({ t: "quote", id: x.id })),
-    ];
-    if (ids.length) {
+    if (rows.length) {
       const { data: vData } = await supabase
         .from("content_views")
         .select("content_type, content_id")
-        .in("content_id", ids.map((i) => i.id));
+        .in("content_id", rows.map((i) => i.id));
       const counts: Record<string, number> = {};
       (vData || []).forEach((v) => {
         const key = `${v.content_type}:${v.content_id}`;
@@ -140,6 +133,7 @@ const MyUploads = () => {
     }
     setLoading(false);
   }, [user, isAdmin]);
+
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
