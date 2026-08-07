@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, Play, Plus, Check, Search, Share2, X } from "lucide-react";
+import { ChevronLeft, Play, Plus, Check, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import VideoPlayer from "@/components/VideoPlayer";
 import { getVideoThumbnail } from "@/lib/thumbUrl";
@@ -13,6 +13,8 @@ interface Item {
   description: string | null;
   video_url: string;
   thumbnail_url: string | null;
+  thumbnail_portrait_url: string | null;
+  thumbnail_landscape_url: string | null;
   category: string;
   created_at: string;
   uploaded_by: string | null;
@@ -27,31 +29,31 @@ const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(ma
 
 const badgeFor = (iso: string) => (Date.now() - new Date(iso).getTime() < 7 * 86400000 ? "New" : "Trending");
 
+const portraitSrc = (item: Item) =>
+  item.thumbnail_portrait_url || getVideoThumbnail(item.video_url, item.thumbnail_url);
+const landscapeSrc = (item: Item) =>
+  item.thumbnail_landscape_url || getVideoThumbnail(item.video_url, item.thumbnail_url);
+
 /** Shared poster visual used at every size so nothing swaps mid-morph. */
-const PosterArt = ({ item, big, showText = true }: { item: Item; big?: boolean; showText?: boolean }) => {
-  const thumb = getVideoThumbnail(item.video_url, item.thumbnail_url);
+const PosterArt = ({
+  item,
+  orientation = "portrait",
+  contain = false,
+}: {
+  item: Item;
+  orientation?: "portrait" | "landscape";
+  contain?: boolean;
+}) => {
+  const thumb = orientation === "landscape" ? landscapeSrc(item) : portraitSrc(item);
   return (
     <div className="absolute inset-0 bg-secondary">
-      {thumb && <img src={thumb} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      {big && (
-        <div
-          className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 text-center px-6 select-none transition-opacity duration-150"
-          style={{ top: "40%", opacity: showText ? 1 : 0 }}
-        >
-
-
-          <div className="text-[42px] font-black leading-[0.95] tracking-tight text-foreground">
-            {item.title || "Untitled"}
-          </div>
-        </div>
+      {thumb && (
+        <img
+          src={thumb}
+          alt=""
+          className={`absolute inset-0 w-full h-full ${contain ? "object-contain" : "object-cover"}`}
+        />
       )}
-      <div
-        className="absolute left-0 right-0 bottom-0"
-        style={{
-          height: big ? 190 : 46,
-          background: `linear-gradient(to top, rgba(0,0,0,${big ? 0.85 : 0.7}), transparent)`,
-        }}
-      />
     </div>
   );
 };
@@ -70,7 +72,8 @@ const ContinueCard = ({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
     onClick={(e) => onOpen(item, e.currentTarget)}
     className="relative flex-shrink-0 w-[76%] max-w-[320px] aspect-[16/10] rounded-2xl overflow-hidden cursor-pointer"
   >
-    <PosterArt item={item} big />
+    <PosterArt item={item} orientation="landscape" />
+    <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/80 to-transparent" />
     <div className="absolute left-3 bottom-2.5 flex items-center gap-1.5 text-xs font-medium text-white/85">
       <Play size={11} className="fill-current" />
       <span className="truncate max-w-[200px]">{item.title || "Untitled"}</span>
@@ -113,6 +116,7 @@ const LongGameSection = ({
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Item | null>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [playing, setPlaying] = useState<Item | null>(null);
@@ -120,7 +124,6 @@ const LongGameSection = ({
   const overlayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rectRef = useRef<DOMRect | null>(null);
-  const wasFullyVisibleRef = useRef(true);
   const tickingRef = useRef(false);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -132,7 +135,9 @@ const LongGameSection = ({
       const list = feedKey.split(",");
       const { data } = await supabase
         .from("reels")
-        .select("id,title,description,video_url,thumbnail_url,category,created_at,uploaded_by")
+        .select(
+          "id,title,description,video_url,thumbnail_url,thumbnail_portrait_url,thumbnail_landscape_url,category,created_at,uploaded_by",
+        )
         .in("feed", list)
         .order("created_at", { ascending: false })
         .limit(100);
@@ -163,9 +168,9 @@ const LongGameSection = ({
   const openItem = useCallback<OpenFn>((item, node) => {
     const rect = node.getBoundingClientRect();
     rectRef.current = rect;
-    wasFullyVisibleRef.current = rect.top >= -0.5;
     setScrollY(0);
     setShowDetail(false);
+    setClosing(false);
     setOpen(item);
     trackView("reel", item.id);
   }, []);
@@ -198,8 +203,9 @@ const LongGameSection = ({
 
   const close = useCallback(() => {
     setShowDetail(false);
+    setClosing(true);
     const overlay = overlayRef.current;
-    if (!overlay) { setOpen(null); return; }
+    if (!overlay || !rectRef.current) { setOpen(null); setClosing(false); return; }
 
     let done = false;
     let handler: (e: TransitionEvent) => void;
@@ -210,24 +216,20 @@ const LongGameSection = ({
       overlay.removeEventListener("transitionend", handler);
       clearTimeout(fallback);
       setOpen(null);
+      setClosing(false);
     };
 
-    if (wasFullyVisibleRef.current && rectRef.current) {
-      const { tx, ty, sx, sy } = computeTransform(rectRef.current);
-      const fadeDuration = Math.round(DURATION * 0.35);
-      const fadeDelay = DURATION - fadeDuration;
-      overlay.style.willChange = "transform, opacity";
-      overlay.style.transition = `transform ${DURATION}ms ${EASE}, border-radius ${DURATION}ms ${EASE}, opacity ${fadeDuration}ms ease ${fadeDelay}ms`;
-      overlay.style.transform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
-      overlay.style.borderRadius = "20px";
-      overlay.style.opacity = "0";
-    } else {
-      overlay.style.willChange = "transform, opacity";
-      overlay.style.transition = `transform ${DURATION}ms ${EASE}, border-radius ${DURATION}ms ${EASE}, opacity ${DURATION}ms ease`;
-      overlay.style.transform = `translateY(${window.innerHeight}px)`;
-      overlay.style.borderRadius = "28px 28px 0 0";
-      overlay.style.opacity = "0.4";
-    }
+    // Always morph back to the exact card position. While closing the overlay sits
+    // below the nav bars, so a card that is clipped by them slides underneath them
+    // instead of glitching on top.
+    const { tx, ty, sx, sy } = computeTransform(rectRef.current);
+    const fadeDuration = Math.round(DURATION * 0.3);
+    const fadeDelay = DURATION - fadeDuration;
+    overlay.style.willChange = "transform, opacity";
+    overlay.style.transition = `transform ${DURATION}ms ${EASE}, border-radius ${DURATION}ms ${EASE}, opacity ${fadeDuration}ms ease ${fadeDelay}ms`;
+    overlay.style.transform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
+    overlay.style.borderRadius = "20px";
+    overlay.style.opacity = "0";
 
     handler = (e: TransitionEvent) => { if (e.propertyName === "transform") finish(); };
     overlay.addEventListener("transitionend", handler);
@@ -255,7 +257,6 @@ const LongGameSection = ({
     };
   }, [items]);
 
-  const navAlpha = clamp(scrollY / 220, 0, 1) * 0.94;
   const titleOpacity = clamp((scrollY - 170) / 60, 0, 1);
   const titleY = 8 - 8 * titleOpacity;
 
@@ -303,26 +304,11 @@ const LongGameSection = ({
       {open && (
         <div
           ref={overlayRef}
-          className="fixed top-0 left-0 w-screen h-screen bg-background overflow-hidden z-50"
+          className="fixed top-0 left-0 w-screen h-screen bg-background overflow-hidden"
+          style={{ zIndex: closing ? 30 : 50 }}
         >
-          {/* Nav bar */}
-          <div
-            className="absolute top-0 left-0 right-0 z-30 h-14 flex items-center px-3 backdrop-blur-xl"
-            style={{
-              background: `hsl(var(--background) / ${navAlpha})`,
-              borderBottom: `1px solid hsl(var(--foreground) / ${navAlpha * 0.13})`,
-              opacity: showDetail ? 1 : 0,
-              transition: showDetail ? "opacity 220ms ease 120ms" : "opacity 120ms ease",
-              pointerEvents: showDetail ? "auto" : "none",
-            }}
-          >
-            <button
-              onClick={close}
-              aria-label="Back"
-              className="w-9 h-9 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0"
-            >
-              <ChevronLeft size={20} />
-            </button>
+          {/* Top bar — back button on the right, no blur, no share */}
+          <div className="absolute top-0 left-0 right-0 z-30 h-14 flex items-center justify-end px-3 pointer-events-none">
             <span
               className="flex-1 text-center text-[15px] font-semibold px-2 truncate"
               style={{ opacity: titleOpacity, transform: `translateY(${titleY}px)` }}
@@ -330,29 +316,21 @@ const LongGameSection = ({
               {open.title || "Untitled"}
             </span>
             <button
-              aria-label="Share"
-              className="w-9 h-9 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0"
+              onClick={close}
+              aria-label="Back"
+              className="pointer-events-auto w-9 h-9 rounded-full bg-black/40 flex items-center justify-center flex-shrink-0 text-white"
             >
-              <Share2 size={16} />
+              <ChevronLeft size={20} />
             </button>
           </div>
 
-          <button
-            onClick={close}
-            aria-label="Back"
-            className="absolute top-2.5 left-2.5 z-[31] w-9 h-9 rounded-full bg-black/35 items-center justify-center text-white"
-            style={{ display: showDetail ? "none" : "flex" }}
-          >
-            <ChevronLeft size={20} />
-          </button>
-
           <div ref={scrollRef} onScroll={handleScroll} className="absolute inset-0 overflow-y-auto scrollbar-hide">
-            <div className="relative" style={{ height: "56vh" }}>
-              <PosterArt item={open} big showText={showDetail} />
+            <div className="relative w-full aspect-[2/3] max-h-[72vh] bg-background">
+              <PosterArt item={open} contain />
             </div>
 
             <div
-              className="relative px-5 pb-24 -mt-6"
+              className="relative px-5 pb-24 pt-4"
               style={{
                 opacity: showDetail ? 1 : 0,
                 transform: showDetail ? "translateY(0px)" : "translateY(8px)",
@@ -364,6 +342,8 @@ const LongGameSection = ({
               <span className="inline-block text-[11px] font-bold uppercase tracking-[0.03em] px-2.5 py-1 rounded-md mb-3 bg-foreground/10 text-foreground">
                 {badgeFor(open.created_at)}
               </span>
+
+              <h1 className="text-[26px] font-black leading-tight tracking-tight mb-2">{open.title || "Untitled"}</h1>
 
               <div className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground mb-5">
                 <span>{open.sharedBy}</span>
@@ -399,7 +379,7 @@ const LongGameSection = ({
               <VideoPlayer
                 key={playing.id}
                 src={getPlayableVideoUrl(playing.video_url)}
-                poster={getVideoThumbnail(playing.video_url, playing.thumbnail_url) || undefined}
+                poster={landscapeSrc(playing) || undefined}
                 autoPlay
                 fill
                 fit="contain"
