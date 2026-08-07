@@ -29,8 +29,12 @@ const UploadTab = () => {
   const [videoFeed, setVideoFeed] = useState<string>("quick_spark");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbFile, setThumbFile] = useState<File | null>(null);
+  const [portraitThumbFile, setPortraitThumbFile] = useState<File | null>(null);
   const thumbPreviewUrl = useMemo(() => (thumbFile ? URL.createObjectURL(thumbFile) : null), [thumbFile]);
   useEffect(() => () => { if (thumbPreviewUrl) URL.revokeObjectURL(thumbPreviewUrl); }, [thumbPreviewUrl]);
+  const portraitPreviewUrl = useMemo(() => (portraitThumbFile ? URL.createObjectURL(portraitThumbFile) : null), [portraitThumbFile]);
+  useEffect(() => () => { if (portraitPreviewUrl) URL.revokeObjectURL(portraitPreviewUrl); }, [portraitPreviewUrl]);
+
   const [videoFit, setVideoFit] = useState<"cover" | "contain" | "fill">("cover");
 
   // Only build a preview URL for files that can be decoded in the WebView without
