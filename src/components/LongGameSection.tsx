@@ -99,7 +99,17 @@ const RankRow = ({ items, onOpen }: { items: Item[]; onOpen: OpenFn }) => (
   </div>
 );
 
-const LongGameSection = ({ feed = "long_game", heading = "Long Game" }: { feed?: string; heading?: string }) => {
+const LongGameSection = ({
+  feed = "long_game",
+  feeds,
+  heading = "Long Game",
+  topInset = 56,
+}: {
+  feed?: string;
+  feeds?: string[];
+  heading?: string;
+  topInset?: number;
+}) => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Item | null>(null);
