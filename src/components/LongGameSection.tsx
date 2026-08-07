@@ -138,7 +138,7 @@ const LongGameSection = ({ feed = "long_game", heading = "Long Game" }: { feed?:
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [feed]);
 
   const computeTransform = (r: DOMRect) => ({
     tx: r.left,
