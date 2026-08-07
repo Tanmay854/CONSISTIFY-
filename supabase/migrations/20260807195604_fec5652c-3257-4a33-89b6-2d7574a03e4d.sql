@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Admins and uploaders can add quotes" ON public.quotes;
+CREATE POLICY "Admins can add quotes" ON public.quotes FOR INSERT TO authenticated WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
