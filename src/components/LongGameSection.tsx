@@ -300,11 +300,11 @@ const LongGameSection = ({
               className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory"
             >
               {featured.map((m) => (
-                <div key={m.id} className="relative flex-shrink-0 w-full h-[52vh] snap-center">
-                  <PosterArt item={m} orientation="landscape" />
+                <div key={m.id} className="relative flex-shrink-0 w-full h-[82vh] snap-center">
+                  <PosterArt item={m} />
                   {/* legibility scrims */}
                   <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/70 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/80 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background via-background/85 to-transparent" />
 
                   <div className="absolute inset-x-0 bottom-0 px-5 pb-4">
                     <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-foreground/15 text-foreground mb-2.5">
