@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Film, Image as ImageIcon, User, Search, X, Mail, Clock } from "lucide-react";
+import { Trash2, Film, Image as ImageIcon, User, Search, X, Mail, Clock, Star } from "lucide-react";
 
 const formatDateTime = (iso: string) => {
   try {
