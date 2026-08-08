@@ -300,33 +300,34 @@ const LongGameSection = ({
               className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory"
             >
               {featured.map((m) => (
-                <div key={m.id} className="relative flex-shrink-0 w-full h-[82vh] snap-center">
+              <div key={m.id} className="relative flex-shrink-0 w-full h-[82vh] snap-center">
                   <PosterArt item={m} />
-                  {/* legibility scrims */}
+                  {/* top scrim for floating nav */}
                   <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/70 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background via-background/85 to-transparent" />
+                  {/* localized bottom scrim so the title/buttons float above the image while the poster stays visible most of the way down */}
+                  <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/80 to-transparent" />
 
-                  <div className="absolute inset-x-0 bottom-0 px-5 pb-4">
-                    <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-foreground/15 text-foreground mb-2.5">
+                  <div className="absolute inset-x-0 bottom-0 px-5 pb-6" style={{ textShadow: "0 2px 20px rgba(0,0,0,0.9)" }}>
+                    <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-black/40 text-white mb-2.5">
                       {badgeFor(m.created_at) === "New" ? "New" : "Continue Watching"}
                     </span>
-                    <h1 className="text-[30px] leading-[1.05] font-extrabold uppercase tracking-tight mb-1.5">
+                    <h1 className="text-[30px] leading-[1.05] font-extrabold uppercase tracking-tight mb-1.5 text-white">
                       {m.title || "Untitled"}
                     </h1>
-                    <p className="text-[12px] font-normal text-muted-foreground mb-4 truncate">
+                    <p className="text-[12px] font-normal text-white/90 mb-4 truncate">
                       Long Game · {m.sharedBy}
                     </p>
                     <div className="flex items-center gap-3">
                       <button
                         onClick={(e) => openItem(m, e.currentTarget.closest("div[class*='snap-center']") as HTMLElement)}
-                        className="h-10 px-6 rounded-full bg-foreground text-background font-semibold text-[14px] flex items-center gap-2"
+                        className="h-10 px-6 rounded-full bg-white text-black font-semibold text-[14px] flex items-center gap-2"
                       >
                         <Play size={15} className="fill-current" /> Play
                       </button>
                       <button
                         onClick={() => setSaved((s) => ({ ...s, [m.id]: !s[m.id] }))}
                         aria-label="Add to Watchlist"
-                        className="w-10 h-10 rounded-full bg-foreground/15 backdrop-blur-md flex items-center justify-center"
+                        className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white"
                       >
                         {saved[m.id] ? <Check size={17} /> : <Plus size={17} />}
                       </button>
