@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Film, Image as ImageIcon, User, Search, X, Mail, Clock } from "lucide-react";
+import { Trash2, Film, Image as ImageIcon, User, Search, X, Mail, Clock, Star } from "lucide-react";
 
 const formatDateTime = (iso: string) => {
   try {
@@ -21,7 +21,7 @@ interface BaseItem {
   uploaded_by: string | null;
   created_at: string;
 }
-interface Reel extends BaseItem { video_url: string; bunny_video_guid: string | null; bunny_library_id: string | null; }
+interface Reel extends BaseItem { video_url: string; bunny_video_guid: string | null; bunny_library_id: string | null; feed: string | null; is_featured: boolean | null; }
 interface Quote extends BaseItem { image_url: string; category: string; bunny_storage_path: string | null; }
 
 
@@ -98,6 +98,16 @@ const AdminContentManager = () => {
     if (!res.ok) alert(res.error || "Delete failed");
     await fetchAll();
     setBusy(false);
+  };
+
+  const toggleFeatured = async (r: Reel) => {
+    const next = !r.is_featured;
+    setReels((prev) => prev.map((x) => (x.id === r.id ? { ...x, is_featured: next } : x)));
+    const { error } = await supabase.from("reels").update({ is_featured: next }).eq("id", r.id);
+    if (error) {
+      setReels((prev) => prev.map((x) => (x.id === r.id ? { ...x, is_featured: !next } : x)));
+      alert(error.message);
+    }
   };
 
   const q = query.trim().toLowerCase();
@@ -179,7 +189,17 @@ const AdminContentManager = () => {
                   )}
                   <p className="text-muted-foreground text-xs truncate flex items-center gap-1 mt-0.5"><Clock size={10} /> {formatDateTime(r.created_at)}</p>
                 </div>
-                <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos", { videoGuid: r.bunny_video_guid, libraryId: r.bunny_library_id })} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
+                <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => toggleFeatured(r)}
+                    aria-label={r.is_featured ? "Remove from hero banner" : "Feature in hero banner"}
+                    title={r.is_featured ? "Featured in hero banner" : "Feature in hero banner"}
+                    className={r.is_featured ? "text-primary" : "text-muted-foreground hover:text-foreground"}
+                  >
+                    <Star size={16} className={r.is_featured ? "fill-current" : ""} />
+                  </button>
+                  <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos", { videoGuid: r.bunny_video_guid, libraryId: r.bunny_library_id })} disabled={busy} className="text-muted-foreground hover:text-destructive"><Trash2 size={16} /></button>
+                </div>
               </div>
               );
             })}

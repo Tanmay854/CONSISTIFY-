@@ -447,6 +447,7 @@ export type Database = {
           description: string | null
           feed: string
           id: string
+          is_featured: boolean
           public_id: string
           thumbnail_landscape_url: string | null
           thumbnail_portrait_url: string | null
@@ -467,6 +468,7 @@ export type Database = {
           description?: string | null
           feed?: string
           id?: string
+          is_featured?: boolean
           public_id?: string
           thumbnail_landscape_url?: string | null
           thumbnail_portrait_url?: string | null
@@ -487,6 +489,7 @@ export type Database = {
           description?: string | null
           feed?: string
           id?: string
+          is_featured?: boolean
           public_id?: string
           thumbnail_landscape_url?: string | null
           thumbnail_portrait_url?: string | null

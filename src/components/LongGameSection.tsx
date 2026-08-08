@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, Play, Plus, Check, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import VideoPlayer from "@/components/VideoPlayer";
@@ -18,6 +18,7 @@ interface Item {
   category: string;
   created_at: string;
   uploaded_by: string | null;
+  is_featured: boolean | null;
   sharedBy: string;
 }
 
@@ -35,7 +36,7 @@ const landscapeSrc = (item: Item) =>
   item.thumbnail_landscape_url || getVideoThumbnail(item.video_url, item.thumbnail_url);
 
 /** Shared poster visual used at every size so nothing swaps mid-morph. */
-const PosterArt = ({
+const PosterArt = memo(({
   item,
   orientation = "portrait",
   contain = false,
@@ -51,12 +52,16 @@ const PosterArt = ({
         <img
           src={thumb}
           alt=""
+          loading="eager"
+          decoding="sync"
+          draggable={false}
           className={`absolute inset-0 w-full h-full ${contain ? "object-contain" : "object-cover"}`}
         />
       )}
     </div>
   );
-};
+});
+PosterArt.displayName = "PosterArt";
 
 const SectionRow = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="mb-8">
@@ -67,7 +72,7 @@ const SectionRow = ({ title, children }: { title: string; children: React.ReactN
 
 type OpenFn = (item: Item, node: HTMLElement) => void;
 
-const ContinueCard = ({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
+const ContinueCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
   <div
     onClick={(e) => onOpen(item, e.currentTarget)}
     className="relative flex-shrink-0 w-[76%] max-w-[320px] aspect-[16/10] rounded-2xl overflow-hidden cursor-pointer"
@@ -79,9 +84,10 @@ const ContinueCard = ({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
       <span className="truncate max-w-[200px]">{item.title || "Untitled"}</span>
     </div>
   </div>
-);
+));
+ContinueCard.displayName = "ContinueCard";
 
-const PosterCard = ({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
+const PosterCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
   <div className="flex-shrink-0 w-[104px]">
     <div
       onClick={(e) => onOpen(item, e.currentTarget)}
@@ -89,17 +95,19 @@ const PosterCard = ({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
     >
       <PosterArt item={item} />
     </div>
-    <div className="mt-2 text-[11px] font-medium text-muted-foreground truncate">{item.sharedBy}</div>
+    <div className="mt-2 text-[11px] font-medium text-muted-foreground truncate text-center">{item.sharedBy}</div>
   </div>
-);
+));
+PosterCard.displayName = "PosterCard";
 
-const RankRow = ({ items, onOpen }: { items: Item[]; onOpen: OpenFn }) => (
+const RankRow = memo(({ items, onOpen }: { items: Item[]; onOpen: OpenFn }) => (
   <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
     {items.map((m) => (
       <PosterCard key={m.id} item={m} onOpen={onOpen} />
     ))}
   </div>
-);
+));
+RankRow.displayName = "RankRow";
 
 const LongGameSection = ({
   feed = "long_game",
@@ -136,7 +144,7 @@ const LongGameSection = ({
       const { data } = await supabase
         .from("reels")
         .select(
-          "id,title,description,video_url,thumbnail_url,thumbnail_portrait_url,thumbnail_landscape_url,category,created_at,uploaded_by",
+          "id,title,description,video_url,thumbnail_url,thumbnail_portrait_url,thumbnail_landscape_url,category,created_at,uploaded_by,is_featured",
         )
         .in("feed", list)
         .order("created_at", { ascending: false })
@@ -260,7 +268,10 @@ const LongGameSection = ({
   const titleOpacity = clamp((scrollY - 170) / 60, 0, 1);
   const titleY = 8 - 8 * titleOpacity;
 
-  const featured = items.slice(0, 5);
+  const featured = useMemo(() => {
+    const picked = items.filter((i) => i.is_featured);
+    return (picked.length ? picked : items).slice(0, 5);
+  }, [items]);
   const heroRef = useRef<HTMLDivElement>(null);
   const [heroIndex, setHeroIndex] = useState(0);
   const onHeroScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -289,11 +300,11 @@ const LongGameSection = ({
               className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory"
             >
               {featured.map((m) => (
-                <div key={m.id} className="relative flex-shrink-0 w-full h-[52vh] snap-center">
-                  <PosterArt item={m} orientation="landscape" />
+                <div key={m.id} className="relative flex-shrink-0 w-full h-[82vh] snap-center">
+                  <PosterArt item={m} />
                   {/* legibility scrims */}
                   <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/70 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/80 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background via-background/85 to-transparent" />
 
                   <div className="absolute inset-x-0 bottom-0 px-5 pb-4">
                     <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-foreground/15 text-foreground mb-2.5">
