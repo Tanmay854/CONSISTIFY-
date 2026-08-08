@@ -23,12 +23,9 @@ const uploadImage = async (file: File, prefix: string): Promise<string | null> =
 
 const TabMediaManager = () => {
   const { user } = useAuth();
-  const [section, setSection] = useState<Section>("banners");
+  const [section, setSection] = useState<Section>("backgrounds");
 
-  // Banners
-  const [tab, setTab] = useState<string>(VIDEO_FEEDS[0].id);
-  const [banners, setBanners] = useState<BannerRow[]>([]);
-  const bannerInput = useRef<HTMLInputElement>(null);
+
 
   // Backgrounds
   const [backgrounds, setBackgrounds] = useState<BgRow[]>([]);
@@ -49,14 +46,13 @@ const TabMediaManager = () => {
   const [message, setMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [b, bg, q, all] = await Promise.all([
-      supabase.from("tab_banners").select("id,tab,image_url,position").order("position"),
+    const [bg, q, all] = await Promise.all([
       supabase.from("quote_backgrounds").select("id,image_url,name,position").order("position"),
       supabase.from("daily_quotes").select("id,text,author,category,subcategory").order("created_at", { ascending: false }).limit(1000),
       supabase.from("daily_quotes").select("category,subcategory").limit(50000),
     ]);
 
-    setBanners((b.data as BannerRow[]) || []);
+
     setBackgrounds((bg.data as BgRow[]) || []);
     setQuotes((q.data as QuoteRow[]) || []);
     const map: Record<string, number> = {};
@@ -71,25 +67,8 @@ const TabMediaManager = () => {
 
   useEffect(() => { load(); }, [load]);
 
-  const tabBanners = banners.filter((b) => b.tab === tab);
 
-  const addBanners = async (files: FileList | null) => {
-    if (!files?.length) return;
-    setBusy(true); setMessage(null);
-    const room = 5 - tabBanners.length;
-    if (room <= 0) { setMessage("This tab already has 5 images."); setBusy(false); return; }
-    const list = Array.from(files).slice(0, room);
-    for (let i = 0; i < list.length; i++) {
-      const url = await uploadImage(list[i], `banners/${tab}`);
-      if (!url) { setMessage("Upload failed"); continue; }
-      const { error } = await supabase.from("tab_banners").insert({
-        tab, image_url: url, position: tabBanners.length + i, created_by: user?.id,
-      });
-      if (error) setMessage(error.message);
-    }
-    await load();
-    setBusy(false);
-  };
+
 
   const addBackgrounds = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -109,22 +88,23 @@ const TabMediaManager = () => {
   };
 
   /**
-   * Inserts quotes while guaranteeing no duplicates: text is de-duplicated
-   * within the batch and against everything already stored (case/whitespace
-   * insensitive). The database also enforces this with a unique index.
+   * Inserts quotes while guaranteeing no duplicates. Matching ignores leading
+   * numbering, punctuation, quote marks, casing and spacing, so the same quote
+   * imported under a different number is rejected.
    */
   const insertUnique = async (
     parsed: { text: string; category: string; subcategory: string }[],
   ): Promise<{ added: number; skipped: number; error?: string }> => {
     const { data: existing } = await supabase.from("daily_quotes").select("text").limit(50000);
-    const seen = new Set((existing ?? []).map((e) => (e.text || "").trim().toLowerCase()));
+    const seen = new Set((existing ?? []).map((e) => quoteKey(e.text || "")));
     const rows: { text: string; category: string; subcategory: string; author: null; created_by?: string }[] = [];
     for (const p of parsed) {
-      const key = p.text.trim().toLowerCase();
+      const key = quoteKey(p.text);
       if (!key || seen.has(key)) continue;
       seen.add(key);
       rows.push({ ...p, text: p.text.trim(), author: null, created_by: user?.id });
     }
+
     let added = 0;
     for (let i = 0; i < rows.length; i += 200) {
       const { error } = await supabase.from("daily_quotes").insert(rows.slice(i, i + 200));
@@ -178,7 +158,7 @@ const TabMediaManager = () => {
 
 
 
-  const remove = async (table: "tab_banners" | "quote_backgrounds" | "daily_quotes", id: string) => {
+  const remove = async (table: "quote_backgrounds" | "daily_quotes", id: string) => {
     if (!confirm("Delete this item?")) return;
     setBusy(true);
     const { error } = await supabase.from(table).delete().eq("id", id);
@@ -188,10 +168,10 @@ const TabMediaManager = () => {
   };
 
   const sections: { id: Section; label: string; icon: typeof ImageIcon }[] = [
-    { id: "banners", label: "Tab images", icon: ImageIcon },
-    { id: "backgrounds", label: "Wallpapers", icon: Upload },
+    { id: "backgrounds", label: "Wallpapers", icon: ImageIcon },
     { id: "quotes", label: "Quotes", icon: QuoteIcon },
   ];
+
 
   return (
     <div className="space-y-3">
@@ -214,50 +194,8 @@ const TabMediaManager = () => {
 
       {message && <p className="text-xs text-muted-foreground">{message}</p>}
 
-      {section === "banners" && (
-        <div className="space-y-3">
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-            {VIDEO_FEEDS.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setTab(f.id)}
-                className={`shrink-0 px-2.5 py-1.5 rounded-full text-[10px] font-semibold ${
-                  tab === f.id ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-          <p className="text-muted-foreground text-[11px]">
-            Up to 5 images per tab. They crossfade every 5 seconds. {tabBanners.length}/5 used.
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {tabBanners.map((b) => (
-              <div key={b.id} className="relative aspect-video rounded-lg overflow-hidden bg-secondary">
-                <img src={b.image_url} alt="" className="w-full h-full object-cover" />
-                <button
-                  onClick={() => remove("tab_banners", b.id)}
-                  className="absolute top-1 right-1 bg-background/80 rounded-full p-1 text-destructive"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
-            {tabBanners.length < 5 && (
-              <button
-                onClick={() => bannerInput.current?.click()}
-                disabled={busy}
-                className="aspect-video rounded-lg bg-secondary flex items-center justify-center text-muted-foreground disabled:opacity-50"
-              >
-                <Plus size={18} />
-              </button>
-            )}
-          </div>
-          <input ref={bannerInput} type="file" accept="image/*" multiple hidden
-            onChange={(e) => { addBanners(e.target.files); e.target.value = ""; }} />
-        </div>
-      )}
+
+
 
       {section === "backgrounds" && (
         <div className="space-y-3">
