@@ -144,7 +144,7 @@ const LongGameSection = ({
       const { data } = await supabase
         .from("reels")
         .select(
-          "id,title,description,video_url,thumbnail_url,thumbnail_portrait_url,thumbnail_landscape_url,category,created_at,uploaded_by",
+          "id,title,description,video_url,thumbnail_url,thumbnail_portrait_url,thumbnail_landscape_url,category,created_at,uploaded_by,is_featured",
         )
         .in("feed", list)
         .order("created_at", { ascending: false })
