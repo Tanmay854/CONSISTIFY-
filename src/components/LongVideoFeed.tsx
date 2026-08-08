@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import VideoPlayer from "@/components/VideoPlayer";
-import TabBanner from "@/components/TabBanner";
 import { getVideoThumbnail } from "@/lib/thumbUrl";
 import { getPlayableVideoUrl } from "@/lib/videoFeeds";
 import { trackView } from "@/lib/trackView";
@@ -94,7 +93,6 @@ const LongVideoFeed = ({ feed, heading, blurb }: { feed: string; heading: string
     <div className="h-[100dvh] overflow-y-auto scrollbar-hide overscroll-contain bg-background pb-28">
       <div className="pt-16">
         <div className="px-4">
-          <TabBanner tab={feed} className="mb-4" />
           <h2 className="text-foreground font-brand text-lg">{heading}</h2>
           <p className="text-muted-foreground text-xs mt-1 mb-3">{blurb}</p>
         </div>

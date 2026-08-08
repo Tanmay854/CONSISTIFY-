@@ -259,7 +259,7 @@ const TabMediaManager = () => {
           <div className="rounded-xl border border-border p-3 space-y-2">
             <p className="text-foreground text-xs font-semibold">Import all topics at once</p>
             <p className="text-muted-foreground text-[11px]">
-              Paste the full list. Category and sub-topic headings on their own line (e.g. <em>Mental Health</em>, then <em>Stress</em>),
+              {totalQuotes} quotes in the app right now. Paste the full list. Category and sub-topic headings on their own line (e.g. <em>Mental Health</em>, then <em>Stress</em>),
               quotes numbered below each heading. Duplicates are skipped automatically.
             </p>
             <textarea
