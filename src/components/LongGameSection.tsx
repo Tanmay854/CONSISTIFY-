@@ -18,6 +18,7 @@ interface Item {
   category: string;
   created_at: string;
   uploaded_by: string | null;
+  is_featured: boolean | null;
   sharedBy: string;
 }
 
