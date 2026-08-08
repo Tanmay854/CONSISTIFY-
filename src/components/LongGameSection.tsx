@@ -268,7 +268,10 @@ const LongGameSection = ({
   const titleOpacity = clamp((scrollY - 170) / 60, 0, 1);
   const titleY = 8 - 8 * titleOpacity;
 
-  const featured = items.slice(0, 5);
+  const featured = useMemo(() => {
+    const picked = items.filter((i) => i.is_featured);
+    return (picked.length ? picked : items).slice(0, 5);
+  }, [items]);
   const heroRef = useRef<HTMLDivElement>(null);
   const [heroIndex, setHeroIndex] = useState(0);
   const onHeroScroll = (e: React.UIEvent<HTMLDivElement>) => {
