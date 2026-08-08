@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, Play, Plus, Check, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import VideoPlayer from "@/components/VideoPlayer";
