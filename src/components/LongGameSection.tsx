@@ -260,21 +260,86 @@ const LongGameSection = ({
   const titleOpacity = clamp((scrollY - 170) / 60, 0, 1);
   const titleY = 8 - 8 * titleOpacity;
 
+  const featured = items.slice(0, 5);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const onHeroScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    setHeroIndex(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
+  };
+
   return (
     <div className="relative h-[100dvh] w-full bg-background text-foreground overflow-hidden">
-      <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain">
-        <div className="flex items-center justify-between px-5 pb-5 bg-background" style={{ paddingTop: topInset }}>
-          <span className="text-[22px] font-black tracking-tight">{heading}</span>
-          <button
-            type="button"
-            aria-label="Search"
-            className="w-9 h-9 rounded-full bg-foreground/10 flex items-center justify-center"
-          >
-            <Search size={17} />
-          </button>
-        </div>
+      {/* Floating search — sits on top of the hero image */}
+      <button
+        type="button"
+        aria-label="Search"
+        className="absolute top-4 right-4 z-40 w-9 h-9 rounded-full bg-black/35 backdrop-blur-md flex items-center justify-center text-foreground"
+      >
+        <Search size={17} />
+      </button>
 
-        <div className="px-5 pt-1 pb-32">
+      <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain">
+        {/* Hero carousel */}
+        {featured.length > 0 && (
+          <div className="relative">
+            <div
+              ref={heroRef}
+              onScroll={onHeroScroll}
+              className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+            >
+              {featured.map((m) => (
+                <div key={m.id} className="relative flex-shrink-0 w-full h-[52vh] snap-center">
+                  <PosterArt item={m} orientation="landscape" />
+                  {/* legibility scrims */}
+                  <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/70 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/80 to-transparent" />
+
+                  <div className="absolute inset-x-0 bottom-0 px-5 pb-4">
+                    <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-foreground/15 text-foreground mb-2.5">
+                      {badgeFor(m.created_at) === "New" ? "New" : "Continue Watching"}
+                    </span>
+                    <h1 className="text-[30px] leading-[1.05] font-extrabold uppercase tracking-tight mb-1.5">
+                      {m.title || "Untitled"}
+                    </h1>
+                    <p className="text-[12px] font-normal text-muted-foreground mb-4 truncate">
+                      Long Game · {m.sharedBy}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={(e) => openItem(m, e.currentTarget.closest("div[class*='snap-center']") as HTMLElement)}
+                        className="h-10 px-6 rounded-full bg-foreground text-background font-semibold text-[14px] flex items-center gap-2"
+                      >
+                        <Play size={15} className="fill-current" /> Play
+                      </button>
+                      <button
+                        onClick={() => setSaved((s) => ({ ...s, [m.id]: !s[m.id] }))}
+                        aria-label="Add to Watchlist"
+                        className="w-10 h-10 rounded-full bg-foreground/15 backdrop-blur-md flex items-center justify-center"
+                      >
+                        {saved[m.id] ? <Check size={17} /> : <Plus size={17} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {featured.length > 1 && (
+              <div className="flex justify-center gap-1.5 pt-3">
+                {featured.map((m, i) => (
+                  <span
+                    key={m.id}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      i === heroIndex ? "w-4 bg-foreground" : "w-1.5 bg-foreground/30"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="px-5 pt-6 pb-32">
           {loading ? (
             <div className="space-y-4">
               {[0, 1, 2].map((i) => (
@@ -300,6 +365,7 @@ const LongGameSection = ({
           )}
         </div>
       </div>
+
 
       {open && (
         <div
