@@ -300,12 +300,12 @@ const LongGameSection = ({
               className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory"
             >
               {featured.map((m) => (
-              <div key={m.id} className="relative flex-shrink-0 w-full h-[calc(100dvh-6rem)] snap-center">
+              <div key={m.id} className="relative flex-shrink-0 w-full h-[82vh] snap-center">
                   <PosterArt item={m} />
                   {/* top scrim for floating nav */}
                   <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/70 to-transparent" />
-                  {/* bottom text scrim — short so the poster is visible most of the way down */}
-                  <div className="absolute inset-x-0 bottom-0 h-[30%] bg-gradient-to-t from-black via-black/70 to-transparent" />
+                  {/* localized bottom scrim so the title/buttons float above the image while the poster stays visible most of the way down */}
+                  <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/80 to-transparent" />
 
                   <div className="absolute inset-x-0 bottom-0 px-5 pb-6" style={{ textShadow: "0 2px 20px rgba(0,0,0,0.9)" }}>
                     <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-black/40 text-white mb-2.5">
