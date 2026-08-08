@@ -100,6 +100,16 @@ const AdminContentManager = () => {
     setBusy(false);
   };
 
+  const toggleFeatured = async (r: Reel) => {
+    const next = !r.is_featured;
+    setReels((prev) => prev.map((x) => (x.id === r.id ? { ...x, is_featured: next } : x)));
+    const { error } = await supabase.from("reels").update({ is_featured: next }).eq("id", r.id);
+    if (error) {
+      setReels((prev) => prev.map((x) => (x.id === r.id ? { ...x, is_featured: !next } : x)));
+      alert(error.message);
+    }
+  };
+
   const q = query.trim().toLowerCase();
   const matches = (title: string | null, uid: string | null, publicId: string | null) => {
     if (!q) return true;
