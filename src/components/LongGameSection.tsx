@@ -36,7 +36,7 @@ const landscapeSrc = (item: Item) =>
   item.thumbnail_landscape_url || getVideoThumbnail(item.video_url, item.thumbnail_url);
 
 /** Shared poster visual used at every size so nothing swaps mid-morph. */
-const PosterArt = ({
+const PosterArt = memo(({
   item,
   orientation = "portrait",
   contain = false,
@@ -52,12 +52,16 @@ const PosterArt = ({
         <img
           src={thumb}
           alt=""
+          loading="eager"
+          decoding="sync"
+          draggable={false}
           className={`absolute inset-0 w-full h-full ${contain ? "object-contain" : "object-cover"}`}
         />
       )}
     </div>
   );
-};
+});
+PosterArt.displayName = "PosterArt";
 
 const SectionRow = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="mb-8">
@@ -68,7 +72,7 @@ const SectionRow = ({ title, children }: { title: string; children: React.ReactN
 
 type OpenFn = (item: Item, node: HTMLElement) => void;
 
-const ContinueCard = ({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
+const ContinueCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
   <div
     onClick={(e) => onOpen(item, e.currentTarget)}
     className="relative flex-shrink-0 w-[76%] max-w-[320px] aspect-[16/10] rounded-2xl overflow-hidden cursor-pointer"
@@ -80,9 +84,10 @@ const ContinueCard = ({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
       <span className="truncate max-w-[200px]">{item.title || "Untitled"}</span>
     </div>
   </div>
-);
+));
+ContinueCard.displayName = "ContinueCard";
 
-const PosterCard = ({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
+const PosterCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
   <div className="flex-shrink-0 w-[104px]">
     <div
       onClick={(e) => onOpen(item, e.currentTarget)}
@@ -90,17 +95,19 @@ const PosterCard = ({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
     >
       <PosterArt item={item} />
     </div>
-    <div className="mt-2 text-[11px] font-medium text-muted-foreground truncate">{item.sharedBy}</div>
+    <div className="mt-2 text-[11px] font-medium text-muted-foreground truncate text-center">{item.sharedBy}</div>
   </div>
-);
+));
+PosterCard.displayName = "PosterCard";
 
-const RankRow = ({ items, onOpen }: { items: Item[]; onOpen: OpenFn }) => (
+const RankRow = memo(({ items, onOpen }: { items: Item[]; onOpen: OpenFn }) => (
   <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
     {items.map((m) => (
       <PosterCard key={m.id} item={m} onOpen={onOpen} />
     ))}
   </div>
-);
+));
+RankRow.displayName = "RankRow";
 
 const LongGameSection = ({
   feed = "long_game",
