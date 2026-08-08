@@ -189,7 +189,17 @@ const AdminContentManager = () => {
                   )}
                   <p className="text-muted-foreground text-xs truncate flex items-center gap-1 mt-0.5"><Clock size={10} /> {formatDateTime(r.created_at)}</p>
                 </div>
-                <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos", { videoGuid: r.bunny_video_guid, libraryId: r.bunny_library_id })} disabled={busy} className="text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 size={16} /></button>
+                <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => toggleFeatured(r)}
+                    aria-label={r.is_featured ? "Remove from hero banner" : "Feature in hero banner"}
+                    title={r.is_featured ? "Featured in hero banner" : "Feature in hero banner"}
+                    className={r.is_featured ? "text-primary" : "text-muted-foreground hover:text-foreground"}
+                  >
+                    <Star size={16} className={r.is_featured ? "fill-current" : ""} />
+                  </button>
+                  <button onClick={() => handleDelete("reels", r.id, r.video_url, isYoutube(r.video_url) ? null : "videos", { videoGuid: r.bunny_video_guid, libraryId: r.bunny_library_id })} disabled={busy} className="text-muted-foreground hover:text-destructive"><Trash2 size={16} /></button>
+                </div>
               </div>
               );
             })}
