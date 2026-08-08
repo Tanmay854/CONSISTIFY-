@@ -21,7 +21,7 @@ interface BaseItem {
   uploaded_by: string | null;
   created_at: string;
 }
-interface Reel extends BaseItem { video_url: string; bunny_video_guid: string | null; bunny_library_id: string | null; }
+interface Reel extends BaseItem { video_url: string; bunny_video_guid: string | null; bunny_library_id: string | null; feed: string | null; is_featured: boolean | null; }
 interface Quote extends BaseItem { image_url: string; category: string; bunny_storage_path: string | null; }
 
 
