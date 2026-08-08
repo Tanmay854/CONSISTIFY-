@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Trash2, Upload, Plus, Image as ImageIcon, Quote as QuoteIcon } from "lucide-react";
+import { Trash2, Upload, Image as ImageIcon, Quote as QuoteIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { VIDEO_FEEDS } from "@/lib/videoFeeds";
 import { QUOTE_CATEGORIES, findCategory, subLabel } from "@/lib/quoteTopics";
 import { parseQuotePdf, parseQuoteText } from "@/lib/parseQuotePdf";
+import { quoteKey } from "@/lib/textNormalize";
 
-type Section = "banners" | "backgrounds" | "quotes";
+type Section = "backgrounds" | "quotes";
 
-interface BannerRow { id: string; tab: string; image_url: string; position: number }
 interface BgRow { id: string; image_url: string; name: string | null; position: number }
 interface QuoteRow { id: string; text: string; author: string | null; category: string | null; subcategory: string | null }
+
 
 
 const uploadImage = async (file: File, prefix: string): Promise<string | null> => {
