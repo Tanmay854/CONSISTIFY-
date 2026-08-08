@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Share2, ImageIcon, Check, MessageCircle, LayoutGrid, ChevronLeft } from "lucide-react";
+import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import TabBanner from "@/components/TabBanner";
-import { shareQuote, shareQuoteToWhatsApp } from "@/lib/shareQuote";
+import { shareQuote } from "@/lib/shareQuote";
 import { QUOTE_CATEGORIES, findCategory } from "@/lib/quoteTopics";
+import {
+  LocalWallpaper,
+  MAX_LOCAL_WALLPAPERS,
+  addLocalWallpapers,
+  loadLocalWallpapers,
+  removeLocalWallpaper,
+} from "@/lib/localWallpapers";
 
 interface Background {
   id: string;
@@ -23,8 +29,15 @@ const SUB_KEY = "daily_quote_sub";
 
 type Step = "category" | "sub" | "wallpaper" | "feed";
 
+/** Staggered slide-up entrance for list items. */
+const stagger = (i: number) => ({
+  animation: "fade-in 0.42s cubic-bezier(0.16,1,0.3,1) both",
+  animationDelay: `${Math.min(i, 14) * 45}ms`,
+});
+
 const DailyQuotesFeed = () => {
   const [backgrounds, setBackgrounds] = useState<Background[]>([]);
+  const [myWallpapers, setMyWallpapers] = useState<LocalWallpaper[]>(() => loadLocalWallpapers());
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [bgId, setBgId] = useState<string | null>(() => {
     try { return localStorage.getItem(BG_KEY); } catch { return null; }
@@ -43,8 +56,11 @@ const DailyQuotesFeed = () => {
   const [loading, setLoading] = useState(true);
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,7 +98,8 @@ const DailyQuotesFeed = () => {
     return () => { cancelled = true; };
   }, [cat, sub]);
 
-  const chosen = backgrounds.find((b) => b.id === bgId) ?? null;
+  const allWallpapers: Background[] = [...myWallpapers, ...backgrounds];
+  const chosen = allWallpapers.find((b) => b.id === bgId) ?? null;
   const category = findCategory(cat);
 
   const chooseBg = useCallback((id: string) => {
@@ -102,6 +119,23 @@ const DailyQuotesFeed = () => {
     try { localStorage.setItem(SUB_KEY, id); } catch { /* empty */ }
     setStep(bgId ? "feed" : "wallpaper");
   }, [bgId]);
+
+  const onUpload = useCallback(async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    const next = await addLocalWallpapers(Array.from(files));
+    setMyWallpapers(next);
+    setUploading(false);
+  }, []);
+
+  const onRemoveMine = useCallback((id: string) => {
+    setMyWallpapers(removeLocalWallpaper(id));
+    setBgId((prev) => {
+      if (prev !== id) return prev;
+      try { localStorage.removeItem(BG_KEY); } catch { /* empty */ }
+      return null;
+    });
+  }, []);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -129,16 +163,16 @@ const DailyQuotesFeed = () => {
 
   if (step === "category") {
     return (
-      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28">
+      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans">
         <div className="px-4 pt-20">
-          <TabBanner tab="daily_quotes" className="mb-5" />
-          <h2 className="text-foreground font-display text-2xl font-bold tracking-tight">What's on your mind?</h2>
-          <p className="text-muted-foreground text-xs mt-1 mb-4">Pick a topic to get quotes that fit.</p>
+          <h2 className="text-foreground text-2xl font-bold tracking-tight" style={stagger(0)}>What's on your mind?</h2>
+          <p className="text-muted-foreground text-xs mt-1 mb-4" style={stagger(1)}>Pick a topic to get quotes that fit.</p>
           <div className="space-y-2">
-            {QUOTE_CATEGORIES.map((c) => (
+            {QUOTE_CATEGORIES.map((c, i) => (
               <button
                 key={c.id}
                 onClick={() => chooseCat(c.id)}
+                style={stagger(i + 2)}
                 className="w-full text-left bg-secondary text-secondary-foreground rounded-xl px-4 py-3.5 text-sm font-semibold active:scale-[0.98] transition-transform"
               >
                 {c.label}
@@ -152,7 +186,7 @@ const DailyQuotesFeed = () => {
 
   if (step === "sub" && category) {
     return (
-      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28">
+      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans">
         <div className="px-4 pt-20">
           <button
             onClick={() => setStep("category")}
@@ -160,13 +194,14 @@ const DailyQuotesFeed = () => {
           >
             <ChevronLeft size={14} /> Topics
           </button>
-          <h2 className="text-foreground font-display text-2xl font-bold tracking-tight">{category.label}</h2>
-          <p className="text-muted-foreground text-xs mt-1 mb-4">Choose what you're dealing with.</p>
+          <h2 className="text-foreground text-2xl font-bold tracking-tight" style={stagger(0)}>{category.label}</h2>
+          <p className="text-muted-foreground text-xs mt-1 mb-4" style={stagger(1)}>Choose what you're dealing with.</p>
           <div className="space-y-2">
-            {category.subs.map((s) => (
+            {category.subs.map((s, i) => (
               <button
                 key={s.id}
                 onClick={() => chooseSub(s.id)}
+                style={stagger(i + 2)}
                 className="w-full text-left bg-secondary text-secondary-foreground rounded-xl px-4 py-3.5 text-sm font-semibold active:scale-[0.98] transition-transform"
               >
                 {s.label}
@@ -180,14 +215,60 @@ const DailyQuotesFeed = () => {
 
   if (step === "wallpaper") {
     return (
-      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28">
+      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans">
         <div className="px-4 pt-20">
-          <h2 className="text-foreground font-display text-2xl font-bold tracking-tight">Choose your wallpaper</h2>
+          <h2 className="text-foreground text-2xl font-bold tracking-tight">Choose your wallpaper</h2>
           <p className="text-muted-foreground text-xs mt-1 mb-4">
             Every quote will flow over the photo you pick. You can change it any time.
           </p>
+
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="text-foreground text-sm font-semibold">Your photos</p>
+            <p className="text-muted-foreground text-[11px]">{myWallpapers.length}/{MAX_LOCAL_WALLPAPERS} · only you can see these</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            {myWallpapers.map((b) => (
+              <div key={b.id} className="relative aspect-[9/16] rounded-xl overflow-hidden bg-secondary">
+                <button onClick={() => chooseBg(b.id)} className="absolute inset-0">
+                  <img src={b.image_url} alt={b.name || ""} className="w-full h-full object-cover" />
+                  {b.id === bgId && (
+                    <span className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                      <Check size={22} className="text-foreground" />
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => onRemoveMine(b.id)}
+                  aria-label="Remove photo"
+                  className="absolute top-1 right-1 bg-background/80 rounded-full p-1 text-destructive"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+            {myWallpapers.length < MAX_LOCAL_WALLPAPERS && (
+              <button
+                onClick={() => fileInput.current?.click()}
+                disabled={uploading}
+                className="aspect-[9/16] rounded-xl bg-secondary flex flex-col items-center justify-center gap-1 text-muted-foreground disabled:opacity-50"
+              >
+                <Plus size={18} />
+                <span className="text-[10px] font-semibold">{uploading ? "Adding..." : "Add photo"}</span>
+              </button>
+            )}
+          </div>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(e) => { onUpload(e.target.files); e.target.value = ""; }}
+          />
+
+          <p className="text-foreground text-sm font-semibold mb-2">Gallery</p>
           {backgrounds.length === 0 ? (
-            <p className="text-muted-foreground text-sm py-16 text-center">No backgrounds yet.</p>
+            <p className="text-muted-foreground text-sm py-10 text-center">No backgrounds yet.</p>
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {backgrounds.map((b) => (
@@ -263,40 +344,55 @@ const DailyQuotesFeed = () => {
         </div>
       )}
 
-      {/* Actions */}
-      <div className="absolute bottom-24 right-4 z-30 flex flex-col gap-2.5">
-        <button
-          onClick={onShare}
-          disabled={sharing || !current}
-          aria-label="Share quote"
-          className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground disabled:opacity-50"
+      {/* Collapsible actions */}
+      <div className="absolute bottom-24 right-4 z-30 flex flex-col items-center gap-2.5">
+        <div
+          className="flex flex-col items-center gap-2.5 origin-bottom transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          style={{
+            opacity: actionsOpen ? 1 : 0,
+            transform: actionsOpen ? "translateY(0) scale(1)" : "translateY(14px) scale(0.85)",
+            pointerEvents: actionsOpen ? "auto" : "none",
+          }}
         >
-          {sharing ? (
-            <span className="h-4 w-4 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin" />
-          ) : (
-            <Share2 size={16} />
-          )}
-        </button>
+          <button
+            onClick={onShare}
+            disabled={sharing || !current}
+            aria-label="Share quote"
+            className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground disabled:opacity-50"
+          >
+            {sharing ? (
+              <span className="h-4 w-4 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin" />
+            ) : (
+              <Share2 size={16} />
+            )}
+          </button>
+          <button
+            onClick={() => setStep("wallpaper")}
+            aria-label="Change background"
+            className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
+          >
+            <ImageIcon size={16} />
+          </button>
+          <button
+            onClick={() => setStep("category")}
+            aria-label="Change topic"
+            className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
+          >
+            <LayoutGrid size={16} />
+          </button>
+        </div>
+
         <button
-          onClick={() => current && shareQuoteToWhatsApp(current.text, current.author)}
-          aria-label="Share text on WhatsApp"
-          className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
+          onClick={() => setActionsOpen((v) => !v)}
+          aria-label={actionsOpen ? "Hide actions" : "Show actions"}
+          aria-expanded={actionsOpen}
+          className="w-9 h-9 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
         >
-          <MessageCircle size={16} />
-        </button>
-        <button
-          onClick={() => setStep("wallpaper")}
-          aria-label="Change background"
-          className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
-        >
-          <ImageIcon size={16} />
-        </button>
-        <button
-          onClick={() => setStep("category")}
-          aria-label="Change topic"
-          className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
-        >
-          <LayoutGrid size={16} />
+          <ChevronUp
+            size={16}
+            className="transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{ transform: actionsOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+          />
         </button>
       </div>
     </div>
