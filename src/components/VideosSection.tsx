@@ -20,9 +20,9 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
   const [view, setView] = useState<HomeView>("long_game");
 
   return (
-    <div className="relative h-[100dvh] w-full bg-background overflow-hidden">
+    <div className="relative flex h-[100dvh] w-full flex-col bg-background overflow-hidden">
       {/* Pill navigation */}
-      <div className="absolute top-0 left-0 right-0 z-40 flex justify-center pt-2 pointer-events-none">
+      <div className="relative z-40 flex h-11 shrink-0 items-start justify-center bg-background pt-2 pointer-events-none">
         <div className="pointer-events-auto flex items-center gap-0.5 p-1 rounded-full bg-[hsl(var(--foreground)/0.07)] backdrop-blur-xl ring-1 ring-foreground/[0.06] shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
           {TABS.map((t) => {
             const active = view === t.id;
@@ -45,10 +45,11 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
       </div>
 
 
-      {view === "long_game" ? (
-        <LongGameSection feeds={LONG_GAME_FEEDS} heading="Long Game" topInset={82} />
-      ) : (
-        <>
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        {view === "long_game" ? (
+          <LongGameSection feeds={LONG_GAME_FEEDS} heading="Long Game" topInset={0} />
+        ) : (
+          <>
           <ReelsTab muted={muted} feed="quick_spark" active />
           {onToggleMute && (
             <button
@@ -59,8 +60,9 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
               {muted ? <VolumeX size={13} className="text-foreground" /> : <Volume2 size={13} className="text-foreground" />}
             </button>
           )}
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
