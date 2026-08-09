@@ -47,7 +47,7 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
         {view === "long_game" ? (
-          <LongGameSection feeds={LONG_GAME_FEEDS} heading="Long Game" topInset={0} />
+          <LongGameSection feeds={LONG_GAME_FEEDS} heading="Long Game" topInset={44} />
         ) : (
           <>
           <ReelsTab muted={muted} feed="quick_spark" active />
