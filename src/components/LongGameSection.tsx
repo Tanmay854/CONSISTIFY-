@@ -326,7 +326,7 @@ const LongGameSection = ({
               <div key={m.id} className="relative flex-shrink-0 w-full h-[82vh] snap-center">
                   <PosterArt item={m} />
                   {/* top scrim for floating nav */}
-                  <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black via-black/80 to-transparent" />
+                  <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black via-black/80 to-transparent" />
                   {/* localized bottom scrim so the title/buttons float above the image while the poster stays visible most of the way down */}
                   <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/80 to-transparent" />
 
