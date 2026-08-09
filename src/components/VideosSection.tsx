@@ -18,9 +18,9 @@ const VideosSection = ({ muted = false, onToggleMute }: { muted?: boolean; onTog
       <LiquidGlassToggle
         active={view}
         onToggle={setView}
-        className="absolute right-4 z-50"
-        style={{ top: 52 }}
+        className="fixed right-4 top-16 z-50"
       />
+
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
         {view === "long_game" ? (
