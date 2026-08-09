@@ -280,8 +280,8 @@ const LongGameSection = ({
   };
 
   return (
-    <div className="relative h-[100dvh] w-full bg-background text-foreground overflow-hidden">
-      {/* Floating search — sits on top of the hero image */}
+    <div className="relative h-full w-full bg-background text-foreground overflow-hidden">
+      {/* Search is scoped to the content area below the navigation. */}
       <button
         type="button"
         aria-label="Search"
@@ -290,7 +290,7 @@ const LongGameSection = ({
         <Search size={17} />
       </button>
 
-      <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain pt-11">
+      <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain">
         {/* Hero carousel */}
         {featured.length > 0 && (
           <div className="relative">
