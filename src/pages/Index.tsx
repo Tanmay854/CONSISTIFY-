@@ -40,7 +40,7 @@ const AppContent = () => {
       <button
         onClick={() => setShowSettings(true)}
         aria-label="Open settings"
-        className="fixed top-4 left-4 z-30 w-9 h-9 rounded-full bg-secondary/80 flex items-center justify-center"
+        className="fixed top-4 left-4 z-50 w-9 h-9 rounded-full bg-black/35 backdrop-blur-md flex items-center justify-center"
       >
         <MoreVertical size={21} className="text-foreground" strokeWidth={2.8} />
       </button>
