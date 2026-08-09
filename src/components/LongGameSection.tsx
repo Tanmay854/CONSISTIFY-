@@ -290,7 +290,7 @@ const LongGameSection = ({
         <Search size={17} />
       </button>
 
-      <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain">
+      <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain pt-11">
         {/* Hero carousel */}
         {featured.length > 0 && (
           <div className="relative">
