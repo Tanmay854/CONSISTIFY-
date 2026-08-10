@@ -280,25 +280,6 @@ const LongGameSection = ({
 
   return (
     <div className="relative h-full w-full bg-background text-foreground overflow-hidden">
-      {/* Blurred hero tint sitting behind the top navigation pill */}
-      {topInset > 0 && (
-        <div
-          className="absolute inset-x-0 top-0 z-30 overflow-hidden pointer-events-none"
-          style={{ height: topInset }}
-        >
-          {heroStripSrc && (
-            <img
-              src={heroStripSrc}
-              alt=""
-              aria-hidden
-              draggable={false}
-              className="absolute inset-x-0 top-0 w-full h-[240px] object-cover scale-125 blur-2xl opacity-70 transition-opacity duration-500"
-            />
-          )}
-          <div className="absolute inset-0 bg-background/40 backdrop-blur-xl" />
-        </div>
-      )}
-
       {/* Search is scoped to the content area below the navigation. */}
       <button
         type="button"
@@ -309,7 +290,8 @@ const LongGameSection = ({
       </button>
 
 
-      <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain" style={{ paddingTop: topInset }}>
+      <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain">
+
 
         {/* Hero carousel */}
         {featured.length > 0 && (
