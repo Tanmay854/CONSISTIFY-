@@ -327,17 +327,15 @@ const LongGameSection = ({
                   {/* localized bottom scrim so the title/buttons float above the image while the poster stays visible most of the way down */}
                   <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/80 to-transparent" />
 
-                  <div className="absolute inset-x-0 bottom-0 px-5 pb-6" style={{ textShadow: "0 2px 20px rgba(0,0,0,0.9)" }}>
+                  <div className="absolute inset-x-0 bottom-0 px-5 pb-6 text-center" style={{ textShadow: "0 2px 20px rgba(0,0,0,0.9)" }}>
                     <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-black/40 text-white mb-2.5">
                       {badgeFor(m.created_at) === "New" ? "New" : "Continue Watching"}
                     </span>
-                    <h1 className="text-[30px] leading-[1.05] font-extrabold uppercase tracking-tight mb-1.5 text-white">
-                      {m.title || "Untitled"}
-                    </h1>
                     <p className="text-[12px] font-normal text-white/90 mb-4 truncate">
                       Long Game · {m.sharedBy}
                     </p>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center gap-3">
+
                       <button
                         onClick={(e) => openItem(m, e.currentTarget.closest("div[class*='snap-center']") as HTMLElement)}
                         className="h-10 px-6 rounded-full bg-white text-black font-semibold text-[14px] flex items-center gap-2"
