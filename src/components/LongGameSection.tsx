@@ -434,7 +434,7 @@ const LongGameSection = ({
                 {badgeFor(open.created_at)}
               </span>
 
-              <h1 className="text-[26px] font-black leading-tight tracking-tight mb-2">{open.title || "Untitled"}</h1>
+              <div className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground mb-5 mt-2">
 
               <div className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground mb-5">
                 <span>{open.sharedBy}</span>
