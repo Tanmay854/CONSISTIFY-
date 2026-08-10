@@ -280,25 +280,6 @@ const LongGameSection = ({
 
   return (
     <div className="relative h-full w-full bg-background text-foreground overflow-hidden">
-      {/* Blurred hero tint sitting behind the top navigation pill */}
-      {topInset > 0 && (
-        <div
-          className="absolute inset-x-0 top-0 z-30 overflow-hidden pointer-events-none"
-          style={{ height: topInset }}
-        >
-          {heroStripSrc && (
-            <img
-              src={heroStripSrc}
-              alt=""
-              aria-hidden
-              draggable={false}
-              className="absolute inset-x-0 top-0 w-full h-[240px] object-cover scale-125 blur-2xl opacity-70 transition-opacity duration-500"
-            />
-          )}
-          <div className="absolute inset-0 bg-background/40 backdrop-blur-xl" />
-        </div>
-      )}
-
       {/* Search is scoped to the content area below the navigation. */}
       <button
         type="button"
@@ -309,7 +290,8 @@ const LongGameSection = ({
       </button>
 
 
-      <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain" style={{ paddingTop: topInset }}>
+      <div className="h-full overflow-y-auto scrollbar-hide overscroll-contain">
+
 
         {/* Hero carousel */}
         {featured.length > 0 && (
@@ -322,8 +304,15 @@ const LongGameSection = ({
               {featured.map((m) => (
               <div key={m.id} className="relative flex-shrink-0 w-full h-[82vh] snap-center">
                   <PosterArt item={m} />
-                  {/* Apple-style top scrim: long, feathered fade that extends slightly above the hero */}
-                  <div className="absolute inset-x-0 -top-4 h-48 bg-gradient-to-b from-black/50 via-black/20 via-black/8 to-transparent" />
+                  {/* Natural, image-tinted top fade — no blur bar, colour comes from the photo itself */}
+                  <div
+                    className="absolute inset-x-0 top-0 h-56 pointer-events-none"
+                    style={{
+                      background:
+                        "linear-gradient(to bottom, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.44) 18%, rgba(0,0,0,0.26) 38%, rgba(0,0,0,0.12) 60%, rgba(0,0,0,0.04) 80%, rgba(0,0,0,0) 100%)",
+                    }}
+                  />
+
                   {/* localized bottom scrim so the title/buttons float above the image while the poster stays visible most of the way down */}
                   <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/80 to-transparent" />
 
