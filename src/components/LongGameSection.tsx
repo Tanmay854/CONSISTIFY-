@@ -405,12 +405,6 @@ const LongGameSection = ({
         >
           {/* Top bar — back button on the right, no blur, no share */}
           <div className="absolute top-0 left-0 right-0 z-30 h-14 flex items-center justify-end px-3 pointer-events-none">
-            <span
-              className="flex-1 text-center text-[15px] font-semibold px-2 truncate"
-              style={{ opacity: titleOpacity, transform: `translateY(${titleY}px)` }}
-            >
-              {open.title || "Untitled"}
-            </span>
             <button
               onClick={close}
               aria-label="Back"
@@ -419,6 +413,7 @@ const LongGameSection = ({
               <ChevronLeft size={20} />
             </button>
           </div>
+
 
           <div ref={scrollRef} onScroll={handleScroll} className="absolute inset-0 overflow-y-auto scrollbar-hide">
             <div className="relative w-full aspect-[2/3] max-h-[72vh] bg-background">
