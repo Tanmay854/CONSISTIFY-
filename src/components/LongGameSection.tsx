@@ -79,10 +79,7 @@ const ContinueCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => 
   >
     <PosterArt item={item} orientation="landscape" />
     <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/80 to-transparent" />
-    <div className="absolute left-3 bottom-2.5 flex items-center gap-1.5 text-xs font-medium text-white/85">
-      <Play size={11} className="fill-current" />
-      <span className="truncate max-w-[200px]">{item.title || "Untitled"}</span>
-    </div>
+
   </div>
 ));
 ContinueCard.displayName = "ContinueCard";
@@ -330,17 +327,15 @@ const LongGameSection = ({
                   {/* localized bottom scrim so the title/buttons float above the image while the poster stays visible most of the way down */}
                   <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/80 to-transparent" />
 
-                  <div className="absolute inset-x-0 bottom-0 px-5 pb-6" style={{ textShadow: "0 2px 20px rgba(0,0,0,0.9)" }}>
+                  <div className="absolute inset-x-0 bottom-0 px-5 pb-6 text-center" style={{ textShadow: "0 2px 20px rgba(0,0,0,0.9)" }}>
                     <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-black/40 text-white mb-2.5">
                       {badgeFor(m.created_at) === "New" ? "New" : "Continue Watching"}
                     </span>
-                    <h1 className="text-[30px] leading-[1.05] font-extrabold uppercase tracking-tight mb-1.5 text-white">
-                      {m.title || "Untitled"}
-                    </h1>
                     <p className="text-[12px] font-normal text-white/90 mb-4 truncate">
                       Long Game · {m.sharedBy}
                     </p>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center gap-3">
+
                       <button
                         onClick={(e) => openItem(m, e.currentTarget.closest("div[class*='snap-center']") as HTMLElement)}
                         className="h-10 px-6 rounded-full bg-white text-black font-semibold text-[14px] flex items-center gap-2"
@@ -410,12 +405,6 @@ const LongGameSection = ({
         >
           {/* Top bar — back button on the right, no blur, no share */}
           <div className="absolute top-0 left-0 right-0 z-30 h-14 flex items-center justify-end px-3 pointer-events-none">
-            <span
-              className="flex-1 text-center text-[15px] font-semibold px-2 truncate"
-              style={{ opacity: titleOpacity, transform: `translateY(${titleY}px)` }}
-            >
-              {open.title || "Untitled"}
-            </span>
             <button
               onClick={close}
               aria-label="Back"
@@ -424,6 +413,7 @@ const LongGameSection = ({
               <ChevronLeft size={20} />
             </button>
           </div>
+
 
           <div ref={scrollRef} onScroll={handleScroll} className="absolute inset-0 overflow-y-auto scrollbar-hide">
             <div className="relative w-full aspect-[2/3] max-h-[72vh] bg-background">
@@ -444,9 +434,8 @@ const LongGameSection = ({
                 {badgeFor(open.created_at)}
               </span>
 
-              <h1 className="text-[26px] font-black leading-tight tracking-tight mb-2">{open.title || "Untitled"}</h1>
+              <div className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground mb-5 mt-2">
 
-              <div className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground mb-5">
                 <span>{open.sharedBy}</span>
               </div>
 

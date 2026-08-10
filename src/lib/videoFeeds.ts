@@ -18,8 +18,9 @@ export const VIDEO_FEEDS: FeedDef[] = [
 // Long Game now aggregates every long-form video (legacy Calm State included).
 export const LONG_GAME_FEEDS: FeedId[] = ["long_game", "calm_state"];
 
-// Feeds that videos can be uploaded into.
-export const UPLOAD_FEEDS = VIDEO_FEEDS.filter((f) => f.kind !== "quotes");
+// Feeds that videos can be uploaded into (Calm State is legacy — no new uploads).
+export const UPLOAD_FEEDS = VIDEO_FEEDS.filter((f) => f.id === "long_game" || f.id === "quick_spark");
+
 
 // Feeds shown on the Home landing screen (Daily Quotes lives in the Quotes tab).
 export const HOME_FEEDS = VIDEO_FEEDS.filter((f) => f.id === "long_game" || f.id === "quick_spark");
