@@ -79,10 +79,7 @@ const ContinueCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => 
   >
     <PosterArt item={item} orientation="landscape" />
     <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/80 to-transparent" />
-    <div className="absolute left-3 bottom-2.5 flex items-center gap-1.5 text-xs font-medium text-white/85">
-      <Play size={11} className="fill-current" />
-      <span className="truncate max-w-[200px]">{item.title || "Untitled"}</span>
-    </div>
+
   </div>
 ));
 ContinueCard.displayName = "ContinueCard";
