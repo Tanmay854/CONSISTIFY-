@@ -334,8 +334,7 @@ const LongGameSection = ({
                     <p className="text-[12px] font-normal text-white/90 mb-4 truncate">
                       Long Game · {m.sharedBy}
                     </p>
-                    <div className="flex items-center justify-center gap-3">
-
+                    <div className="relative flex items-center justify-center">
                       <button
                         onClick={(e) => openItem(m, e.currentTarget.closest("div[class*='snap-center']") as HTMLElement)}
                         className="h-10 px-6 rounded-full bg-white text-black font-semibold text-[14px] flex items-center gap-2"
@@ -345,7 +344,7 @@ const LongGameSection = ({
                       <button
                         onClick={() => setSaved((s) => ({ ...s, [m.id]: !s[m.id] }))}
                         aria-label="Add to Watchlist"
-                        className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white"
+                        className="absolute left-1/2 ml-[68px] w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white"
                       >
                         {saved[m.id] ? <Check size={17} /> : <Plus size={17} />}
                       </button>
@@ -416,8 +415,10 @@ const LongGameSection = ({
 
 
           <div ref={scrollRef} onScroll={handleScroll} className="absolute inset-0 overflow-y-auto scrollbar-hide">
-            <div className="relative w-full aspect-[2/3] max-h-[72vh] bg-background">
-              <PosterArt item={open} contain />
+            <div className="relative w-full h-[72vh] bg-background overflow-hidden">
+              <PosterArt item={open} />
+              <div className="absolute inset-x-0 -top-4 h-48 bg-gradient-to-b from-black/50 via-black/20 via-black/8 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/70 to-transparent" />
             </div>
 
             <div
