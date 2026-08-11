@@ -1,0 +1,22 @@
+/* Local font faces used only by the Quotes screen font picker. */
+
+@font-face { font-family: 'QF Inter'; src: url('/fonts/Inter.ttf') format('truetype'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Montserrat'; src: url('/fonts/Montserrat.ttf') format('truetype'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Poppins'; src: url('/fonts/Poppins-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Poppins'; src: url('/fonts/Poppins-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Playfair Display'; src: url('/fonts/PlayfairDisplay.ttf') format('truetype'); font-weight: 400 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF DM Serif Display'; src: url('/fonts/DMSerifDisplay.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Libre Baskerville'; src: url('/fonts/LibreBaskerville.ttf') format('truetype'); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Bebas Neue'; src: url('/fonts/BebasNeue.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Oswald'; src: url('/fonts/Oswald.ttf') format('truetype'); font-weight: 200 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Raleway'; src: url('/fonts/Raleway.ttf') format('truetype'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Cormorant Garamond'; src: url('/fonts/CormorantGaramond-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Cormorant Garamond'; src: url('/fonts/CormorantGaramond-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Bungee Outline'; src: url('/fonts/BungeeOutline.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Major Mono Display'; src: url('/fonts/MajorMonoDisplay.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Codystar'; src: url('/fonts/Codystar.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Monoton'; src: url('/fonts/Monoton.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Poiret One'; src: url('/fonts/PoiretOne.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Josefin Sans'; src: url('/fonts/JosefinSans.ttf') format('truetype'); font-weight: 100 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Barlow Condensed'; src: url('/fonts/BarlowCondensed-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'QF Barlow Condensed'; src: url('/fonts/BarlowCondensed-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }

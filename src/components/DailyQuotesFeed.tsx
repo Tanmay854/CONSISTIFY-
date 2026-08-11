@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronUp, Plus, Trash2, Type } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareQuote } from "@/lib/shareQuote";
 import { QUOTE_CATEGORIES, findCategory } from "@/lib/quoteTopics";
+import FittedQuote from "@/components/FittedQuote";
+import FontPicker from "@/components/FontPicker";
+import { DEFAULT_QUOTE_FONT_ID, findQuoteFont } from "@/lib/quoteFonts";
+import "@/styles/quoteFonts.css";
 import {
   LocalWallpaper,
   MAX_LOCAL_WALLPAPERS,
@@ -26,6 +30,7 @@ interface Quote {
 const BG_KEY = "daily_quote_bg_id";
 const CAT_KEY = "daily_quote_cat";
 const SUB_KEY = "daily_quote_sub";
+const FONT_KEY = "daily_quote_font";
 
 type Step = "category" | "sub" | "wallpaper" | "feed";
 
@@ -58,6 +63,10 @@ const DailyQuotesFeed = () => {
   const [sharing, setSharing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [fontOpen, setFontOpen] = useState(false);
+  const [fontId, setFontId] = useState<string>(() => {
+    try { return localStorage.getItem(FONT_KEY) || DEFAULT_QUOTE_FONT_ID; } catch { return DEFAULT_QUOTE_FONT_ID; }
+  });
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -328,16 +337,23 @@ const DailyQuotesFeed = () => {
           className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-contain [scroll-snap-stop:always]"
         >
           {quotes.map((q, i) => (
-            <div key={q.id} className="h-[100dvh] w-full snap-start snap-always flex items-center justify-center px-9">
-              <div className={i === activeIndex ? "animate-fade-in" : ""}>
-                <p className="font-display text-[1.7rem] leading-snug text-center text-foreground font-semibold drop-shadow-[0_2px_10px_rgba(0,0,0,0.75)]">
-                  “{q.text}”
-                </p>
-                {q.author && (
-                  <p className="mt-4 text-center text-xs uppercase tracking-[0.22em] text-foreground/75">
-                    {q.author}
-                  </p>
-                )}
+            <div key={q.id} className="h-[100dvh] w-full snap-start snap-always">
+              {/* Invisible safe area — never painted, keeps text clear of nav + arrow */}
+              <div
+                className={`w-full h-full ${i === activeIndex ? "animate-fade-in" : ""}`}
+                style={{
+                  paddingLeft: "36px",
+                  paddingRight: "36px",
+                  paddingTop: "calc(env(safe-area-inset-top, 0px) + 76px)",
+                  paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 148px)",
+                }}
+              >
+                <FittedQuote
+                  text={q.text}
+                  author={q.author}
+                  font={findQuoteFont(fontId)}
+                  active={Math.abs(i - activeIndex) <= 1}
+                />
               </div>
             </div>
           ))}
@@ -346,12 +362,22 @@ const DailyQuotesFeed = () => {
 
       {/* Collapsible actions */}
       <div className="absolute bottom-24 right-4 z-30 flex flex-col items-center gap-2.5">
+        <FontPicker
+          open={fontOpen}
+          value={fontId}
+          onClose={() => setFontOpen(false)}
+          onSelect={(id) => {
+            setFontId(id);
+            try { localStorage.setItem(FONT_KEY, id); } catch { /* empty */ }
+          }}
+        />
+
         <div
           className="flex flex-col items-center gap-2.5 origin-bottom transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
           style={{
-            opacity: actionsOpen ? 1 : 0,
-            transform: actionsOpen ? "translateY(0) scale(1)" : "translateY(14px) scale(0.85)",
-            pointerEvents: actionsOpen ? "auto" : "none",
+            opacity: actionsOpen && !fontOpen ? 1 : 0,
+            transform: actionsOpen && !fontOpen ? "translateY(0) scale(1)" : "translateY(14px) scale(0.85)",
+            pointerEvents: actionsOpen && !fontOpen ? "auto" : "none",
           }}
         >
           <button
@@ -365,6 +391,13 @@ const DailyQuotesFeed = () => {
             ) : (
               <Share2 size={16} />
             )}
+          </button>
+          <button
+            onClick={() => setFontOpen(true)}
+            aria-label="Change font"
+            className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
+          >
+            <Type size={16} />
           </button>
           <button
             onClick={() => setStep("wallpaper")}
@@ -383,7 +416,7 @@ const DailyQuotesFeed = () => {
         </div>
 
         <button
-          onClick={() => setActionsOpen((v) => !v)}
+          onClick={() => { if (fontOpen) setFontOpen(false); else setActionsOpen((v) => !v); }}
           aria-label={actionsOpen ? "Hide actions" : "Show actions"}
           aria-expanded={actionsOpen}
           className="w-9 h-9 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
