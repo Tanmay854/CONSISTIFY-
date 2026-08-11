@@ -30,6 +30,7 @@ interface Quote {
 const BG_KEY = "daily_quote_bg_id";
 const CAT_KEY = "daily_quote_cat";
 const SUB_KEY = "daily_quote_sub";
+const FONT_KEY = "daily_quote_font";
 
 type Step = "category" | "sub" | "wallpaper" | "feed";
 
@@ -62,6 +63,10 @@ const DailyQuotesFeed = () => {
   const [sharing, setSharing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [fontOpen, setFontOpen] = useState(false);
+  const [fontId, setFontId] = useState<string>(() => {
+    try { return localStorage.getItem(FONT_KEY) || DEFAULT_QUOTE_FONT_ID; } catch { return DEFAULT_QUOTE_FONT_ID; }
+  });
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
