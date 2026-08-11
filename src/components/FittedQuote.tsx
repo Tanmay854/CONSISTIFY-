@@ -48,14 +48,15 @@ const FittedQuote = ({ text, author, font, active = true }: Props) => {
       probe.style.lineHeight = String(font.lineHeight ?? 1.22);
       probe.style.letterSpacing = font.letterSpacing ?? "normal";
 
-      const cap = Math.min(MAX_SIZE * (font.maxScale ?? 1), h * 0.42);
+      const avail = h - (author ? 34 : 0);
+      const cap = Math.min(MAX_SIZE * (font.maxScale ?? 1), avail * 0.42);
       let lo = MIN_SIZE;
       let hi = Math.max(MIN_SIZE, cap);
       let best = MIN_SIZE;
 
       const fits = (px: number) => {
         probe.style.fontSize = `${px}px`;
-        return probe.scrollHeight <= h && probe.scrollWidth <= w + 1;
+        return probe.scrollHeight <= avail && probe.scrollWidth <= w + 1;
       };
 
       if (fits(hi)) {
@@ -100,7 +101,6 @@ const FittedQuote = ({ text, author, font, active = true }: Props) => {
         } as React.CSSProperties}
       >
         {`“${text}”`}
-        {author ? `\n${author}` : ""}
       </div>
 
       <p
