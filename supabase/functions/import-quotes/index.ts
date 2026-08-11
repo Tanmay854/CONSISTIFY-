@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < rows.length; i += 500) {
       const chunk = rows.slice(i, i + 500);
       const { error } = await admin.from("daily_quotes").insert(chunk);
-      if (error) throw error;
+      if (error) throw new Error(JSON.stringify(error));
       inserted += chunk.length;
     }
     return new Response(JSON.stringify({ inserted }), {
