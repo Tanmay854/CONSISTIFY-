@@ -30,6 +30,7 @@ interface Quote {
 const BG_KEY = "daily_quote_bg_id";
 const CAT_KEY = "daily_quote_cat";
 const SUB_KEY = "daily_quote_sub";
+const SCALE_KEY = "daily_quote_font_scale";
 const FONT_KEY = "daily_quote_font";
 
 type Step = "category" | "sub" | "wallpaper" | "feed";
@@ -63,6 +64,9 @@ const DailyQuotesFeed = () => {
   const [sharing, setSharing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [fontScale, setFontScale] = useState<number>(() => {
+    try { return Number(localStorage.getItem(SCALE_KEY)) || 1; } catch { return 1; }
+  });
   const [fontOpen, setFontOpen] = useState(false);
   const [fontId, setFontId] = useState<string>(() => {
     try { return localStorage.getItem(FONT_KEY) || DEFAULT_QUOTE_FONT_ID; } catch { return DEFAULT_QUOTE_FONT_ID; }
@@ -352,6 +356,7 @@ const DailyQuotesFeed = () => {
                   text={q.text}
                   author={q.author}
                   font={findQuoteFont(fontId)}
+                  scale={fontScale}
                   active={Math.abs(i - activeIndex) <= 1}
                 />
               </div>
@@ -366,6 +371,11 @@ const DailyQuotesFeed = () => {
           open={fontOpen}
           value={fontId}
           onClose={() => setFontOpen(false)}
+          scale={fontScale}
+          onScale={(v) => {
+            setFontScale(v);
+            try { localStorage.setItem(SCALE_KEY, String(v)); } catch { /* empty */ }
+          }}
           onSelect={(id) => {
             setFontId(id);
             try { localStorage.setItem(FONT_KEY, id); } catch { /* empty */ }

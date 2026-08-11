@@ -7,6 +7,8 @@ interface Props {
   font: QuoteFont;
   /** Only measure when this card is the active one (perf). */
   active?: boolean;
+  /** User font-size preference, 0.7 - 1.3 (1 = auto fit). */
+  scale?: number;
 }
 
 const MIN_SIZE = 12;
@@ -19,7 +21,7 @@ const FILL = 0.72;
  * Binary-searches the largest font size whose rendered block fits both
  * the available width and height, measured with the real selected face.
  */
-const FittedQuote = ({ text, author, font, active = true }: Props) => {
+const FittedQuote = ({ text, author, font, active = true, scale = 1 }: Props) => {
   const boxRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<number | null>(null);
@@ -51,14 +53,15 @@ const FittedQuote = ({ text, author, font, active = true }: Props) => {
       probe.style.letterSpacing = font.letterSpacing ?? "normal";
 
       const avail = h - (author ? 34 : 0);
-      const cap = Math.min(MAX_SIZE * (font.maxScale ?? 1), avail * 0.22);
+      const budget = Math.min(avail, avail * FILL * scale);
+      const cap = Math.min(MAX_SIZE * (font.maxScale ?? 1) * scale, avail * 0.22 * scale);
       let lo = MIN_SIZE;
       let hi = Math.max(MIN_SIZE, cap);
       let best = MIN_SIZE;
 
       const fits = (px: number) => {
         probe.style.fontSize = `${px}px`;
-        return probe.scrollHeight <= avail * FILL && probe.scrollWidth <= w + 1;
+        return probe.scrollHeight <= budget && probe.scrollWidth <= w + 1;
       };
 
       if (fits(hi)) {
@@ -79,7 +82,7 @@ const FittedQuote = ({ text, author, font, active = true }: Props) => {
     });
     ro.observe(box);
     return () => { cancelAnimationFrame(frame); ro.disconnect(); };
-  }, [text, author, font, active, fontReady]);
+  }, [text, author, font, active, fontReady, scale]);
 
   const authorSize = size ? Math.max(10, Math.min(15, size * 0.3)) : 12;
 

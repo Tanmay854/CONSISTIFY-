@@ -3,16 +3,310 @@ export interface QuoteCategory { id: string; label: string; subs: QuoteSub[] }
 
 export const QUOTE_CATEGORIES: QuoteCategory[] = [
   {
-    "id": "mental_health",
-    "label": "Mental Health",
+    "id": "mindfulness_calm",
+    "label": "Mindfulness & Calm",
     "subs": [
+      {
+        "id": "calm",
+        "label": "Calm"
+      },
+      {
+        "id": "enjoy_the_moment",
+        "label": "Enjoy the moment"
+      },
+      {
+        "id": "sleep",
+        "label": "Sleep"
+      },
+      {
+        "id": "inner_peace",
+        "label": "Inner peace"
+      },
+      {
+        "id": "zen",
+        "label": "Zen"
+      },
+      {
+        "id": "being_present",
+        "label": "Being present"
+      },
+      {
+        "id": "managing_anxiety",
+        "label": "Managing anxiety"
+      },
       {
         "id": "stress",
         "label": "Stress"
       },
       {
-        "id": "anxiety",
-        "label": "Anxiety"
+        "id": "patience",
+        "label": "Patience"
+      },
+      {
+        "id": "smile",
+        "label": "Smile"
+      },
+      {
+        "id": "appreciation",
+        "label": "Appreciation"
+      },
+      {
+        "id": "mindfulness",
+        "label": "Mindfulness"
+      }
+    ]
+  },
+  {
+    "id": "spiritual_philosophy",
+    "label": "Spiritual & Philosophy",
+    "subs": [
+      {
+        "id": "faith",
+        "label": "Faith"
+      },
+      {
+        "id": "hope",
+        "label": "Hope"
+      },
+      {
+        "id": "bible_verses",
+        "label": "Bible verses"
+      },
+      {
+        "id": "christianity",
+        "label": "Christianity"
+      },
+      {
+        "id": "devotions",
+        "label": "Devotions"
+      },
+      {
+        "id": "god",
+        "label": "God"
+      },
+      {
+        "id": "feeling_blessed",
+        "label": "Feeling blessed"
+      },
+      {
+        "id": "philosophy",
+        "label": "Philosophy"
+      },
+      {
+        "id": "deep",
+        "label": "Deep"
+      },
+      {
+        "id": "universe",
+        "label": "Universe"
+      },
+      {
+        "id": "karma",
+        "label": "Karma"
+      },
+      {
+        "id": "mantras",
+        "label": "Mantras"
+      },
+      {
+        "id": "wisdom",
+        "label": "Wisdom"
+      },
+      {
+        "id": "stoicism",
+        "label": "Stoicism"
+      },
+      {
+        "id": "loving_kindness",
+        "label": "Loving kindness"
+      }
+    ]
+  },
+  {
+    "id": "identity_voice_sayings",
+    "label": "Identity, Voice & Sayings",
+    "subs": [
+      {
+        "id": "women_s_history_month",
+        "label": "Women's History Month"
+      },
+      {
+        "id": "lgbtq",
+        "label": "LGBTQ+"
+      },
+      {
+        "id": "african_american",
+        "label": "African-American"
+      },
+      {
+        "id": "feeling_sassy",
+        "label": "Feeling sassy"
+      },
+      {
+        "id": "sayings",
+        "label": "Sayings"
+      },
+      {
+        "id": "sarcastic",
+        "label": "Sarcastic"
+      },
+      {
+        "id": "short_quotes",
+        "label": "Short quotes"
+      },
+      {
+        "id": "proverbs",
+        "label": "Proverbs"
+      },
+      {
+        "id": "funny",
+        "label": "Funny"
+      },
+      {
+        "id": "dream_big",
+        "label": "Dream big"
+      },
+      {
+        "id": "elite_athletes",
+        "label": "Elite athletes"
+      },
+      {
+        "id": "affirmations",
+        "label": "Affirmations"
+      },
+      {
+        "id": "future",
+        "label": "Future"
+      },
+      {
+        "id": "beauty",
+        "label": "Beauty"
+      },
+      {
+        "id": "passion",
+        "label": "Passion"
+      },
+      {
+        "id": "encouraging_words",
+        "label": "Encouraging words"
+      },
+      {
+        "id": "visionary_thinkers",
+        "label": "Visionary thinkers"
+      }
+    ]
+  },
+  {
+    "id": "work_productivity",
+    "label": "Work & Productivity",
+    "subs": [
+      {
+        "id": "entrepreneurs",
+        "label": "Entrepreneurs"
+      },
+      {
+        "id": "business",
+        "label": "Business"
+      },
+      {
+        "id": "leadership",
+        "label": "Leadership"
+      },
+      {
+        "id": "hustling",
+        "label": "Hustling"
+      },
+      {
+        "id": "work",
+        "label": "Work"
+      },
+      {
+        "id": "money_and_wealth",
+        "label": "Money and wealth"
+      },
+      {
+        "id": "success",
+        "label": "Success"
+      },
+      {
+        "id": "routine",
+        "label": "Routine"
+      },
+      {
+        "id": "building_habits",
+        "label": "Building habits"
+      },
+      {
+        "id": "consistency",
+        "label": "Consistency"
+      },
+      {
+        "id": "discipline",
+        "label": "Discipline"
+      },
+      {
+        "id": "focus",
+        "label": "Focus"
+      },
+      {
+        "id": "productivity",
+        "label": "Productivity"
+      },
+      {
+        "id": "mental_toughness",
+        "label": "Mental toughness"
+      },
+      {
+        "id": "study",
+        "label": "Study"
+      },
+      {
+        "id": "making_decisions",
+        "label": "Making decisions"
+      },
+      {
+        "id": "perseverance",
+        "label": "Perseverance"
+      }
+    ]
+  },
+  {
+    "id": "mental_health",
+    "label": "Mental Health",
+    "subs": [
+      {
+        "id": "bipolar_disorder",
+        "label": "Bipolar disorder"
+      },
+      {
+        "id": "addiction_disorder",
+        "label": "Addiction disorder"
+      },
+      {
+        "id": "autism",
+        "label": "Autism"
+      },
+      {
+        "id": "ptsd",
+        "label": "PTSD"
+      },
+      {
+        "id": "adhd",
+        "label": "ADHD"
+      },
+      {
+        "id": "mental_health",
+        "label": "Mental health"
+      }
+    ]
+  },
+  {
+    "id": "hard_times_overcoming",
+    "label": "Hard Times & Overcoming",
+    "subs": [
+      {
+        "id": "death",
+        "label": "Death"
       },
       {
         "id": "depression",
@@ -23,60 +317,52 @@ export const QUOTE_CATEGORIES: QuoteCategory[] = [
         "label": "Loneliness"
       },
       {
-        "id": "burnout",
-        "label": "Burnout"
-      }
-    ]
-  },
-  {
-    "id": "physical_health",
-    "label": "Physical Health",
-    "subs": [
-      {
-        "id": "poor_sleep",
-        "label": "Poor sleep"
+        "id": "sadness",
+        "label": "Sadness"
       },
       {
-        "id": "obesity",
-        "label": "Obesity"
+        "id": "heartbroken",
+        "label": "Heartbroken"
       },
       {
-        "id": "chronic_diseases",
-        "label": "Chronic diseases"
+        "id": "missing_someone",
+        "label": "Missing someone"
       },
       {
-        "id": "lack_of_exercise",
-        "label": "Lack of exercise"
+        "id": "dealing_with_change",
+        "label": "Dealing with change"
       },
       {
-        "id": "unhealthy_diet",
-        "label": "Unhealthy diet"
-      }
-    ]
-  },
-  {
-    "id": "financial_problems",
-    "label": "Financial Problems",
-    "subs": [
-      {
-        "id": "debt",
-        "label": "Debt"
+        "id": "uncertainty",
+        "label": "Uncertainty"
       },
       {
-        "id": "low_income",
-        "label": "Low income"
+        "id": "dealing_with_frustration",
+        "label": "Dealing with frustration"
       },
       {
-        "id": "inflation",
-        "label": "Inflation"
+        "id": "unrequited_love",
+        "label": "Unrequited love"
       },
       {
-        "id": "unemployment",
-        "label": "Unemployment"
+        "id": "overcoming_fears",
+        "label": "Overcoming fears"
       },
       {
-        "id": "difficulty_saving_money",
-        "label": "Difficulty saving money"
+        "id": "breakup",
+        "label": "Breakup"
+      },
+      {
+        "id": "overcoming_adversity",
+        "label": "Overcoming adversity"
+      },
+      {
+        "id": "resilience",
+        "label": "Resilience"
+      },
+      {
+        "id": "haters",
+        "label": "Haters"
       }
     ]
   },
@@ -85,180 +371,188 @@ export const QUOTE_CATEGORIES: QuoteCategory[] = [
     "label": "Relationships",
     "subs": [
       {
-        "id": "family_conflicts",
-        "label": "Family conflicts"
+        "id": "falling_in_love",
+        "label": "Falling in love"
       },
       {
-        "id": "breakups",
-        "label": "Breakups"
+        "id": "love",
+        "label": "Love"
       },
       {
-        "id": "divorce",
-        "label": "Divorce"
+        "id": "unconditional_love",
+        "label": "Unconditional love"
       },
       {
-        "id": "difficulty_making_friends",
-        "label": "Difficulty making friends"
+        "id": "marriage",
+        "label": "Marriage"
       },
       {
-        "id": "communication_problems",
-        "label": "Communication problems"
+        "id": "cheating",
+        "label": "Cheating"
+      },
+      {
+        "id": "distance",
+        "label": "Distance"
+      },
+      {
+        "id": "best_friend",
+        "label": "Best friend"
+      },
+      {
+        "id": "family",
+        "label": "Family"
+      },
+      {
+        "id": "friendship",
+        "label": "Friendship"
+      },
+      {
+        "id": "loyalty",
+        "label": "Loyalty"
+      },
+      {
+        "id": "listening",
+        "label": "Listening"
+      },
+      {
+        "id": "honesty",
+        "label": "Honesty"
+      },
+      {
+        "id": "fake_people",
+        "label": "Fake people"
+      },
+      {
+        "id": "setting_boundaries",
+        "label": "Setting boundaries"
+      },
+      {
+        "id": "forgiveness",
+        "label": "Forgiveness"
+      },
+      {
+        "id": "trust",
+        "label": "Trust"
+      },
+      {
+        "id": "introvert",
+        "label": "Introvert"
+      },
+      {
+        "id": "relationships",
+        "label": "Relationships"
       }
     ]
   },
   {
-    "id": "career_and_education",
-    "label": "Career and Education",
+    "id": "self_growth_self_worth",
+    "label": "Self-Growth & Self-Worth",
     "subs": [
       {
-        "id": "job_insecurity",
-        "label": "Job insecurity"
+        "id": "self_worth",
+        "label": "Self-worth"
       },
       {
-        "id": "lack_of_skills",
-        "label": "Lack of skills"
+        "id": "self_respect",
+        "label": "Self-respect"
       },
       {
-        "id": "career_confusion",
-        "label": "Career confusion"
+        "id": "self_esteem",
+        "label": "Self-esteem"
       },
       {
-        "id": "academic_pressure",
-        "label": "Academic pressure"
+        "id": "self_love",
+        "label": "Self-love"
       },
       {
-        "id": "work_life_imbalance",
-        "label": "Work-life imbalance"
-      }
-    ]
-  },
-  {
-    "id": "technology",
-    "label": "Technology",
-    "subs": [
-      {
-        "id": "social_media_addiction",
-        "label": "Social media addiction"
+        "id": "love_yourself",
+        "label": "Love yourself"
       },
       {
-        "id": "excessive_screen_time",
-        "label": "Excessive screen time"
+        "id": "accept_yourself",
+        "label": "Accept yourself"
       },
       {
-        "id": "cyberbullying",
-        "label": "Cyberbullying"
+        "id": "ego",
+        "label": "Ego"
       },
       {
-        "id": "privacy_concerns",
-        "label": "Privacy concerns"
+        "id": "self_improvement",
+        "label": "Self-improvement"
       },
       {
-        "id": "information_overload",
-        "label": "Information overload"
-      }
-    ]
-  },
-  {
-    "id": "personal_development",
-    "label": "Personal Development",
-    "subs": [
-      {
-        "id": "procrastination",
-        "label": "Procrastination"
+        "id": "self_development",
+        "label": "Self-development"
       },
       {
-        "id": "low_self_confidence",
-        "label": "Low self-confidence"
+        "id": "self_care",
+        "label": "Self-care"
       },
       {
-        "id": "lack_of_discipline",
-        "label": "Lack of discipline"
+        "id": "growth",
+        "label": "Growth"
       },
       {
-        "id": "fear_of_failure",
-        "label": "Fear of failure"
+        "id": "finding_purpose",
+        "label": "Finding purpose"
       },
       {
-        "id": "poor_time_management",
-        "label": "Poor time management"
-      }
-    ]
-  },
-  {
-    "id": "societal_issues",
-    "label": "Societal Issues",
-    "subs": [
-      {
-        "id": "crime",
-        "label": "Crime"
+        "id": "be_yourself",
+        "label": "Be yourself"
       },
       {
-        "id": "pollution",
-        "label": "Pollution"
+        "id": "start_change",
+        "label": "Start change"
       },
       {
-        "id": "climate_change",
-        "label": "Climate change"
+        "id": "positive_thinking",
+        "label": "Positive thinking"
       },
       {
-        "id": "political_conflicts",
-        "label": "Political conflicts"
-      },
-      {
-        "id": "inequality",
-        "label": "Inequality"
-      }
-    ]
-  },
-  {
-    "id": "basic_needs",
-    "label": "Basic Needs",
-    "subs": [
-      {
-        "id": "hunger",
-        "label": "Hunger"
-      },
-      {
-        "id": "clean_water",
-        "label": "Clean water"
-      },
-      {
-        "id": "housing",
-        "label": "Housing"
-      },
-      {
-        "id": "healthcare_access",
-        "label": "Healthcare access"
-      },
-      {
-        "id": "safety",
-        "label": "Safety"
-      }
-    ]
-  },
-  {
-    "id": "existential_questions",
-    "label": "Existential Questions",
-    "subs": [
-      {
-        "id": "finding_meaning_in_life",
-        "label": "Finding meaning in life"
-      },
-      {
-        "id": "fear_of_death",
-        "label": "Fear of death"
-      },
-      {
-        "id": "identity",
-        "label": "Identity"
+        "id": "optimism",
+        "label": "Optimism"
       },
       {
         "id": "happiness",
         "label": "Happiness"
       },
       {
-        "id": "spiritual_fulfillment",
-        "label": "Spiritual fulfillment"
+        "id": "gratitude",
+        "label": "Gratitude"
+      },
+      {
+        "id": "new_beginnings",
+        "label": "New beginnings"
+      },
+      {
+        "id": "letting_go",
+        "label": "Letting go"
+      },
+      {
+        "id": "moving_on",
+        "label": "Moving on"
+      },
+      {
+        "id": "be_strong",
+        "label": "Be strong"
+      },
+      {
+        "id": "improve_self_talk",
+        "label": "Improve self-talk"
+      }
+    ]
+  },
+  {
+    "id": "seasonal_daily_rituals",
+    "label": "Seasonal & Daily Rituals",
+    "subs": [
+      {
+        "id": "summer",
+        "label": "Summer"
+      },
+      {
+        "id": "good_morning",
+        "label": "Good morning"
       }
     ]
   }

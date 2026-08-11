@@ -6,13 +6,15 @@ interface Props {
   open: boolean;
   value: string;
   onSelect: (id: string) => void;
+  scale: number;
+  onScale: (v: number) => void;
   onClose: () => void;
 }
 
 /**
  * Compact iOS-style font panel that expands upward from the actions arrow.
  */
-const FontPicker = ({ open, value, onSelect, onClose }: Props) => {
+const FontPicker = ({ open, value, onSelect, scale, onScale, onClose }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,6 +66,25 @@ const FontPicker = ({ open, value, onSelect, onClose }: Props) => {
             {f.id === value && <Check size={14} className="text-white shrink-0" />}
           </button>
         ))}
+      </div>
+
+      {/* Font size */}
+      <div className="border-t border-white/10 px-3.5 pt-2.5 pb-3">
+        <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/50">Size</p>
+        <div className="flex items-center gap-2.5">
+          <span className="text-white/70 text-[12px] leading-none">A</span>
+          <input
+            type="range"
+            min={0.7}
+            max={1.3}
+            step={0.05}
+            value={scale}
+            aria-label="Font size"
+            onChange={(e) => onScale(Number(e.target.value))}
+            className="flex-1 h-1 appearance-none rounded-full bg-white/25 accent-white"
+          />
+          <span className="text-white/85 text-[18px] leading-none">A</span>
+        </div>
       </div>
     </div>
   );
