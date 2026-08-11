@@ -362,12 +362,22 @@ const DailyQuotesFeed = () => {
 
       {/* Collapsible actions */}
       <div className="absolute bottom-24 right-4 z-30 flex flex-col items-center gap-2.5">
+        <FontPicker
+          open={fontOpen}
+          value={fontId}
+          onClose={() => setFontOpen(false)}
+          onSelect={(id) => {
+            setFontId(id);
+            try { localStorage.setItem(FONT_KEY, id); } catch { /* empty */ }
+          }}
+        />
+
         <div
           className="flex flex-col items-center gap-2.5 origin-bottom transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
           style={{
-            opacity: actionsOpen ? 1 : 0,
-            transform: actionsOpen ? "translateY(0) scale(1)" : "translateY(14px) scale(0.85)",
-            pointerEvents: actionsOpen ? "auto" : "none",
+            opacity: actionsOpen && !fontOpen ? 1 : 0,
+            transform: actionsOpen && !fontOpen ? "translateY(0) scale(1)" : "translateY(14px) scale(0.85)",
+            pointerEvents: actionsOpen && !fontOpen ? "auto" : "none",
           }}
         >
           <button
@@ -381,6 +391,13 @@ const DailyQuotesFeed = () => {
             ) : (
               <Share2 size={16} />
             )}
+          </button>
+          <button
+            onClick={() => setFontOpen(true)}
+            aria-label="Change font"
+            className="w-10 h-10 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
+          >
+            <Type size={16} />
           </button>
           <button
             onClick={() => setStep("wallpaper")}
@@ -399,7 +416,7 @@ const DailyQuotesFeed = () => {
         </div>
 
         <button
-          onClick={() => setActionsOpen((v) => !v)}
+          onClick={() => { if (fontOpen) setFontOpen(false); else setActionsOpen((v) => !v); }}
           aria-label={actionsOpen ? "Hide actions" : "Show actions"}
           aria-expanded={actionsOpen}
           className="w-9 h-9 rounded-full bg-secondary/85 backdrop-blur flex items-center justify-center text-foreground"
