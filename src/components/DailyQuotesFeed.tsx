@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronUp, Plus, Trash2, Type } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareQuote } from "@/lib/shareQuote";
 import { QUOTE_CATEGORIES, findCategory } from "@/lib/quoteTopics";
+import FittedQuote from "@/components/FittedQuote";
+import FontPicker from "@/components/FontPicker";
+import { DEFAULT_QUOTE_FONT_ID, findQuoteFont } from "@/lib/quoteFonts";
+import "@/styles/quoteFonts.css";
 import {
   LocalWallpaper,
   MAX_LOCAL_WALLPAPERS,
