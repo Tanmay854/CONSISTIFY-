@@ -9,8 +9,10 @@ interface Props {
   active?: boolean;
 }
 
-const MIN_SIZE = 13;
-const MAX_SIZE = 76;
+const MIN_SIZE = 12;
+const MAX_SIZE = 44;
+/** Never let the quote block fill the whole safe area. */
+const FILL = 0.72;
 
 /**
  * Renders a quote that always fits inside its (invisible) safe area.
@@ -49,14 +51,14 @@ const FittedQuote = ({ text, author, font, active = true }: Props) => {
       probe.style.letterSpacing = font.letterSpacing ?? "normal";
 
       const avail = h - (author ? 34 : 0);
-      const cap = Math.min(MAX_SIZE * (font.maxScale ?? 1), avail * 0.42);
+      const cap = Math.min(MAX_SIZE * (font.maxScale ?? 1), avail * 0.22);
       let lo = MIN_SIZE;
       let hi = Math.max(MIN_SIZE, cap);
       let best = MIN_SIZE;
 
       const fits = (px: number) => {
         probe.style.fontSize = `${px}px`;
-        return probe.scrollHeight <= avail && probe.scrollWidth <= w + 1;
+        return probe.scrollHeight <= avail * FILL && probe.scrollWidth <= w + 1;
       };
 
       if (fits(hi)) {
@@ -94,8 +96,9 @@ const FittedQuote = ({ text, author, font, active = true }: Props) => {
           visibility: "hidden",
           pointerEvents: "none",
           whiteSpace: "pre-wrap",
-          overflowWrap: "break-word",
-          wordBreak: "normal",
+          overflowWrap: "normal",
+          wordBreak: "keep-all",
+          hyphens: "none",
           textAlign: "center",
           textWrap: "balance",
         } as React.CSSProperties}
@@ -112,8 +115,9 @@ const FittedQuote = ({ text, author, font, active = true }: Props) => {
           letterSpacing: font.letterSpacing ?? "normal",
           opacity: size ? 1 : 0,
           textWrap: "balance",
-          overflowWrap: "break-word",
-          wordBreak: "normal",
+          overflowWrap: "normal",
+          wordBreak: "keep-all",
+          hyphens: "none",
           transition: "font-size 180ms cubic-bezier(0.16,1,0.3,1), opacity 160ms ease-out",
           textShadow: font.decorative
             ? "0 2px 12px rgba(0,0,0,0.6)"
