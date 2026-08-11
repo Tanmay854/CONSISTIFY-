@@ -337,16 +337,23 @@ const DailyQuotesFeed = () => {
           className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-contain [scroll-snap-stop:always]"
         >
           {quotes.map((q, i) => (
-            <div key={q.id} className="h-[100dvh] w-full snap-start snap-always flex items-center justify-center px-9">
-              <div className={i === activeIndex ? "animate-fade-in" : ""}>
-                <p className="font-display text-[1.7rem] leading-snug text-center text-foreground font-semibold drop-shadow-[0_2px_10px_rgba(0,0,0,0.75)]">
-                  “{q.text}”
-                </p>
-                {q.author && (
-                  <p className="mt-4 text-center text-xs uppercase tracking-[0.22em] text-foreground/75">
-                    {q.author}
-                  </p>
-                )}
+            <div key={q.id} className="h-[100dvh] w-full snap-start snap-always">
+              {/* Invisible safe area — never painted, keeps text clear of nav + arrow */}
+              <div
+                className={`w-full h-full ${i === activeIndex ? "animate-fade-in" : ""}`}
+                style={{
+                  paddingLeft: "36px",
+                  paddingRight: "36px",
+                  paddingTop: "calc(env(safe-area-inset-top, 0px) + 76px)",
+                  paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 148px)",
+                }}
+              >
+                <FittedQuote
+                  text={q.text}
+                  author={q.author}
+                  font={findQuoteFont(fontId)}
+                  active={Math.abs(i - activeIndex) <= 1}
+                />
               </div>
             </div>
           ))}
