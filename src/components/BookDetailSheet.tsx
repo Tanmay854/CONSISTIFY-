@@ -142,8 +142,8 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
       ghost.style.transform = `translate3d(${toX}px, ${toY}px, 0) scale(${scaleX}, ${scaleY})`;
     });
 
-    // Fade the sheet content after a short delay, matching the original spec.
-    window.setTimeout(() => setContentVisible(false), 110);
+    // Fade the sheet content immediately; the ghost cover is the only element that should stay visible.
+    setContentVisible(false);
 
     const cleanup = () => {
       ghost.removeEventListener("transitionend", onEnd);
