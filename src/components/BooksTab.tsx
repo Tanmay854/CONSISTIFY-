@@ -8,8 +8,8 @@ import { sharedCoverUrl } from "@/lib/coverUrl";
 
 import BookDetailSheet from "./BookDetailSheet";
 
-type OpenHandler = (b: Book, coverLayoutId: string) => void;
-type SelectedBook = { book: Book; coverLayoutId: string };
+type OpenHandler = (b: Book, coverLayoutId: string, el: HTMLElement) => void;
+type SelectedBook = { book: Book; coverLayoutId: string; originEl: HTMLElement };
 
 const POPULAR = ["Discipline", "Atomic Habits", "Deep Work", "Stoicism", "Focus"];
 const RECENT_KEY = "book_recent_searches";
@@ -53,16 +53,19 @@ const BooksTab = () => {
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSearchById = isAdmin || isSuperAdmin;
 
-  const openBook = useCallback((b: Book, coverLayoutId: string) => {
+  const [requestClose, setRequestClose] = useState(false);
+
+  const openBook = useCallback((b: Book, coverLayoutId: string, el: HTMLElement) => {
+    setRequestClose(false);
     setStaticDismiss(false);
-    setSelected({ book: b, coverLayoutId });
+    setSelected({ book: b, coverLayoutId, originEl: el });
   }, []);
   const closeBook = useCallback(() => {
+    setRequestClose(true);
+  }, []);
+  const completeClose = useCallback(() => {
     setSelected(null);
-    // Keep shared covers disabled after a slide-down dismissal. Re-enabling
-    // them here makes Framer project the tapped cover once more after the
-    // sheet has gone, which visibly moves the otherwise static grid image.
-    // openBook restores the shared layer only when a new transition begins.
+    setRequestClose(false);
   }, []);
 
   const load = useCallback(async () => {
@@ -80,7 +83,7 @@ const BooksTab = () => {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    (window as any).__openBook = (b: Book) => setSelected({ book: b, coverLayoutId: `similar-book-cover-${b.id}` });
+    (window as any).__openBook = (b: Book) => setSelected({ book: b, coverLayoutId: `similar-book-cover-${b.id}`, originEl: document.body });
     return () => { delete (window as any).__openBook; };
   }, []);
 
@@ -219,7 +222,7 @@ const BooksTab = () => {
           <p className="text-muted-foreground text-sm mt-1">New books will appear here soon.</p>
         </div>
       ) : isSearching ? (
-        <SearchResults books={filtered} onOpen={(b, coverLayoutId) => { openBook(b, coverLayoutId); push(query); }} />
+        <SearchResults books={filtered} onOpen={(b, coverLayoutId, el) => { openBook(b, coverLayoutId, el); push(query); }} />
       ) : (
         <div className="pt-5 space-y-8">
           {featured.length > 0 && <FeaturedHero books={featured} onOpen={openBook} sharedCoverVisible={!staticDismiss} />}
@@ -244,7 +247,9 @@ const BooksTab = () => {
             key={`${selected.book.id}-${selected.coverLayoutId}`}
             book={selected.book}
             coverLayoutId={selected.coverLayoutId}
-            onClose={closeBook}
+            originEl={selected.originEl}
+            requestClose={requestClose}
+            onCloseComplete={completeClose}
             onDismissStart={() => setStaticDismiss(true)}
           />
         )}
@@ -395,10 +400,12 @@ const Row = ({
 const BookCard = ({ book, onOpen, sharedCoverVisible = true }: { book: Book; onOpen: OpenHandler; sharedCoverVisible?: boolean }) => {
   const instanceId = useId();
   const coverLayoutId = `book-cover-${book.id}-${instanceId}`;
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
   <button
-    onClick={() => onOpen(book, coverLayoutId)}
+    ref={buttonRef}
+    onClick={() => onOpen(book, coverLayoutId, buttonRef.current!)}
     className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
     <div data-cover-id={coverLayoutId} className="relative w-36 aspect-[2/3] overflow-hidden rounded-2xl bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
