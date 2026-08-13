@@ -84,89 +84,17 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
     setMode(m);
   };
 
-  // For a card that is still visible in the grid, perform a manual FLIP
-  // reverse-morph back to the original card's rect. The grid card keeps a
-  // static base image underneath, so the book never appears to move. If the
-  // card is off-screen or the cover isn't available, fall back to a slide-down.
-  const closeWithFlip = useCallback(() => {
-    if (!originEl || !coverRef.current || mode !== "overview") return false;
-
-    const card = originEl.querySelector(`[data-cover-id="${coverLayoutId}"]`) as HTMLElement | null;
-    if (!card) return false;
-
-    const cardRect = card.getBoundingClientRect();
-    if (cardRect.width === 0 || cardRect.height === 0 || cardRect.bottom < 0 || cardRect.top > window.innerHeight) return false;
-
-    const coverRect = coverRef.current.getBoundingClientRect();
-    if (coverRect.width === 0 || coverRect.height === 0) return false;
-
-    // Hide the grid shared cover so Framer doesn't also try to project back.
-    onDismissStart();
-    // Hide the sheet cover; a ghost will take over the return animation.
-    coverRef.current.style.opacity = "0";
-
-    const ghost = document.createElement("div");
-    const img = document.createElement("img");
-    img.src = sharedCoverUrl(book.cover_url);
-    img.alt = "";
-    img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
-    ghost.appendChild(img);
-    ghost.style.cssText = `
-      position: fixed;
-      left: ${coverRect.left}px;
-      top: ${coverRect.top}px;
-      width: ${coverRect.width}px;
-      height: ${coverRect.height}px;
-      border-radius: 16px;
-      overflow: hidden;
-      z-index: 9999;
-      pointer-events: none;
-      will-change: transform, opacity;
-      box-shadow: 0 30px 60px -20px rgba(0,0,0,0.9);
-    `;
-    document.body.appendChild(ghost);
-
-    const toX = cardRect.left - coverRect.left;
-    const toY = cardRect.top - coverRect.top;
-    const scaleX = cardRect.width / coverRect.width;
-    const scaleY = cardRect.height / coverRect.height;
-
-    // Start at the cover position (identity), then animate to the card.
-    ghost.style.transition = "none";
-    ghost.style.transform = "translate3d(0,0,0) scale(1,1)";
-
-    void ghost.offsetWidth;
-
-    requestAnimationFrame(() => {
-      ghost.style.transition = "transform 280ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease-out 60ms";
-      ghost.style.transform = `translate3d(${toX}px, ${toY}px, 0) scale(${scaleX}, ${scaleY})`;
-    });
-
-    // Fade the sheet content immediately; the ghost cover is the only element that should stay visible.
-    setContentVisible(false);
-
-    const cleanup = () => {
-      ghost.removeEventListener("transitionend", onEnd);
-      ghost.remove();
-      if (coverRef.current) coverRef.current.style.opacity = "";
-      onCloseComplete();
-    };
-    const onEnd = () => cleanup();
-    ghost.addEventListener("transitionend", onEnd);
-    window.setTimeout(cleanup, 360); // fallback if transitionend is late
-    return true;
-  }, [originEl, coverLayoutId, mode, onDismissStart, book.cover_url, onCloseComplete]);
-
   const slideDown = useCallback(() => {
     onDismissStart();
     setDismissDown(true);
   }, [onDismissStart]);
 
+  // Always slide the sheet down on close; the grid card underneath stays static.
   const handleClose = useCallback(() => {
     if (isClosing || dismissDown) return;
     setIsClosing(true);
-    if (!closeWithFlip()) slideDown();
-  }, [isClosing, dismissDown, closeWithFlip, slideDown]);
+    slideDown();
+  }, [isClosing, dismissDown, slideDown]);
 
   useEffect(() => {
     if (requestClose) handleClose();
