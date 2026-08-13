@@ -162,11 +162,12 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
     setDismissDown(true);
   }, [onDismissStart]);
 
+  // Always slide the sheet down on close; the grid card underneath stays static.
   const handleClose = useCallback(() => {
     if (isClosing || dismissDown) return;
     setIsClosing(true);
-    if (!closeWithFlip()) slideDown();
-  }, [isClosing, dismissDown, closeWithFlip, slideDown]);
+    slideDown();
+  }, [isClosing, dismissDown, slideDown]);
 
   useEffect(() => {
     if (requestClose) handleClose();
