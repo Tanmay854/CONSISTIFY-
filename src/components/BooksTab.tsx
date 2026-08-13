@@ -222,7 +222,7 @@ const BooksTab = () => {
           <p className="text-muted-foreground text-sm mt-1">New books will appear here soon.</p>
         </div>
       ) : isSearching ? (
-        <SearchResults books={filtered} onOpen={(b, coverLayoutId, el) => { openBook(b, coverLayoutId, el); push(query); }} />
+        <SearchResults books={filtered} sharedCoverVisible={!staticDismiss} onOpen={(b, coverLayoutId, el) => { openBook(b, coverLayoutId, el); push(query); }} />
       ) : (
         <div className="pt-5 space-y-8">
           {featured.length > 0 && <FeaturedHero books={featured} onOpen={openBook} sharedCoverVisible={!staticDismiss} />}
@@ -435,14 +435,14 @@ const BookCard = ({ book, onOpen, sharedCoverVisible = true }: { book: Book; onO
 };
 
 
-const SearchResults = ({ books, onOpen }: { books: Book[]; onOpen: OpenHandler }) => (
+const SearchResults = ({ books, onOpen, sharedCoverVisible = true }: { books: Book[]; onOpen: OpenHandler; sharedCoverVisible?: boolean }) => (
   <div className="px-5 pt-5">
     {books.length === 0 ? (
       <div className="text-center text-muted-foreground text-sm py-16">No books found.</div>
     ) : (
       <div className="grid grid-cols-2 gap-4">
         {books.map((b) => (
-          <BookCard key={b.id} book={b} onOpen={onOpen} />
+          <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} />
         ))}
       </div>
     )}
