@@ -192,11 +192,32 @@ const MyUploads = () => {
     setBusy(false);
   };
 
+  // Show the picked image first so the uploader can check framing before it goes live.
+  const previewThumbnail = (file: File | null) => {
+    if (!file) { setThumbTargetId(null); return; }
+    setPendingThumb({ file, url: URL.createObjectURL(file) });
+  };
+
+  const cancelPendingThumb = () => {
+    if (pendingThumb) URL.revokeObjectURL(pendingThumb.url);
+    setPendingThumb(null);
+    setThumbTargetId(null);
+  };
+
+  const confirmPendingThumb = async () => {
+    if (!pendingThumb) return;
+    const file = pendingThumb.file;
+    URL.revokeObjectURL(pendingThumb.url);
+    setPendingThumb(null);
+    await handleThumbnail(file);
+  };
+
   const pickThumb = (id: string, kind: ThumbKind) => {
     setThumbTargetId(id);
     setThumbKind(kind);
     thumbInput.current?.click();
   };
+
 
 
 
