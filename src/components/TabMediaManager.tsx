@@ -109,14 +109,16 @@ const TabMediaManager = () => {
   const insertUnique = async (
     parsed: { text: string; category: string; subcategory: string }[],
   ): Promise<{ added: number; skipped: number; error?: string }> => {
-    const { data: existing } = await supabase.from("daily_quotes").select("text").limit(50000);
-    const seen = new Set((existing ?? []).map((e) => quoteKey(e.text || "")));
+    const existing = await fetchAllRows<{ text: string | null }>("daily_quotes", "text");
+    const seen = new Set(existing.map((e) => quoteKey(e.text || "")));
     const rows: { text: string; category: string; subcategory: string; author: null; created_by?: string }[] = [];
     for (const p of parsed) {
       const key = quoteKey(p.text);
       if (!key || seen.has(key)) continue;
       seen.add(key);
-      rows.push({ ...p, text: p.text.trim(), author: null, created_by: user?.id });
+      // Never store the source numbering ("12. ") with the quote itself.
+      const clean = p.text.trim().replace(/^[\s\-–—*•]*\d+\s*[.)\]:-]?\s*/, "").trim();
+      rows.push({ ...p, text: clean || p.text.trim(), author: null, created_by: user?.id });
     }
 
     let added = 0;
@@ -127,6 +129,33 @@ const TabMediaManager = () => {
     }
     return { added, skipped: parsed.length - rows.length };
   };
+
+  /** Scans the whole library and deletes rows whose normalized text repeats. */
+  const removeDuplicates = async () => {
+    setBusy(true); setMessage("Scanning library for duplicates...");
+    const all = await fetchAllRows<{ id: string; text: string | null }>("daily_quotes", "id,text");
+    const seen = new Set<string>();
+    const dupeIds: string[] = [];
+    for (const row of all) {
+      const key = quoteKey(row.text || "");
+      if (!key) continue;
+      if (seen.has(key)) dupeIds.push(row.id);
+      else seen.add(key);
+    }
+    if (!dupeIds.length) {
+      setMessage(`No duplicates found across ${all.length} quotes.`);
+      setBusy(false);
+      return;
+    }
+    for (let i = 0; i < dupeIds.length; i += 200) {
+      const { error } = await supabase.from("daily_quotes").delete().in("id", dupeIds.slice(i, i + 200));
+      if (error) { setMessage(error.message); setBusy(false); return; }
+    }
+    setMessage(`Removed ${dupeIds.length} duplicate quotes.`);
+    await load();
+    setBusy(false);
+  };
+
 
   const importPdfs = async (files: FileList | null) => {
     if (!files?.length) return;
