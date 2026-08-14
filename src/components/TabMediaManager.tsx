@@ -50,7 +50,12 @@ const TabMediaManager = () => {
     const all: T[] = [];
     const page = 1000;
     for (let from = 0; ; from += page) {
-      const { data, error } = await supabase.from(table).select(columns).range(from, from + page - 1);
+      // Deterministic ordering is required, otherwise pages can repeat/skip rows.
+      const { data, error } = await supabase
+        .from(table)
+        .select(columns)
+        .order("id", { ascending: true })
+        .range(from, from + page - 1);
       if (error || !data?.length) break;
       all.push(...(data as unknown as T[]));
       if (data.length < page) break;
@@ -59,10 +64,11 @@ const TabMediaManager = () => {
   }, []);
 
   const load = useCallback(async () => {
-    const [bg, q, all] = await Promise.all([
+    const [bg, q, all, totalRes] = await Promise.all([
       supabase.from("quote_backgrounds").select("id,image_url,name,position").order("position"),
       supabase.from("daily_quotes").select("id,text,author,category,subcategory").order("created_at", { ascending: false }).limit(1000),
-      fetchAllRows<{ category: string | null; subcategory: string | null }>("daily_quotes", "category,subcategory"),
+      fetchAllRows<{ category: string | null; subcategory: string | null }>("daily_quotes", "id,category,subcategory"),
+      supabase.from("daily_quotes").select("id", { count: "exact", head: true }),
     ]);
 
 
@@ -74,8 +80,9 @@ const TabMediaManager = () => {
       map[key] = (map[key] || 0) + 1;
     });
     setCounts(map);
-    setTotalQuotes(all.length);
+    setTotalQuotes(totalRes.count ?? all.length);
   }, [fetchAllRows]);
+
 
 
 
