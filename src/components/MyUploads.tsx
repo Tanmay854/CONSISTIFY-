@@ -101,7 +101,9 @@ const MyUploads = () => {
   const [statsOpen, setStatsOpen] = useState<string | null>(null);
   const thumbInput = useRef<HTMLInputElement>(null);
   const [thumbTargetId, setThumbTargetId] = useState<string | null>(null);
+  const [pendingThumb, setPendingThumb] = useState<{ file: File; url: string } | null>(null);
   const [thumbKind, setThumbKind] = useState<ThumbKind>("landscape");
+
 
 
   const q = query.trim().toLowerCase();
