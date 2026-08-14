@@ -45,24 +45,38 @@ const TabMediaManager = () => {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  /** Fetches every row of a table in 1000-row pages (PostgREST caps a single request). */
+  const fetchAllRows = useCallback(async <T,>(table: "daily_quotes", columns: string): Promise<T[]> => {
+    const all: T[] = [];
+    const page = 1000;
+    for (let from = 0; ; from += page) {
+      const { data, error } = await supabase.from(table).select(columns).range(from, from + page - 1);
+      if (error || !data?.length) break;
+      all.push(...(data as unknown as T[]));
+      if (data.length < page) break;
+    }
+    return all;
+  }, []);
+
   const load = useCallback(async () => {
     const [bg, q, all] = await Promise.all([
       supabase.from("quote_backgrounds").select("id,image_url,name,position").order("position"),
       supabase.from("daily_quotes").select("id,text,author,category,subcategory").order("created_at", { ascending: false }).limit(1000),
-      supabase.from("daily_quotes").select("category,subcategory").limit(50000),
+      fetchAllRows<{ category: string | null; subcategory: string | null }>("daily_quotes", "category,subcategory"),
     ]);
 
 
     setBackgrounds((bg.data as BgRow[]) || []);
     setQuotes((q.data as QuoteRow[]) || []);
     const map: Record<string, number> = {};
-    (all.data ?? []).forEach((r) => {
+    all.forEach((r) => {
       const key = `${r.category}|${r.subcategory}`;
       map[key] = (map[key] || 0) + 1;
     });
     setCounts(map);
-    setTotalQuotes((all.data ?? []).length);
-  }, []);
+    setTotalQuotes(all.length);
+  }, [fetchAllRows]);
+
 
 
   useEffect(() => { load(); }, [load]);
@@ -95,14 +109,16 @@ const TabMediaManager = () => {
   const insertUnique = async (
     parsed: { text: string; category: string; subcategory: string }[],
   ): Promise<{ added: number; skipped: number; error?: string }> => {
-    const { data: existing } = await supabase.from("daily_quotes").select("text").limit(50000);
-    const seen = new Set((existing ?? []).map((e) => quoteKey(e.text || "")));
+    const existing = await fetchAllRows<{ text: string | null }>("daily_quotes", "text");
+    const seen = new Set(existing.map((e) => quoteKey(e.text || "")));
     const rows: { text: string; category: string; subcategory: string; author: null; created_by?: string }[] = [];
     for (const p of parsed) {
       const key = quoteKey(p.text);
       if (!key || seen.has(key)) continue;
       seen.add(key);
-      rows.push({ ...p, text: p.text.trim(), author: null, created_by: user?.id });
+      // Never store the source numbering ("12. ") with the quote itself.
+      const clean = p.text.trim().replace(/^[\s\-–—*•]*\d+\s*[.)\]:-]?\s*/, "").trim();
+      rows.push({ ...p, text: clean || p.text.trim(), author: null, created_by: user?.id });
     }
 
     let added = 0;
@@ -113,6 +129,33 @@ const TabMediaManager = () => {
     }
     return { added, skipped: parsed.length - rows.length };
   };
+
+  /** Scans the whole library and deletes rows whose normalized text repeats. */
+  const removeDuplicates = async () => {
+    setBusy(true); setMessage("Scanning library for duplicates...");
+    const all = await fetchAllRows<{ id: string; text: string | null }>("daily_quotes", "id,text");
+    const seen = new Set<string>();
+    const dupeIds: string[] = [];
+    for (const row of all) {
+      const key = quoteKey(row.text || "");
+      if (!key) continue;
+      if (seen.has(key)) dupeIds.push(row.id);
+      else seen.add(key);
+    }
+    if (!dupeIds.length) {
+      setMessage(`No duplicates found across ${all.length} quotes.`);
+      setBusy(false);
+      return;
+    }
+    for (let i = 0; i < dupeIds.length; i += 200) {
+      const { error } = await supabase.from("daily_quotes").delete().in("id", dupeIds.slice(i, i + 200));
+      if (error) { setMessage(error.message); setBusy(false); return; }
+    }
+    setMessage(`Removed ${dupeIds.length} duplicate quotes.`);
+    await load();
+    setBusy(false);
+  };
+
 
   const importPdfs = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -283,6 +326,14 @@ const TabMediaManager = () => {
               <p className="text-foreground text-xs font-semibold">Library</p>
               <p className="text-muted-foreground text-[11px]">{totalQuotes} quotes total</p>
             </div>
+            <button
+              onClick={removeDuplicates}
+              disabled={busy}
+              className="w-full bg-secondary text-secondary-foreground rounded-lg py-2 text-[11px] font-semibold disabled:opacity-50"
+            >
+              {busy ? "Working..." : "Check & remove duplicates"}
+            </button>
+
             <div className="max-h-[28vh] overflow-y-auto space-y-2">
               {QUOTE_CATEGORIES.map((c) => {
                 const catTotal = c.subs.reduce((n, s) => n + (counts[`${c.id}|${s.id}`] || 0), 0);

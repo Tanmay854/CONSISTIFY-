@@ -101,7 +101,9 @@ const MyUploads = () => {
   const [statsOpen, setStatsOpen] = useState<string | null>(null);
   const thumbInput = useRef<HTMLInputElement>(null);
   const [thumbTargetId, setThumbTargetId] = useState<string | null>(null);
+  const [pendingThumb, setPendingThumb] = useState<{ file: File; url: string } | null>(null);
   const [thumbKind, setThumbKind] = useState<ThumbKind>("landscape");
+
 
 
   const q = query.trim().toLowerCase();
@@ -192,11 +194,32 @@ const MyUploads = () => {
     setBusy(false);
   };
 
+  // Show the picked image first so the uploader can check framing before it goes live.
+  const previewThumbnail = (file: File | null) => {
+    if (!file) { setThumbTargetId(null); return; }
+    setPendingThumb({ file, url: URL.createObjectURL(file) });
+  };
+
+  const cancelPendingThumb = () => {
+    if (pendingThumb) URL.revokeObjectURL(pendingThumb.url);
+    setPendingThumb(null);
+    setThumbTargetId(null);
+  };
+
+  const confirmPendingThumb = async () => {
+    if (!pendingThumb) return;
+    const file = pendingThumb.file;
+    URL.revokeObjectURL(pendingThumb.url);
+    setPendingThumb(null);
+    await handleThumbnail(file);
+  };
+
   const pickThumb = (id: string, kind: ThumbKind) => {
     setThumbTargetId(id);
     setThumbKind(kind);
     thumbInput.current?.click();
   };
+
 
 
 
@@ -225,8 +248,33 @@ const MyUploads = () => {
         type="file"
         accept="image/*"
         hidden
-        onChange={(e) => { handleThumbnail(e.target.files?.[0] || null); e.target.value = ""; }}
+        onChange={(e) => { previewThumbnail(e.target.files?.[0] || null); e.target.value = ""; }}
       />
+
+      {pendingThumb && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6">
+          <div className="w-full max-w-xs bg-secondary rounded-2xl p-4 space-y-3">
+            <p className="text-foreground text-sm font-semibold">
+              {thumbKind === "portrait" ? "Hero / portrait thumbnail" : "Landscape thumbnail"}
+            </p>
+            <div className={`w-full overflow-hidden rounded-xl bg-muted ${thumbKind === "portrait" ? "aspect-[2/3]" : "aspect-video"}`}>
+              <img src={pendingThumb.url} alt="Thumbnail preview" className="w-full h-full object-cover" />
+            </div>
+            <p className="text-muted-foreground text-[11px]">
+              {thumbKind === "portrait"
+                ? "This is exactly how it appears in the hero banner and poster grid."
+                : "This is how it appears in Continue Watching."}
+            </p>
+            <div className="flex gap-2">
+              <button onClick={cancelPendingThumb} disabled={busy} className="flex-1 rounded-xl bg-muted text-muted-foreground text-xs font-semibold py-2.5">Cancel</button>
+              <button onClick={confirmPendingThumb} disabled={busy} className="flex-1 rounded-xl bg-primary text-primary-foreground text-xs font-semibold py-2.5 disabled:opacity-50">
+                {busy ? "Uploading..." : "Use this"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <div className="relative">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
