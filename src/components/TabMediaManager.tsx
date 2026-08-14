@@ -45,24 +45,38 @@ const TabMediaManager = () => {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  /** Fetches every row of a table in 1000-row pages (PostgREST caps a single request). */
+  const fetchAllRows = useCallback(async <T,>(table: "daily_quotes", columns: string): Promise<T[]> => {
+    const all: T[] = [];
+    const page = 1000;
+    for (let from = 0; ; from += page) {
+      const { data, error } = await supabase.from(table).select(columns).range(from, from + page - 1);
+      if (error || !data?.length) break;
+      all.push(...(data as unknown as T[]));
+      if (data.length < page) break;
+    }
+    return all;
+  }, []);
+
   const load = useCallback(async () => {
     const [bg, q, all] = await Promise.all([
       supabase.from("quote_backgrounds").select("id,image_url,name,position").order("position"),
       supabase.from("daily_quotes").select("id,text,author,category,subcategory").order("created_at", { ascending: false }).limit(1000),
-      supabase.from("daily_quotes").select("category,subcategory").limit(50000),
+      fetchAllRows<{ category: string | null; subcategory: string | null }>("daily_quotes", "category,subcategory"),
     ]);
 
 
     setBackgrounds((bg.data as BgRow[]) || []);
     setQuotes((q.data as QuoteRow[]) || []);
     const map: Record<string, number> = {};
-    (all.data ?? []).forEach((r) => {
+    all.forEach((r) => {
       const key = `${r.category}|${r.subcategory}`;
       map[key] = (map[key] || 0) + 1;
     });
     setCounts(map);
-    setTotalQuotes((all.data ?? []).length);
-  }, []);
+    setTotalQuotes(all.length);
+  }, [fetchAllRows]);
+
 
 
   useEffect(() => { load(); }, [load]);
