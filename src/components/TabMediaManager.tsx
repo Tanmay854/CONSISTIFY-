@@ -326,6 +326,14 @@ const TabMediaManager = () => {
               <p className="text-foreground text-xs font-semibold">Library</p>
               <p className="text-muted-foreground text-[11px]">{totalQuotes} quotes total</p>
             </div>
+            <button
+              onClick={removeDuplicates}
+              disabled={busy}
+              className="w-full bg-secondary text-secondary-foreground rounded-lg py-2 text-[11px] font-semibold disabled:opacity-50"
+            >
+              {busy ? "Working..." : "Check & remove duplicates"}
+            </button>
+
             <div className="max-h-[28vh] overflow-y-auto space-y-2">
               {QUOTE_CATEGORIES.map((c) => {
                 const catTotal = c.subs.reduce((n, s) => n + (counts[`${c.id}|${s.id}`] || 0), 0);
