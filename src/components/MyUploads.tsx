@@ -349,17 +349,30 @@ const MyUploads = () => {
                           <ImagePlus size={10} /> 16:9
                         </span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => pickThumb(reel.id, "portrait")}
-                        title="Change portrait thumbnail"
-                        className="relative w-24 h-[84px] rounded-lg overflow-hidden bg-muted"
-                      >
-                        {portrait ? <img src={portrait} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">Portrait</div>}
-                        <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
-                          <ImagePlus size={10} /> 2:3
-                        </span>
-                      </button>
+                      <div className="relative w-24">
+                        <button
+                          type="button"
+                          onClick={() => pickThumb(reel.id, "portrait")}
+                          title="Change portrait thumbnail"
+                          className="relative w-24 h-[84px] rounded-lg overflow-hidden bg-muted block"
+                        >
+                          {portrait ? <img src={portrait} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">Portrait</div>}
+                          <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
+                            <ImagePlus size={10} /> 2:3
+                          </span>
+                        </button>
+                        {portrait && (
+                          <button
+                            type="button"
+                            onClick={() => setHeroPreview({ url: portrait })}
+                            title="Preview hero banner"
+                            className="absolute top-1 right-1 rounded-full bg-background/80 p-1 text-foreground"
+                          >
+                            <Eye size={11} />
+                          </button>
+                        )}
+                      </div>
+
                     </div>
 
 
