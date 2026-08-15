@@ -103,6 +103,7 @@ const MyUploads = () => {
   const [thumbTargetId, setThumbTargetId] = useState<string | null>(null);
   const [pendingThumb, setPendingThumb] = useState<{ file: File; url: string } | null>(null);
   const [thumbKind, setThumbKind] = useState<ThumbKind>("landscape");
+  const [heroPreview, setHeroPreview] = useState<{ url: string } | null>(null);
 
 
 
