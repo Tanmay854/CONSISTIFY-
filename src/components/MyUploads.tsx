@@ -103,6 +103,7 @@ const MyUploads = () => {
   const [thumbTargetId, setThumbTargetId] = useState<string | null>(null);
   const [pendingThumb, setPendingThumb] = useState<{ file: File; url: string } | null>(null);
   const [thumbKind, setThumbKind] = useState<ThumbKind>("landscape");
+  const [heroPreview, setHeroPreview] = useState<{ url: string } | null>(null);
 
 
 
@@ -275,6 +276,22 @@ const MyUploads = () => {
         </div>
       )}
 
+      {heroPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-6" onClick={() => setHeroPreview(null)}>
+          <div className="w-full max-w-xs space-y-3" onClick={(e) => e.stopPropagation()}>
+            <p className="text-foreground text-sm font-semibold">Hero banner preview</p>
+            <div className="relative w-full aspect-[2/3] overflow-hidden rounded-2xl bg-muted">
+              <img src={heroPreview.url} alt="Hero banner preview" className="w-full h-full object-cover" />
+              <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/60 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/85 to-transparent" />
+            </div>
+            <p className="text-muted-foreground text-[11px]">This is how it appears in the hero banner and poster grid.</p>
+            <button onClick={() => setHeroPreview(null)} className="w-full rounded-xl bg-muted text-muted-foreground text-xs font-semibold py-2.5">Close</button>
+          </div>
+        </div>
+      )}
+
+
 
       <div className="relative">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -332,17 +349,30 @@ const MyUploads = () => {
                           <ImagePlus size={10} /> 16:9
                         </span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => pickThumb(reel.id, "portrait")}
-                        title="Change portrait thumbnail"
-                        className="relative w-24 h-[84px] rounded-lg overflow-hidden bg-muted"
-                      >
-                        {portrait ? <img src={portrait} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">Portrait</div>}
-                        <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
-                          <ImagePlus size={10} /> 2:3
-                        </span>
-                      </button>
+                      <div className="relative w-24">
+                        <button
+                          type="button"
+                          onClick={() => pickThumb(reel.id, "portrait")}
+                          title="Change portrait thumbnail"
+                          className="relative w-24 h-[84px] rounded-lg overflow-hidden bg-muted block"
+                        >
+                          {portrait ? <img src={portrait} alt={reel.title || "video"} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">Portrait</div>}
+                          <span className="absolute bottom-0 inset-x-0 bg-background/70 text-[9px] py-0.5 text-foreground flex items-center justify-center gap-1">
+                            <ImagePlus size={10} /> 2:3
+                          </span>
+                        </button>
+                        {portrait && (
+                          <button
+                            type="button"
+                            onClick={() => setHeroPreview({ url: portrait })}
+                            title="Preview hero banner"
+                            className="absolute top-1 right-1 rounded-full bg-background/80 p-1 text-foreground"
+                          >
+                            <Eye size={11} />
+                          </button>
+                        )}
+                      </div>
+
                     </div>
 
 
