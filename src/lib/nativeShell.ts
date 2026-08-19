@@ -20,7 +20,6 @@ export async function initNativeShell() {
   try {
     const { Keyboard, KeyboardResize } = await import("@capacitor/keyboard");
     await Keyboard.setResizeMode({ mode: KeyboardResize.Native });
-    await Keyboard.setScrollAssist({ isDisabled: false });
     await Keyboard.setAccessoryBarVisible({ isVisible: false });
 
     // Keep the focused input visible when the keyboard appears.
