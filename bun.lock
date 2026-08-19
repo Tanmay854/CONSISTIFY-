@@ -11,6 +11,8 @@
         "@capacitor/browser": "6.0.6",
         "@capacitor/core": "6.2.1",
         "@capacitor/ios": "6.2.1",
+        "@capacitor/keyboard": "6",
+        "@capacitor/status-bar": "6",
         "@hookform/resolvers": "^3.10.0",
         "@radix-ui/react-accordion": "^1.2.11",
         "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -117,6 +119,10 @@
     "@capacitor/core": ["@capacitor/core@6.2.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@capacitor/core/-/core-6.2.1.tgz", { "dependencies": { "tslib": "^2.1.0" } }, "sha512-urZwxa7hVE/BnA18oCFAdizXPse6fCKanQyEqpmz6cBJ2vObwMpyJDG5jBeoSsgocS9+Ax+9vb4ducWJn0y2qQ=="],
 
     "@capacitor/ios": ["@capacitor/ios@6.2.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@capacitor/ios/-/ios-6.2.1.tgz", { "peerDependencies": { "@capacitor/core": "^6.2.0" } }, "sha512-tbMlQdQjxe1wyaBvYVU1yTojKJjgluZQsJkALuJxv/6F8QTw5b6vd7X785O/O7cMpIAZfUWo/vtAHzFkRV+kXw=="],
+
+    "@capacitor/keyboard": ["@capacitor/keyboard@6.0.4", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@capacitor/keyboard/-/keyboard-6.0.4.tgz", { "peerDependencies": { "@capacitor/core": "^6.0.0" } }, "sha512-tNeyQGxIOTiSv3g+dTxJ/plVpGMnB4daJuCHz1E2Kelo+jOx+FKlyFY9L1Ow144SCzuXK48NXr8WoxXfXgQEKA=="],
+
+    "@capacitor/status-bar": ["@capacitor/status-bar@6.0.3", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@capacitor/status-bar/-/status-bar-6.0.3.tgz", { "peerDependencies": { "@capacitor/core": "^6.0.0" } }, "sha512-nFlgSmtx6Zwaw0tEvZgQsWHBeOfWWB/AvEoCApopLT4mHkBVoSrwkLvy2PjZs5wxCbsmqvQczr3XCyTwaDZVQg=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.25.0", "", { "os": "aix", "cpu": "ppc64" }, "sha512-O7vun9Sf8DFjH2UtqK8Ku3LkquL9SZL8OLY1T5NZkA34+wG3OQF7cl4Ql8vdNzM6fzBbYfLaiRLIOZ+2FOCgBQ=="],
 
