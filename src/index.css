@@ -270,3 +270,23 @@ video {
 /* Hide horizontal scrollbar utility used in Courses rows */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* iOS WebView: no rubber-band on the document, no horizontal overflow,
+   and momentum scrolling inside scroll containers. */
+html, body {
+  overscroll-behavior-y: none;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+* {
+  -webkit-overflow-scrolling: touch;
+}
+/* Prevent iOS zoom-on-focus for form fields */
+input, textarea, select {
+  font-size: 16px;
+}

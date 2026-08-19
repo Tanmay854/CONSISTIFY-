@@ -66,7 +66,7 @@ const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () 
       <button
         onClick={onClose}
         aria-label="Close"
-        className="absolute top-4 left-4 z-20 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
+        className="absolute top-safe-4 left-4 z-20 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"
       >
         <X size={20} className="text-white" />
       </button>
