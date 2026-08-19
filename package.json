@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "android:sync": "npm run build && npx cap sync android",
-    "android:open": "npm run android:sync && npx cap open android"
+    "android:open": "npm run android:sync && npx cap open android",
+    "ios:sync": "npm run build && npx cap sync ios",
+    "ios:open": "npm run ios:sync && npx cap open ios"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
@@ -21,6 +23,8 @@
     "@capacitor/browser": "6.0.6",
     "@capacitor/core": "6.2.1",
     "@capacitor/ios": "6.2.1",
+    "@capacitor/keyboard": "6",
+    "@capacitor/status-bar": "6",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

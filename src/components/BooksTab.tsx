@@ -143,7 +143,7 @@ const BooksTab = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl pt-4 pb-3 px-5 border-b border-border/40">
+      <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 px-5 border-b border-border/40">
         <div className="flex items-baseline justify-between mb-3 pl-11">
           <h1 className="text-foreground text-2xl font-extrabold tracking-tight">Books</h1>
           <span className="text-muted-foreground text-[11px] uppercase tracking-[0.2em]">Library</span>

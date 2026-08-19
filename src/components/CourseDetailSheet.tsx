@@ -93,7 +93,7 @@ const CourseDetailSheet = ({
           <button
             onClick={onClose}
             aria-label="Back"
-            className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/50 backdrop-blur-xl border border-white/10 flex items-center justify-center"
+            className="absolute top-safe-4 left-4 w-10 h-10 rounded-full bg-black/50 backdrop-blur-xl border border-white/10 flex items-center justify-center"
           >
             <ChevronLeft size={20} className="text-white" />
           </button>

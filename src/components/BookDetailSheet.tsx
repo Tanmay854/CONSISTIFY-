@@ -126,7 +126,7 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.1 } }}
           transition={CONTENT_TRANSITION}
-          className="fixed top-4 right-4 z-20 w-10 h-10 rounded-full bg-secondary/80 backdrop-blur flex items-center justify-center"
+          className="fixed top-safe-4 right-4 z-20 w-10 h-10 rounded-full bg-secondary/80 backdrop-blur flex items-center justify-center"
         >
           <X size={20} className="text-foreground" />
         </motion.button>

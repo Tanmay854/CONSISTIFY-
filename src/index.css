@@ -65,6 +65,40 @@
 }
 
 @layer utilities {
+  /* ---------------------------------------------------------------
+     App-wide safe-area system (Dynamic Island / notch / home indicator)
+     Use these instead of hard-coded top/bottom padding.
+     --------------------------------------------------------------- */
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .safe-x {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .safe-area {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  /* Offsets for fixed/absolute controls that must clear the Dynamic Island */
+  .top-safe-4 {
+    top: calc(env(safe-area-inset-top, 0px) + 1rem);
+  }
+  .top-safe-16 {
+    top: calc(env(safe-area-inset-top, 0px) + 4rem);
+  }
+  .mt-safe {
+    margin-top: env(safe-area-inset-top, 0px);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
   /* Wide-tracked uppercase wordmark style used for section headers */
   .font-brand {
     font-family: 'Inter', sans-serif;
@@ -236,3 +270,23 @@ video {
 /* Hide horizontal scrollbar utility used in Courses rows */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* iOS WebView: no rubber-band on the document, no horizontal overflow,
+   and momentum scrolling inside scroll containers. */
+html, body {
+  overscroll-behavior-y: none;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+* {
+  -webkit-overflow-scrolling: touch;
+}
+/* Prevent iOS zoom-on-focus for form fields */
+input, textarea, select {
+  font-size: 16px;
+}

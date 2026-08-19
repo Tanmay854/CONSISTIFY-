@@ -292,7 +292,7 @@ const BookLibrary = () => {
     <div className="min-h-screen bg-black text-white">
       <div className="mx-auto w-full max-w-[520px] pb-32">
         {/* Header */}
-        <header className="sticky top-0 z-20 px-5 pt-6 pb-3 bg-black/70 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 px-5 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-3 bg-black/70 backdrop-blur-xl">
           <div className="flex items-baseline justify-between mb-3">
             <h1 className="text-2xl font-extrabold tracking-tight">Books</h1>
             <span className="text-[11px] uppercase tracking-[0.2em] text-white/45">Library</span>

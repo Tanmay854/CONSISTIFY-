@@ -288,7 +288,7 @@ const LongGameSection = ({
       <button
         type="button"
         aria-label="Search"
-        className="absolute top-4 right-4 z-40 w-9 h-9 rounded-full bg-black/35 backdrop-blur-md flex items-center justify-center text-foreground"
+        className="absolute top-safe-4 right-4 z-40 w-9 h-9 rounded-full bg-black/35 backdrop-blur-md flex items-center justify-center text-foreground"
       >
         <Search size={17} />
       </button>
