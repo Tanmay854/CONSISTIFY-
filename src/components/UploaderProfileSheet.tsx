@@ -214,13 +214,19 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
             <div className="px-4 pt-4 pb-8">
               {loading ? (
                 <div className="p-10 text-center text-white/50 text-sm">Loading…</div>
-              ) : tab === "reels" ? (
-                reels.length === 0 ? (
-                  <div className="p-10 text-center text-white/50 text-sm">No long game videos yet</div>
-                ) : (
+              ) : (() => {
+                const list = tab === "reels" ? longGame : quickClips;
+                if (list.length === 0) {
+                  return (
+                    <div className="p-10 text-center text-white/50 text-sm">
+                      {tab === "reels" ? "No long game videos yet" : "No quick clips yet"}
+                    </div>
+                  );
+                }
+                return (
                   <div className="grid grid-cols-2 gap-2.5">
-                    {reels.map((r) => {
-                      const thumb = getVideoThumbnail(r.video_url);
+                    {list.map((r) => {
+                      const thumb = r.thumbnail_portrait_url || getVideoThumbnail(r.video_url, r.thumbnail_url);
                       return (
                         <button
                           key={r.id}
@@ -244,31 +250,10 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
                       );
                     })}
                   </div>
-                )
-              ) : (
-                quoteSets.length === 0 ? (
-                  <div className="p-10 text-center text-white/50 text-sm">No quick clips yet</div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {quoteSets.map((q) => (
-                      <button
-                        key={q.id}
-                        onClick={() => setViewing({
-                          kind: "quote", id: q.id, title: q.title, description: q.description,
-                          image_url: q.image_url, category: q.category, set_id: q.set_id,
-                        })}
-                        className="relative aspect-square bg-white/5 overflow-hidden rounded-2xl active:scale-[0.98] transition-transform"
-                      >
-                        <img src={q.image_url} alt="" loading="lazy" className="w-full h-full object-cover" />
-                        {q.set_id && (
-                          <div className="absolute top-2 right-2 bg-black/55 backdrop-blur rounded-md px-1.5 py-0.5 text-[9px] text-white font-semibold tracking-wide">SET</div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )
-              )}
+                );
+              })()}
             </div>
+
           </div>
         </div>
       </div>
