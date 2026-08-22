@@ -14,7 +14,7 @@ type UploadType = "video" | "photo" | "ad";
 type AdSource = "url" | "file";
 
 const UploadTab = () => {
-  const { canUpload, isAdmin, user } = useAuth();
+  const { canUpload, user } = useAuth();
   const [activeType, setActiveType] = useState<UploadType>("video");
   const [showMyUploads, setShowMyUploads] = useState(false);
   const [loading, setLoading] = useState(false);
