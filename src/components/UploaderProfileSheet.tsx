@@ -173,8 +173,9 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
               <div className="mt-6 w-full max-w-xs grid grid-cols-3">
                 {[
                   { label: "Posts", value: totalPosts },
-                  { label: "Long Game", value: reels.length },
-                  { label: "Quick Clips", value: quoteSets.length },
+                  { label: "Long Game", value: longGame.length },
+                  { label: "Quick Clips", value: quickClips.length },
+
                 ].map((s) => (
                   <div key={s.label} className="flex flex-col items-center">
                     <span className="text-white text-lg font-semibold tabular-nums">{s.value}</span>
