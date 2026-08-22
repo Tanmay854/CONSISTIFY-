@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Play, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchProfile, type UploaderProfile } from "@/lib/uploaderProfiles";
@@ -8,14 +8,15 @@ import SinglePostViewer, { type PostForViewer } from "@/components/SinglePostVie
 type ReelRow = {
   id: string; title: string | null; description: string | null;
   video_url: string; video_fit: string | null; trim_start: number | null;
-};
-
-type QuoteRow = {
-  id: string; title: string | null; description: string | null;
-  image_url: string; category: string; set_id: string | null; set_position: number;
+  trim_end: number | null; feed: string; thumbnail_portrait_url: string | null;
+  thumbnail_url: string | null;
 };
 
 type Tab = "reels" | "quotes";
+
+// Videos shorter than this (in seconds) always belong to Quick Clips.
+const QUICK_CLIP_MAX_SECONDS = 180;
+
 
 // Height reserved for the bottom navigation bar — the sheet and backdrop
 // stop above this so the nav remains fully sharp and visible.
