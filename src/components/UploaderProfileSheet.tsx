@@ -25,7 +25,6 @@ const NAV_H = 64;
 const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: () => void }) => {
   const [profile, setProfile] = useState<UploaderProfile | null>(null);
   const [reels, setReels] = useState<ReelRow[]>([]);
-  const [quoteSets, setQuoteSets] = useState<QuoteRow[]>([]);
   const [tab, setTab] = useState<Tab>("reels");
   const [viewing, setViewing] = useState<PostForViewer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,40 +51,41 @@ const UploaderProfileSheet = ({ userId, onClose }: { userId: string; onClose: ()
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [p, r, q] = await Promise.all([
+      const [p, r] = await Promise.all([
         fetchProfile(userId),
         supabase.from("reels")
-          .select("id,title,description,video_url,video_fit,trim_start")
+          .select("id,title,description,video_url,video_fit,trim_start,trim_end,feed,thumbnail_portrait_url,thumbnail_url")
           .eq("uploaded_by", userId)
           .order("created_at", { ascending: false })
-          .limit(60),
-        supabase.from("quotes")
-          .select("id,title,description,image_url,category,set_id,set_position,created_at")
-          .eq("uploaded_by", userId)
-          .order("created_at", { ascending: false })
-          .order("set_position", { ascending: true })
           .limit(120),
       ]);
       if (cancelled) return;
       setProfile(p);
       setReels((r.data as ReelRow[]) || []);
-      const seen = new Set<string>();
-      const collapsed: QuoteRow[] = [];
-      for (const row of ((q.data as (QuoteRow & { created_at: string })[]) || [])) {
-        const key = row.set_id || row.id;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        collapsed.push(row);
-      }
-      setQuoteSets(collapsed);
       setLoading(false);
     })();
     return () => { cancelled = true; };
   }, [userId]);
 
+  // A video is a Quick Clip when it was posted to the quick clips feed OR its
+  // trimmed length is under 3 minutes.
+  const { longGame, quickClips } = useMemo(() => {
+    const long: ReelRow[] = [];
+    const quick: ReelRow[] = [];
+    for (const r of reels) {
+      const start = r.trim_start ?? 0;
+      const end = r.trim_end ?? null;
+      const seconds = end != null ? end - start : null;
+      const isQuick = r.feed === "quick_spark" || (seconds != null && seconds < QUICK_CLIP_MAX_SECONDS);
+      (isQuick ? quick : long).push(r);
+    }
+    return { longGame: long, quickClips: quick };
+  }, [reels]);
+
   const safeName = (v: string | null | undefined) => (v && !v.includes("@") ? v : null);
   const handle = profile?.username || safeName(profile?.display_name) || "user";
-  const totalPosts = reels.length + quoteSets.length;
+  const totalPosts = reels.length;
+
 
   const onTouchStart = (e: React.TouchEvent) => { startY.current = e.touches[0].clientY; };
   const onTouchMove = (e: React.TouchEvent) => {
