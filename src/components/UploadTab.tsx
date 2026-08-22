@@ -1,6 +1,6 @@
 import { UPLOAD_FEEDS } from "@/lib/videoFeeds";
 import { useEffect, useMemo, useState } from "react";
-import { Film, Upload, Check, FolderOpen, Link2, FileVideo, Megaphone } from "lucide-react";
+import { Film, Upload, Check, FolderOpen, Link2, FileVideo } from "lucide-react";
 import * as tus from "tus-js-client";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
