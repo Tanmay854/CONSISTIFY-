@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, BookOpen, GraduationCap, Camera, FilePlus } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
-import AdminPanel from "./AdminPanel";
 import ApplyUploaderSheet from "./ApplyUploaderSheet";
-import BooksAdminSheet from "./BooksAdminSheet";
-import BooksBulkImportSheet from "./BooksBulkImportSheet";
-import CoursesAdminSheet from "./CoursesAdminSheet";
 import { fetchProfile, updateProfileCache, type UploaderProfile } from "@/lib/uploaderProfiles";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
@@ -16,10 +12,6 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
   const { user, isAdmin, canUpload, signOut, loading: authLoading } = useAuth();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
-  const [showBooksAdmin, setShowBooksAdmin] = useState(false);
-  const [showBooksBulk, setShowBooksBulk] = useState(false);
-  const [showCoursesAdmin, setShowCoursesAdmin] = useState(false);
   const [showApply, setShowApply] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
@@ -363,10 +355,6 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
       </div>
 
       <AuthSheet open={showAuth} onClose={() => { setShowAuth(false); fetchPreferences(); }} />
-      <AdminPanel open={showAdmin} onClose={() => setShowAdmin(false)} />
-      <BooksAdminSheet open={showBooksAdmin} onClose={() => setShowBooksAdmin(false)} />
-      <BooksBulkImportSheet open={showBooksBulk} onClose={() => setShowBooksBulk(false)} />
-      <CoursesAdminSheet open={showCoursesAdmin} onClose={() => setShowCoursesAdmin(false)} />
       <ApplyUploaderSheet open={showApply} onClose={() => setShowApply(false)} />
     </>
   );
