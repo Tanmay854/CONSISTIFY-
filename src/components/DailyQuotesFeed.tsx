@@ -48,17 +48,28 @@ const DailyQuotesFeed = () => {
   const [bgId, setBgId] = useState<string | null>(() => {
     try { return localStorage.getItem(BG_KEY); } catch { return null; }
   });
+  // Stored topics are only honoured when they still exist in the taxonomy.
   const [cat, setCat] = useState<string | null>(() => {
-    try { return localStorage.getItem(CAT_KEY); } catch { return null; }
+    try {
+      const id = localStorage.getItem(CAT_KEY);
+      return id && findCategory(id) ? id : null;
+    } catch { return null; }
   });
   const [sub, setSub] = useState<string | null>(() => {
-    try { return localStorage.getItem(SUB_KEY); } catch { return null; }
+    try {
+      const c = localStorage.getItem(CAT_KEY);
+      const s = localStorage.getItem(SUB_KEY);
+      return c && s && findCategory(c)?.subs.some((x) => x.id === s) ? s : null;
+    } catch { return null; }
   });
   const [step, setStep] = useState<Step>(() => {
     try {
-      return localStorage.getItem(SUB_KEY) ? "feed" : "category";
+      const c = localStorage.getItem(CAT_KEY);
+      const s = localStorage.getItem(SUB_KEY);
+      return c && s && findCategory(c)?.subs.some((x) => x.id === s) ? "feed" : "category";
     } catch { return "category"; }
   });
+
   const [loading, setLoading] = useState(true);
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -181,17 +192,24 @@ const DailyQuotesFeed = () => {
           <h2 className="text-foreground text-2xl font-bold tracking-tight" style={stagger(0)}>What's on your mind?</h2>
           <p className="text-muted-foreground text-xs mt-1 mb-4" style={stagger(1)}>Pick a topic to get quotes that fit.</p>
           <div className="space-y-2">
-            {QUOTE_CATEGORIES.map((c, i) => (
-              <button
-                key={c.id}
-                onClick={() => chooseCat(c.id)}
-                style={stagger(i + 2)}
-                className="w-full text-left bg-secondary text-secondary-foreground rounded-xl px-4 py-3.5 text-sm font-semibold active:scale-[0.98] transition-transform"
-              >
-                {c.label}
-              </button>
-            ))}
+            {QUOTE_CATEGORIES.length === 0 ? (
+              <p className="text-muted-foreground text-sm py-16 text-center" style={stagger(2)}>
+                New topics are on the way.
+              </p>
+            ) : (
+              QUOTE_CATEGORIES.map((c, i) => (
+                <button
+                  key={c.id}
+                  onClick={() => chooseCat(c.id)}
+                  style={stagger(i + 2)}
+                  className="w-full text-left bg-secondary text-secondary-foreground rounded-xl px-4 py-3.5 text-sm font-semibold active:scale-[0.98] transition-transform"
+                >
+                  {c.label}
+                </button>
+              ))
+            )}
           </div>
+
         </div>
       </div>
     );
