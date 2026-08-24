@@ -74,6 +74,7 @@ export const QUOTE_CATEGORIES: QuoteCategory[] = [
       s("Communication", "MessageCircle"),
       s("Boundaries", "Shield"),
       s("Toxic Relationships", "AlertTriangle"),
+      s("Fake People", "User"),
       s("Missing Someone", "Hourglass"),
       s("Friendship", "Users"),
       s("Family", "Home"),
