@@ -48,17 +48,28 @@ const DailyQuotesFeed = () => {
   const [bgId, setBgId] = useState<string | null>(() => {
     try { return localStorage.getItem(BG_KEY); } catch { return null; }
   });
+  // Stored topics are only honoured when they still exist in the taxonomy.
   const [cat, setCat] = useState<string | null>(() => {
-    try { return localStorage.getItem(CAT_KEY); } catch { return null; }
+    try {
+      const id = localStorage.getItem(CAT_KEY);
+      return id && findCategory(id) ? id : null;
+    } catch { return null; }
   });
   const [sub, setSub] = useState<string | null>(() => {
-    try { return localStorage.getItem(SUB_KEY); } catch { return null; }
+    try {
+      const c = localStorage.getItem(CAT_KEY);
+      const s = localStorage.getItem(SUB_KEY);
+      return c && s && findCategory(c)?.subs.some((x) => x.id === s) ? s : null;
+    } catch { return null; }
   });
   const [step, setStep] = useState<Step>(() => {
     try {
-      return localStorage.getItem(SUB_KEY) ? "feed" : "category";
+      const c = localStorage.getItem(CAT_KEY);
+      const s = localStorage.getItem(SUB_KEY);
+      return c && s && findCategory(c)?.subs.some((x) => x.id === s) ? "feed" : "category";
     } catch { return "category"; }
   });
+
   const [loading, setLoading] = useState(true);
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
