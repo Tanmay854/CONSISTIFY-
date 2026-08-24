@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronUp, Plus, Trash2, Type } from "lucide-react";
+import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronRight, ChevronUp, Plus, Trash2, Type } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareQuote } from "@/lib/shareQuote";
-import { QUOTE_CATEGORIES, findCategory } from "@/lib/quoteTopics";
+import { QUOTE_CATEGORIES, TOTAL_SUBTOPICS, TOTAL_TOPICS, findCategory } from "@/lib/quoteTopics";
+import QuoteIcon from "@/components/QuoteIcon";
 import FittedQuote from "@/components/FittedQuote";
 import FontPicker from "@/components/FontPicker";
 import { DEFAULT_QUOTE_FONT_ID, findQuoteFont } from "@/lib/quoteFonts";
@@ -39,6 +40,12 @@ type Step = "category" | "sub" | "wallpaper" | "feed";
 const stagger = (i: number) => ({
   animation: "fade-in 0.42s cubic-bezier(0.16,1,0.3,1) both",
   animationDelay: `${Math.min(i, 14) * 45}ms`,
+});
+
+/** iOS-style row entrance: slides in from the right, staggered. */
+const rowIn = (i: number) => ({
+  animation: "quote-row-in 0.42s cubic-bezier(.25,.9,.35,1) both",
+  animationDelay: `${Math.min(i, 24) * 45}ms`,
 });
 
 const DailyQuotesFeed = () => {
@@ -187,55 +194,33 @@ const DailyQuotesFeed = () => {
 
   if (step === "category") {
     return (
-      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans">
-        <div className="px-4 pt-20">
-          <h2 className="text-foreground text-2xl font-bold tracking-tight" style={stagger(0)}>What's on your mind?</h2>
-          <p className="text-muted-foreground text-xs mt-1 mb-4" style={stagger(1)}>Pick a topic to get quotes that fit.</p>
-          <div className="space-y-2">
-            {QUOTE_CATEGORIES.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-16 text-center" style={stagger(2)}>
-                New topics are on the way.
-              </p>
-            ) : (
-              QUOTE_CATEGORIES.map((c, i) => (
-                <button
-                  key={c.id}
-                  onClick={() => chooseCat(c.id)}
-                  style={stagger(i + 2)}
-                  className="w-full text-left bg-secondary text-secondary-foreground rounded-xl px-4 py-3.5 text-sm font-semibold active:scale-[0.98] transition-transform"
-                >
-                  {c.label}
-                </button>
-              ))
-            )}
+      <div className="min-h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans">
+        <div className="max-w-[430px] mx-auto">
+          <div className="px-5 pt-[calc(env(safe-area-inset-top,0px)+56px)] pb-4">
+            <h1 className="text-foreground text-[34px] font-extrabold leading-[1.08] tracking-[-0.025em]">
+              What's on<br />your mind?
+            </h1>
+            <p className="text-[16px] text-muted-foreground mt-1">Pick a topic to get quotes that fit.</p>
+            <p className="text-[13px] font-medium mt-1.5" style={{ color: "#636366" }}>
+              {TOTAL_TOPICS} Topics · {TOTAL_SUBTOPICS} Subtopics
+            </p>
           </div>
 
-        </div>
-      </div>
-    );
-  }
-
-  if (step === "sub" && category) {
-    return (
-      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans">
-        <div className="px-4 pt-20">
-          <button
-            onClick={() => setStep("category")}
-            className="flex items-center gap-1 text-muted-foreground text-xs mb-3"
-          >
-            <ChevronLeft size={14} /> Topics
-          </button>
-          <h2 className="text-foreground text-2xl font-bold tracking-tight" style={stagger(0)}>{category.label}</h2>
-          <p className="text-muted-foreground text-xs mt-1 mb-4" style={stagger(1)}>Choose what you're dealing with.</p>
-          <div className="space-y-2">
-            {category.subs.map((s, i) => (
+          <div className="mx-4 mb-7 rounded-[14px] overflow-hidden" style={{ background: "#1c1c1e" }}>
+            {QUOTE_CATEGORIES.map((c, i) => (
               <button
-                key={s.id}
-                onClick={() => chooseSub(s.id)}
-                style={stagger(i + 2)}
-                className="w-full text-left bg-secondary text-secondary-foreground rounded-xl px-4 py-3.5 text-sm font-semibold active:scale-[0.98] transition-transform"
+                key={c.id}
+                onClick={() => chooseCat(c.id)}
+                style={rowIn(i)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left border-b-[0.5px] border-[#38383a] last:border-b-0 active:bg-white/5"
               >
-                {s.label}
+                <span className="w-[29px] h-[29px] rounded-[7px] flex items-center justify-center shrink-0" style={{ background: "#2c2c2e" }}>
+                  <QuoteIcon name={c.icon} size={16} />
+                </span>
+                <span className="flex-1 min-w-0 text-foreground text-[16.5px] font-medium tracking-[-0.01em] leading-[1.25]">
+                  {c.label}
+                </span>
+                <ChevronRight size={16} style={{ color: "#48484a" }} className="shrink-0" />
               </button>
             ))}
           </div>
@@ -243,6 +228,61 @@ const DailyQuotesFeed = () => {
       </div>
     );
   }
+
+  if (step === "sub" && category) {
+    return (
+      <div
+        key={category.id}
+        className="min-h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans"
+        style={{ animation: "quote-page-in .38s cubic-bezier(.25,.9,.35,1) both" }}
+      >
+        <div className="max-w-[430px] mx-auto">
+          <div className="pt-[calc(env(safe-area-inset-top,0px)+48px)] pl-2.5 pr-4">
+            <button
+              onClick={() => setStep("category")}
+              className="flex items-center gap-0.5 text-foreground text-[17px] py-1.5 pl-1 pr-2"
+            >
+              <ChevronLeft size={22} /> Topics
+            </button>
+          </div>
+
+          <div className="px-5 pt-3.5 pb-4 flex items-center gap-3.5">
+            <span className="w-[52px] h-[52px] rounded-[13px] flex items-center justify-center shrink-0" style={{ background: "#2c2c2e" }}>
+              <QuoteIcon name={category.icon} size={26} />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-foreground text-[22px] font-bold tracking-[-0.01em] leading-[1.2]">{category.label}</h2>
+              <p className="text-[14px] text-muted-foreground mt-0.5">{category.subs.length} Subtopics</p>
+            </div>
+          </div>
+
+          <div className="mx-4 mb-7 rounded-[14px] overflow-hidden py-1" style={{ background: "#1c1c1e" }}>
+            {category.subs.map((sb, i) => (
+              <button
+                key={sb.id}
+                onClick={() => chooseSub(sb.id)}
+                style={rowIn(i)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left border-b-[0.5px] border-[#29292b] last:border-b-0 active:bg-white/5"
+              >
+                <span className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: "#232325" }}>
+                  {sb.glyph ? (
+                    <span className="text-[13px] text-foreground/85 leading-none">{sb.glyph}</span>
+                  ) : (
+                    <QuoteIcon name={sb.icon} size={12} />
+                  )}
+                </span>
+                <span className="flex-1 min-w-0 text-[15px] tracking-[-0.01em]" style={{ color: "#d1d1d3" }}>
+                  {sb.label}
+                </span>
+                <ChevronRight size={14} style={{ color: "#3a3a3c" }} className="shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   if (step === "wallpaper") {
     return (
