@@ -196,7 +196,7 @@ const DailyQuotesFeed = () => {
     return (
       <div className="min-h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans">
         <div className="max-w-[430px] mx-auto">
-          <div className="px-5 pt-[calc(env(safe-area-inset-top,0px)+28px)] pb-4">
+          <div className="px-5 pt-[calc(env(safe-area-inset-top,0px)+56px)] pb-4">
             <h1 className="text-foreground text-[34px] font-extrabold leading-[1.08] tracking-[-0.025em]">
               What's on<br />your mind?
             </h1>
@@ -237,7 +237,7 @@ const DailyQuotesFeed = () => {
         style={{ animation: "quote-page-in .38s cubic-bezier(.25,.9,.35,1) both" }}
       >
         <div className="max-w-[430px] mx-auto">
-          <div className="pt-[calc(env(safe-area-inset-top,0px)+22px)] pl-2.5 pr-4">
+          <div className="pt-[calc(env(safe-area-inset-top,0px)+48px)] pl-2.5 pr-4">
             <button
               onClick={() => setStep("category")}
               className="flex items-center gap-0.5 text-foreground text-[17px] py-1.5 pl-1 pr-2"
