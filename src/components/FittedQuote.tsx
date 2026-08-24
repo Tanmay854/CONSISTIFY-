@@ -106,7 +106,7 @@ const FittedQuote = ({ text, author, font, active = true, scale = 1 }: Props) =>
           textWrap: "balance",
         } as React.CSSProperties}
       >
-        {`“${text}”`}
+        {text}
       </div>
 
       <p
@@ -128,7 +128,7 @@ const FittedQuote = ({ text, author, font, active = true, scale = 1 }: Props) =>
         } as React.CSSProperties}
         className="text-center text-foreground w-full"
       >
-        {`“${text}”`}
+        {text}
       </p>
 
       {author && (
