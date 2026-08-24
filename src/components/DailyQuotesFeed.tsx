@@ -194,7 +194,7 @@ const DailyQuotesFeed = () => {
 
   if (step === "category") {
     return (
-      <div className="min-h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans">
+      <div className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans">
         <div className="max-w-[430px] mx-auto">
           <div className="px-5 pt-[calc(env(safe-area-inset-top,0px)+56px)] pb-4">
             <h1 className="text-foreground text-[34px] font-extrabold leading-[1.08] tracking-[-0.025em]">
@@ -233,7 +233,7 @@ const DailyQuotesFeed = () => {
     return (
       <div
         key={category.id}
-        className="min-h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans"
+        className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans"
         style={{ animation: "quote-page-in .38s cubic-bezier(.25,.9,.35,1) both" }}
       >
         <div className="max-w-[430px] mx-auto">
