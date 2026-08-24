@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronUp, Plus, Trash2, Type } from "lucide-react";
+import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronRight, ChevronUp, Plus, Trash2, Type } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareQuote } from "@/lib/shareQuote";
-import { QUOTE_CATEGORIES, findCategory } from "@/lib/quoteTopics";
+import { QUOTE_CATEGORIES, TOTAL_SUBTOPICS, TOTAL_TOPICS, findCategory } from "@/lib/quoteTopics";
+import QuoteIcon from "@/components/QuoteIcon";
 import FittedQuote from "@/components/FittedQuote";
 import FontPicker from "@/components/FontPicker";
 import { DEFAULT_QUOTE_FONT_ID, findQuoteFont } from "@/lib/quoteFonts";
@@ -39,6 +40,12 @@ type Step = "category" | "sub" | "wallpaper" | "feed";
 const stagger = (i: number) => ({
   animation: "fade-in 0.42s cubic-bezier(0.16,1,0.3,1) both",
   animationDelay: `${Math.min(i, 14) * 45}ms`,
+});
+
+/** iOS-style row entrance: slides in from the right, staggered. */
+const rowIn = (i: number) => ({
+  animation: "quote-row-in 0.42s cubic-bezier(.25,.9,.35,1) both",
+  animationDelay: `${Math.min(i, 24) * 45}ms`,
 });
 
 const DailyQuotesFeed = () => {
