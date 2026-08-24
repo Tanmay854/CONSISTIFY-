@@ -192,17 +192,24 @@ const DailyQuotesFeed = () => {
           <h2 className="text-foreground text-2xl font-bold tracking-tight" style={stagger(0)}>What's on your mind?</h2>
           <p className="text-muted-foreground text-xs mt-1 mb-4" style={stagger(1)}>Pick a topic to get quotes that fit.</p>
           <div className="space-y-2">
-            {QUOTE_CATEGORIES.map((c, i) => (
-              <button
-                key={c.id}
-                onClick={() => chooseCat(c.id)}
-                style={stagger(i + 2)}
-                className="w-full text-left bg-secondary text-secondary-foreground rounded-xl px-4 py-3.5 text-sm font-semibold active:scale-[0.98] transition-transform"
-              >
-                {c.label}
-              </button>
-            ))}
+            {QUOTE_CATEGORIES.length === 0 ? (
+              <p className="text-muted-foreground text-sm py-16 text-center" style={stagger(2)}>
+                New topics are on the way.
+              </p>
+            ) : (
+              QUOTE_CATEGORIES.map((c, i) => (
+                <button
+                  key={c.id}
+                  onClick={() => chooseCat(c.id)}
+                  style={stagger(i + 2)}
+                  className="w-full text-left bg-secondary text-secondary-foreground rounded-xl px-4 py-3.5 text-sm font-semibold active:scale-[0.98] transition-transform"
+                >
+                  {c.label}
+                </button>
+              ))
+            )}
           </div>
+
         </div>
       </div>
     );
