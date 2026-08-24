@@ -50,8 +50,7 @@ const BooksTab = () => {
   const [selected, setSelected] = useState<SelectedBook | null>(null);
   const [staticDismiss, setStaticDismiss] = useState(false);
   const { recent, push, clear } = useRecent();
-  const { isAdmin, isSuperAdmin } = useAuth();
-  const canSearchById = isAdmin || isSuperAdmin;
+  const canSearchById = false;
 
   const [requestClose, setRequestClose] = useState(false);
 

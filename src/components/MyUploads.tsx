@@ -86,7 +86,7 @@ const VideoTrimmer = ({ reel, onSave }: { reel: Reel; onSave: (start: number, en
 };
 
 const MyUploads = () => {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("long_game");
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,7 +116,7 @@ const MyUploads = () => {
     if (!user) return;
     setLoading(true);
     const base = supabase.from("reels").select("*").order("created_at", { ascending: false });
-    const r = await (isAdmin ? base : base.eq("uploaded_by", user.id));
+    const r = await base.eq("uploaded_by", user.id);
     const rows = (r.data as Reel[]) || [];
     setReels(rows);
 
@@ -135,7 +135,7 @@ const MyUploads = () => {
       setViews({});
     }
     setLoading(false);
-  }, [user, isAdmin]);
+  }, [user]);
 
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
