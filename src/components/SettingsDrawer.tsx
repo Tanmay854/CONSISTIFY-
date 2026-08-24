@@ -9,7 +9,7 @@ import { fetchProfile, updateProfileCache, type UploaderProfile } from "@/lib/up
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
 const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClose: () => void; onOpenUpload?: () => void }) => {
-  const { user, isAdmin, canUpload, signOut, loading: authLoading } = useAuth();
+  const { user, canUpload, signOut, loading: authLoading } = useAuth();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);
   const [showApply, setShowApply] = useState(false);
@@ -184,7 +184,7 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
                 <div className="flex-1 min-w-0">
                   <p className="text-foreground text-sm font-medium truncate">{user.email}</p>
                   <p className="text-muted-foreground text-xs">
-                    {isAdmin ? "Admin" : canUpload ? "Uploader" : "Member"}
+                    {canUpload ? "Uploader" : "Member"}
                   </p>
                 </div>
               </div>

@@ -3,7 +3,6 @@ import { Search, X, Star } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
-import { useAuth } from "@/hooks/useAuth";
 import { sharedCoverUrl } from "@/lib/coverUrl";
 
 import BookDetailSheet from "./BookDetailSheet";
@@ -50,8 +49,7 @@ const BooksTab = () => {
   const [selected, setSelected] = useState<SelectedBook | null>(null);
   const [staticDismiss, setStaticDismiss] = useState(false);
   const { recent, push, clear } = useRecent();
-  const { isAdmin, isSuperAdmin } = useAuth();
-  const canSearchById = isAdmin || isSuperAdmin;
+  const canSearchById = false;
 
   const [requestClose, setRequestClose] = useState(false);
 
