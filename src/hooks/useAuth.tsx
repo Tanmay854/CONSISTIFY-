@@ -101,12 +101,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setPendingApplicationMessage(null);
   };
 
-  const isAdmin = roles.includes("admin");
-  const isSuperAdmin = roles.includes("super_admin");
-  const canUpload = isAdmin || roles.includes("uploader");
+  // This app is viewer + uploader only. All admin powers live in Discipline X Admin.
+  const canUpload = roles.includes("uploader") || roles.includes("admin");
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, roles, isAdmin, isSuperAdmin, canUpload, pendingApplicationMessage, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, roles, canUpload, pendingApplicationMessage, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
