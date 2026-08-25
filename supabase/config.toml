@@ -8,6 +8,3 @@ verify_jwt = false
 
 [functions.spotify-public-config]
 verify_jwt = false
-
-[functions.bunny-audit]
-verify_jwt = false
