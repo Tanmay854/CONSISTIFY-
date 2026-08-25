@@ -9,8 +9,6 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   roles: AppRole[];
-  isAdmin: boolean;
-  isSuperAdmin: boolean;
   canUpload: boolean;
   pendingApplicationMessage: string | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
