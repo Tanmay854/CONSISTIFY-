@@ -57,14 +57,17 @@ Deno.serve(async (req) => {
     const add = (v: unknown) => { if (typeof v === "string" && v) referenced.add(v.toLowerCase()); };
 
     const tables: [string, string[]][] = [
-      ["reels", ["video_url", "thumbnail_url", "thumbnail_portrait_url", "thumbnail_landscape_url", "bunny_video_guid"]],
-      ["quotes", ["image_url", "bunny_storage_path"]],
-      ["music", ["audio_url", "cover_url"]],
-      ["books", ["cover_url", "audio_url"]],
-      ["courses", ["thumbnail_url", "video_url"]],
-      ["tab_banners", ["image_url"]],
-      ["daily_quotes", ["background_url"]],
+      ["ads", ["media_url", "link_url"]],
+      ["books", ["cover_url", "cover_url_2", "audio_url"]],
+      ["courses", ["cover_image", "hero_image", "hero_video_url"]],
+      ["music", ["audio_url", "image_url"]],
       ["profiles", ["avatar_url"]],
+      ["quote_backgrounds", ["image_url"]],
+      ["quotes", ["image_url", "bunny_storage_path"]],
+      ["reels", ["video_url", "thumbnail_url", "thumbnail_portrait_url", "thumbnail_landscape_url", "bunny_video_guid"]],
+      ["tab_banners", ["image_url"]],
+      ["user_album_tracks", ["image"]],
+      ["user_albums", ["cover_url"]],
     ];
     const tableStatus: Record<string, string> = {};
     for (const [t, cols] of tables) {
