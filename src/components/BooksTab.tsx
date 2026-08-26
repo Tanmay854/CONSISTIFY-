@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
 import { sharedCoverUrl } from "@/lib/coverUrl";
+import { useBackHandler } from "@/lib/backHandler";
 
 import BookDetailSheet from "./BookDetailSheet";
 
@@ -67,6 +68,9 @@ const BooksTab = () => {
     setSelected(null);
     setRequestClose(false);
   }, []);
+
+  // Android hardware back closes the open book instead of the app.
+  useBackHandler(!!selected, closeBook);
 
   const load = useCallback(async () => {
     setLoading(true);

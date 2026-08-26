@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, Play, Plus, Check, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useBackHandler } from "@/lib/backHandler";
 import VideoPlayer from "@/components/VideoPlayer";
 import { getVideoThumbnail } from "@/lib/thumbUrl";
 import { getPlayableVideoUrl } from "@/lib/videoFeeds";
@@ -396,7 +397,8 @@ const LongGameSection = ({
           style={{ zIndex: closing ? 30 : 50 }}
         >
           {/* Top bar — back button on the right, no blur, no share */}
-          <div className="absolute top-0 left-0 right-0 z-30 h-14 flex items-center justify-end px-3 pointer-events-none">
+          <div className="absolute top-0 left-0 right-0 z-30 h-14 flex items-center justify-end px-3 pointer-events-none"
+            style={{ marginTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
             <button
               onClick={close}
               aria-label="Back"
