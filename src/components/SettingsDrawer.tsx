@@ -28,6 +28,16 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
   const [pwBusy, setPwBusy] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwInfo, setPwInfo] = useState<string | null>(null);
+  const [notifOn, setNotifOn] = useState(() => notificationsEnabled());
+
+  const toggleNotifications = async () => {
+    const next = !notifOn;
+    setNotifOn(next);
+    setNotificationsEnabled(next);
+    if (next) await scheduleQuoteNotifications();
+    else await cancelQuoteNotifications();
+  };
+
 
   // Profile editor state (username / avatar / bio for uploaders + admins)
   const [profile, setProfile] = useState<UploaderProfile | null>(null);
