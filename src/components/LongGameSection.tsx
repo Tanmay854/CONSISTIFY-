@@ -477,7 +477,8 @@ const LongGameSection = ({
               <button
                 onClick={() => setPlaying(null)}
                 aria-label="Close player"
-                className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/50 flex items-center justify-center"
+                className="absolute right-3 z-10 w-9 h-9 rounded-full bg-black/50 flex items-center justify-center"
+                style={{ top: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
               >
                 <X size={20} className="text-white" />
               </button>
