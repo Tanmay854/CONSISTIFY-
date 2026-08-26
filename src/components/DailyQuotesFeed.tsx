@@ -8,6 +8,8 @@ import FittedQuote from "@/components/FittedQuote";
 import FontPicker from "@/components/FontPicker";
 import { DEFAULT_QUOTE_FONT_ID, findQuoteFont } from "@/lib/quoteFonts";
 import "@/styles/quoteFonts.css";
+import { refreshQuoteNotifications } from "@/lib/quoteNotifications";
+
 import {
   LocalWallpaper,
   MAX_LOCAL_WALLPAPERS,
