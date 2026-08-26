@@ -30,9 +30,15 @@ export async function initNativeShell() {
       }
       App.exitApp();
     });
+
+    // Keep the queue of upcoming quote notifications fresh on every resume.
+    App.addListener("resume", () => { void scheduleQuoteNotifications(); });
   } catch {
     /* plugin unavailable */
   }
+
+  void scheduleQuoteNotifications();
+
 
   try {
     const { Keyboard, KeyboardResize } = await import("@capacitor/keyboard");
