@@ -130,7 +130,7 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
         </motion.button>
 
         {mode === "overview" && (
-          <Overview coverRef={coverRef} scrollRef={overviewScrollRef} book={book} coverLayoutId={dismissDown ? undefined : coverLayoutId} similar={similar} showBackdrop={settled && !dismissDown} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+          <Overview coverRef={coverRef} scrollRef={overviewScrollRef} book={book} coverLayoutId={dismissDown ? undefined : coverLayoutId} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
         )}
 
 
