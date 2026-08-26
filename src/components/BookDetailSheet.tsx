@@ -106,38 +106,33 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" style={{ height: "100dvh" }}>
-      {/* Backdrop travels with the page on a downward dismissal so the grid
-          is revealed underneath as the sheet slides away. */}
+      {/* One single compositing layer slides down: the opaque background lives on
+          the same element as the content so Android only moves one texture. */}
       <motion.div
-        className="absolute inset-0 bg-background"
+        className="relative h-full bg-background"
         initial={{ opacity: 0 }}
-        animate={{ opacity: contentVisible ? 1 : 0, y: dismissDown ? "100%" : 0 }}
-        exit={{ opacity: 0, transition: { duration: dismissDown ? 0 : 0.16, ease: "easeOut" } }}
-        transition={{ opacity: { duration: 0.22, ease: "easeOut" }, y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] } }}
-      />
-
-      <motion.div
-        className="relative h-full"
         animate={{ y: dismissDown ? "100%" : 0, opacity: contentVisible ? 1 : 0 }}
+        exit={{ opacity: 0, transition: { duration: dismissDown ? 0 : 0.16, ease: "easeOut" } }}
         transition={{ y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] }, opacity: { duration: 0.22, ease: "easeOut" } }}
         onAnimationComplete={() => { if (dismissDown) onCloseComplete(); }}
-        style={{ pointerEvents: dismissDown ? "none" : "auto" }}
+        style={{ pointerEvents: dismissDown ? "none" : "auto", willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
       >
         <motion.button
           onClick={handleClose}
           aria-label="Close"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: dismissDown ? 0 : 1 }}
           exit={{ opacity: 0, transition: { duration: 0.1 } }}
           transition={CONTENT_TRANSITION}
-          className="fixed top-safe-4 right-4 z-20 w-10 h-10 rounded-full bg-secondary/80 backdrop-blur flex items-center justify-center"
+          className="absolute top-safe-4 right-4 z-20 w-10 h-10 rounded-full bg-secondary/80 backdrop-blur flex items-center justify-center"
         >
           <X size={20} className="text-foreground" />
         </motion.button>
 
         {mode === "overview" && (
-          <Overview coverRef={coverRef} scrollRef={overviewScrollRef} book={book} coverLayoutId={dismissDown ? undefined : coverLayoutId} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+          <Overview coverRef={coverRef} scrollRef={overviewScrollRef} book={book} coverLayoutId={dismissDown ? undefined : coverLayoutId} similar={similar} showBackdrop={settled && !dismissDown} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
         )}
+
 
 
         {mode === "quiz" && <QuizFlow book={book} onDone={() => openSummaryAt(0)} />}
