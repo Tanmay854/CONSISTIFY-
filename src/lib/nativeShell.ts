@@ -1,5 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { runBackHandler } from "./backHandler";
+import { scheduleQuoteNotifications } from "./quoteNotifications";
+
 
 /**
  * Native (Capacitor) shell setup. Everything here is a no-op on the web build,
