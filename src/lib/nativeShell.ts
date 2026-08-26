@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core";
+import { runBackHandler } from "./backHandler";
 
 /**
  * Native (Capacitor) shell setup. Everything here is a no-op on the web build,
@@ -13,6 +14,22 @@ export async function initNativeShell() {
     // so our env(safe-area-inset-top) padding controls the layout.
     await StatusBar.setOverlaysWebView({ overlay: true });
     await StatusBar.setStyle({ style: Style.Dark });
+  } catch {
+    /* plugin unavailable */
+  }
+
+  // Android hardware / gesture back button: close the top-most overlay first,
+  // then fall back to history, and only exit the app at the root.
+  try {
+    const { App } = await import("@capacitor/app");
+    App.addListener("backButton", ({ canGoBack }) => {
+      if (runBackHandler()) return;
+      if (canGoBack && window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+      App.exitApp();
+    });
   } catch {
     /* plugin unavailable */
   }
