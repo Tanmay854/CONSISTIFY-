@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useBackHandler } from "@/lib/backHandler";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, Camera } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, Camera, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
 import ApplyUploaderSheet from "./ApplyUploaderSheet";
 import { fetchProfile, updateProfileCache, type UploaderProfile } from "@/lib/uploaderProfiles";
+import {
+  cancelQuoteNotifications,
+  notificationsEnabled,
+  scheduleQuoteNotifications,
+  setNotificationsEnabled,
+} from "@/lib/quoteNotifications";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
