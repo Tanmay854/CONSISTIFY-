@@ -1,5 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { runBackHandler } from "./backHandler";
+import { scheduleQuoteNotifications } from "./quoteNotifications";
+
 
 /**
  * Native (Capacitor) shell setup. Everything here is a no-op on the web build,
@@ -30,9 +32,15 @@ export async function initNativeShell() {
       }
       App.exitApp();
     });
+
+    // Keep the queue of upcoming quote notifications fresh on every resume.
+    App.addListener("resume", () => { void scheduleQuoteNotifications(); });
   } catch {
     /* plugin unavailable */
   }
+
+  void scheduleQuoteNotifications();
+
 
   try {
     const { Keyboard, KeyboardResize } = await import("@capacitor/keyboard");

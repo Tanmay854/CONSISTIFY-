@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useBackHandler } from "@/lib/backHandler";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, Camera } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, Camera, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AuthSheet from "./AuthSheet";
 import ApplyUploaderSheet from "./ApplyUploaderSheet";
 import { fetchProfile, updateProfileCache, type UploaderProfile } from "@/lib/uploaderProfiles";
+import {
+  cancelQuoteNotifications,
+  notificationsEnabled,
+  scheduleQuoteNotifications,
+  setNotificationsEnabled,
+} from "@/lib/quoteNotifications";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
@@ -22,6 +28,16 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
   const [pwBusy, setPwBusy] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwInfo, setPwInfo] = useState<string | null>(null);
+  const [notifOn, setNotifOn] = useState(() => notificationsEnabled());
+
+  const toggleNotifications = async () => {
+    const next = !notifOn;
+    setNotifOn(next);
+    setNotificationsEnabled(next);
+    if (next) await scheduleQuoteNotifications();
+    else await cancelQuoteNotifications();
+  };
+
 
   // Profile editor state (username / avatar / bio for uploaders + admins)
   const [profile, setProfile] = useState<UploaderProfile | null>(null);
@@ -203,7 +219,26 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
             )}
           </div>
 
-
+          {/* Daily quote notifications */}
+          <div className="px-5 py-4 border-b border-border">
+            <button
+              onClick={toggleNotifications}
+              className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+            >
+              <Bell size={18} className="text-primary" />
+              <span className="flex-1 text-left">
+                <span className="block text-foreground text-sm font-medium">Quote Notifications</span>
+                <span className="block text-muted-foreground text-xs">Every 3 hours, 6am–9pm</span>
+              </span>
+              <span
+                className={`w-10 h-6 rounded-full flex items-center px-0.5 transition-colors ${notifOn ? "bg-primary" : "bg-muted"}`}
+              >
+                <span
+                  className={`w-5 h-5 rounded-full bg-background transition-transform ${notifOn ? "translate-x-4" : ""}`}
+                />
+              </span>
+            </button>
+          </div>
 
 
           {/* Public profile editor (uploaders / admins) */}

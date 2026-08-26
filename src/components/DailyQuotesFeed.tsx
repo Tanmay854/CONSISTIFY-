@@ -8,6 +8,8 @@ import FittedQuote from "@/components/FittedQuote";
 import FontPicker from "@/components/FontPicker";
 import { DEFAULT_QUOTE_FONT_ID, findQuoteFont } from "@/lib/quoteFonts";
 import "@/styles/quoteFonts.css";
+import { refreshQuoteNotifications } from "@/lib/quoteNotifications";
+
 import {
   LocalWallpaper,
   MAX_LOCAL_WALLPAPERS,
@@ -148,8 +150,11 @@ const DailyQuotesFeed = () => {
   const chooseSub = useCallback((id: string) => {
     setSub(id);
     try { localStorage.setItem(SUB_KEY, id); } catch { /* empty */ }
+    // Upcoming quote notifications should follow the newly picked subtopic.
+    refreshQuoteNotifications();
     setStep(bgId ? "feed" : "wallpaper");
   }, [bgId]);
+
 
   const onUpload = useCallback(async (files: FileList | null) => {
     if (!files?.length) return;
