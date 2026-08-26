@@ -6,3 +6,11 @@ import { initNativeShell } from "./lib/nativeShell";
 void initNativeShell();
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Hand off from the instant HTML boot splash to the animated React splash.
+requestAnimationFrame(() => {
+  const boot = document.getElementById("boot-splash");
+  if (!boot) return;
+  boot.classList.add("hide");
+  setTimeout(() => boot.remove(), 220);
+});

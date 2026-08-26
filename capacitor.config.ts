@@ -11,7 +11,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // ...but remove it again before producing a release build (IPA/APK).
 const config: CapacitorConfig = {
   appId: 'app.lovable.eec72d85d0444261b29a8882a5f34c1e',
-  appName: 'DISCIPLINE X',
+  appName: 'Consistify',
   webDir: 'dist',
   ios: {
     contentInset: 'never',
