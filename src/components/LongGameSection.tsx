@@ -246,6 +246,8 @@ const LongGameSection = ({
     fallback = setTimeout(finish, DURATION + 60);
   }, []);
 
+  useBackHandler(!!open, close);
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const top = e.currentTarget.scrollTop;
     if (tickingRef.current) return;
