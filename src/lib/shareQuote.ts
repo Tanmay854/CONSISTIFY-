@@ -108,6 +108,38 @@ export const renderQuoteImage = async (
   return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png", 0.95));
 };
 
+const blobToBase64 = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("read failed"));
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.slice(result.indexOf(",") + 1));
+    };
+    reader.readAsDataURL(blob);
+  });
+
+/** Native (Capacitor) share: write the PNG to cache, then open the OS share sheet. */
+const shareNative = async (blob: Blob, text: string): Promise<boolean> => {
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (!Capacitor.isNativePlatform()) return false;
+
+    const { Filesystem, Directory } = await import("@capacitor/filesystem");
+    const { Share } = await import("@capacitor/share");
+
+    const path = `quote-${Date.now()}.png`;
+    const data = await blobToBase64(blob);
+    await Filesystem.writeFile({ path, data, directory: Directory.Cache });
+    const { uri } = await Filesystem.getUri({ path, directory: Directory.Cache });
+
+    await Share.share({ text, files: [uri], dialogTitle: "Share quote" });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const shareQuote = async (
   quote: string,
   author: string | null,
@@ -118,10 +150,23 @@ export const shareQuote = async (
   const file = new File([blob], "quote.png", { type: "image/png" });
   const text = author ? `"${quote}" — ${author}` : `"${quote}"`;
 
+  // Android/iOS WebView has no navigator.share and ignores <a download>, so the
+  // native share sheet has to go through Capacitor first.
+  if (await shareNative(blob, text)) return "shared";
+
   const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
   if (nav.share && nav.canShare?.({ files: [file] })) {
     try {
       await nav.share({ files: [file], text });
+      return "shared";
+    } catch {
+      return "failed";
+    }
+  }
+
+  if (nav.share) {
+    try {
+      await nav.share({ text });
       return "shared";
     } catch {
       return "failed";
@@ -136,6 +181,7 @@ export const shareQuote = async (
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   return "downloaded";
 };
+
 
 export const shareQuoteToWhatsApp = (quote: string, author: string | null) => {
   const text = author ? `"${quote}" — ${author}` : `"${quote}"`;
