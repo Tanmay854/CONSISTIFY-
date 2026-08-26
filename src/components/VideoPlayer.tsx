@@ -1,6 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RotateCcw, RotateCw, RectangleHorizontal } from "lucide-react";
 import HlsVideo from "./HlsVideo";
+import { useBackHandler } from "@/lib/backHandler";
+
+const lockLandscape = async () => {
+  try {
+    const { ScreenOrientation } = await import("@capacitor/screen-orientation");
+    await ScreenOrientation.lock({ orientation: "landscape" });
+    return;
+  } catch { /* not native */ }
+  try {
+    await (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> })?.lock?.("landscape");
+  } catch { /* unsupported */ }
+};
+
+const unlockOrientation = async () => {
+  try {
+    const { ScreenOrientation } = await import("@capacitor/screen-orientation");
+    await ScreenOrientation.unlock();
+    return;
+  } catch { /* not native */ }
+  try {
+    (screen.orientation as ScreenOrientation & { unlock?: () => void })?.unlock?.();
+  } catch { /* unsupported */ }
+};
 
 type Fit = "contain" | "cover";
 
@@ -56,7 +79,9 @@ const VideoPlayer = ({
   const [buffered, setBuffered] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [isFs, setIsFs] = useState(false);
+  const [nativeFs, setNativeFs] = useState(false);
+  const [cssFs, setCssFs] = useState(false);
+  const isFs = nativeFs || cssFs;
   const [scrubbing, setScrubbing] = useState(false);
 
   const scheduleHide = useCallback(() => {
@@ -106,34 +131,41 @@ const VideoPlayer = ({
     revealControls();
   };
 
-  type OrientationLock = ScreenOrientation & {
-    lock?: (o: string) => Promise<void>;
-    unlock?: () => void;
-  };
-
   const toggleFs = async () => {
     const el = wrapperRef.current;
     if (!el) return;
-    const orientation = (typeof screen !== "undefined" ? screen.orientation : undefined) as OrientationLock | undefined;
-    try {
-      if (!document.fullscreenElement) {
+    if (!isFs) {
+      // Android WebView often refuses the Fullscreen API — fall back to a CSS
+      // fullscreen layer so landscape playback always works.
+      try {
         await el.requestFullscreen?.();
-        if (allowRotate) {
-          try { await orientation?.lock?.("landscape"); } catch { /* not supported */ }
-        }
-      } else {
-        try { orientation?.unlock?.(); } catch { /* not supported */ }
-        await document.exitFullscreen?.();
+      } catch {
+        /* fullscreen unavailable */
       }
-    } catch { /* empty */ }
+      if (!document.fullscreenElement) setCssFs(true);
+      if (allowRotate) await lockLandscape();
+    } else {
+      await unlockOrientation();
+      setCssFs(false);
+      try { await document.exitFullscreen?.(); } catch { /* empty */ }
+    }
     revealControls();
   };
 
+  const exitFs = useCallback(() => {
+    void unlockOrientation();
+    setCssFs(false);
+    try { void document.exitFullscreen?.(); } catch { /* empty */ }
+  }, []);
+
+  useBackHandler(cssFs, exitFs);
+
+  useEffect(() => () => { void unlockOrientation(); }, []);
 
   useEffect(() => {
     const onFs = () => {
       const fs = !!document.fullscreenElement;
-      setIsFs(fs);
+      setNativeFs(fs);
       if (!fs) {
         try { (screen.orientation as ScreenOrientation & { unlock?: () => void })?.unlock?.(); } catch { /* empty */ }
       }
@@ -154,7 +186,11 @@ const VideoPlayer = ({
   return (
     <div
       ref={wrapperRef}
-      className={`relative bg-black overflow-hidden select-none ${fill ? "w-full h-full" : "w-full aspect-video"} ${className}`}
+      className={`bg-black overflow-hidden select-none ${
+        cssFs
+          ? "fixed inset-0 z-[9999] w-screen h-screen"
+          : `relative ${fill ? "w-full h-full" : "w-full aspect-video"} ${className}`
+      }`}
       onPointerMove={revealControls}
       onClick={() => {
         // Single tap toggles controls; if hidden, show; if shown, toggle play

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useBackHandler } from "@/lib/backHandler";
 import { X, CircleAlert } from "lucide-react";
 import VideoPlayer from "@/components/VideoPlayer";
 import ReportDialog from "@/components/ReportDialog";
@@ -37,6 +38,7 @@ const getPlayableVideoUrl = (url: string): string => {
 };
 
 const SinglePostViewer = ({ post, onClose }: { post: PostForViewer; onClose: () => void }) => {
+  useBackHandler(true, onClose);
   const [setImages, setSetImages] = useState<string[] | null>(null);
   const [idx, setIdx] = useState(0);
   const [showReport, setShowReport] = useState(false);

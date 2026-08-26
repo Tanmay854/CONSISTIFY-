@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useBackHandler } from "@/lib/backHandler";
 import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +10,7 @@ import { fetchProfile, updateProfileCache, type UploaderProfile } from "@/lib/up
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
 const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClose: () => void; onOpenUpload?: () => void }) => {
+  useBackHandler(open, onClose);
   const { user, canUpload, signOut, loading: authLoading } = useAuth();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);

@@ -5,6 +5,7 @@ import VideoPlayer from "@/components/VideoPlayer";
 import { getVideoThumbnail } from "@/lib/thumbUrl";
 import { getPlayableVideoUrl } from "@/lib/videoFeeds";
 import { trackView } from "@/lib/trackView";
+import { useBackHandler } from "@/lib/backHandler";
 
 interface LongVideo {
   id: string;
@@ -84,6 +85,9 @@ const LongVideoFeed = ({ feed, heading, blurb }: { feed: string; heading: string
     trackView("reel", v.id);
   }, []);
 
+  const closeActive = useCallback(() => setActive(null), []);
+  useBackHandler(!!active, closeActive);
+
   const upNext = useMemo(
     () => (active ? videos.filter((v) => v.id !== active.id) : []),
     [videos, active],
@@ -133,9 +137,10 @@ const LongVideoFeed = ({ feed, heading, blurb }: { feed: string; heading: string
             />
 
             <button
-              onClick={() => setActive(null)}
+              onClick={closeActive}
               aria-label="Close player"
-              className="absolute top-2 right-2 z-10 w-9 h-9 rounded-full bg-black/50 flex items-center justify-center"
+              className="absolute right-2 z-10 w-9 h-9 rounded-full bg-black/50 flex items-center justify-center"
+              style={{ top: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
             >
               <X size={20} className="text-white" />
             </button>

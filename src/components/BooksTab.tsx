@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
 import { sharedCoverUrl } from "@/lib/coverUrl";
+import { useBackHandler } from "@/lib/backHandler";
 
 import BookDetailSheet from "./BookDetailSheet";
 
@@ -41,7 +42,9 @@ const useRecent = () => {
 };
 
 const BooksTab = () => {
+  const listRef = useRef<HTMLDivElement>(null);
   const [books, setBooks] = useState<Book[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -65,6 +68,9 @@ const BooksTab = () => {
     setSelected(null);
     setRequestClose(false);
   }, []);
+
+  // Android hardware back closes the open book instead of the app.
+  useBackHandler(!!selected, closeBook);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -133,13 +139,16 @@ const BooksTab = () => {
 
   const scrollListTop = () => {
     requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      document.scrollingElement?.scrollTo({ top: 0, behavior: "smooth" });
+      listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     });
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div
+      ref={listRef}
+      className="h-[100dvh] overflow-y-auto overscroll-contain scrollbar-hide bg-background pb-24"
+    >
+
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 px-5 border-b border-border/40">
         <div className="flex items-baseline justify-between mb-3 pl-11">
