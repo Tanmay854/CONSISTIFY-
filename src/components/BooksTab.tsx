@@ -41,7 +41,9 @@ const useRecent = () => {
 };
 
 const BooksTab = () => {
+  const listRef = useRef<HTMLDivElement>(null);
   const [books, setBooks] = useState<Book[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
