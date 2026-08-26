@@ -6,7 +6,7 @@ import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
 import { sharedCoverUrl } from "@/lib/coverUrl";
 import { useBackHandler } from "@/lib/backHandler";
 
-import BookDetailSheet from "./BookDetailSheet";
+import BookDetailSheet, { COVER_SPRING } from "./BookDetailSheet";
 
 type OpenHandler = (b: Book, coverLayoutId: string, el: HTMLElement) => void;
 type SelectedBook = { book: Book; coverLayoutId: string; originEl: HTMLElement };
