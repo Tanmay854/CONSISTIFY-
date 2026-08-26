@@ -133,13 +133,16 @@ const BooksTab = () => {
 
   const scrollListTop = () => {
     requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      document.scrollingElement?.scrollTo({ top: 0, behavior: "smooth" });
+      listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     });
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div
+      ref={listRef}
+      className="h-[100dvh] overflow-y-auto overscroll-contain scrollbar-hide bg-background pb-24"
+    >
+
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 px-5 border-b border-border/40">
         <div className="flex items-baseline justify-between mb-3 pl-11">
