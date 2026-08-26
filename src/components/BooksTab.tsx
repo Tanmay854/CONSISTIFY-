@@ -6,7 +6,7 @@ import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
 import { sharedCoverUrl } from "@/lib/coverUrl";
 import { useBackHandler } from "@/lib/backHandler";
 
-import BookDetailSheet from "./BookDetailSheet";
+import BookDetailSheet, { COVER_SPRING } from "./BookDetailSheet";
 
 type OpenHandler = (b: Book, coverLayoutId: string, el: HTMLElement) => void;
 type SelectedBook = { book: Book; coverLayoutId: string; originEl: HTMLElement };
@@ -421,8 +421,8 @@ const BookCard = ({ book, onOpen, sharedCoverVisible = true }: { book: Book; onO
       <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="absolute inset-0 w-full h-full object-cover" loading="eager" decoding="async" />
       <motion.div
         layoutId={coverLayoutId}
-        transition={{ type: "spring", stiffness: 300, damping: 34, mass: 0.8 }}
-        style={{ borderRadius: 16, display: sharedCoverVisible ? "block" : "none" }}
+        transition={COVER_SPRING}
+        style={{ borderRadius: 16, display: sharedCoverVisible ? "block" : "none", willChange: "transform", backfaceVisibility: "hidden" }}
         className="absolute inset-0 overflow-hidden bg-secondary"
       >
         <img src={sharedCoverUrl(book.cover_url)} alt="" aria-hidden="true" className="w-full h-full object-cover" loading="eager" decoding="async" />

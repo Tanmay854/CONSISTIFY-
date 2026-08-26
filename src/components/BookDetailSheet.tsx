@@ -32,7 +32,11 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
 );
 
 /** Shared-element spring used by both the grid card and this sheet. */
-export const COVER_SPRING = { type: "spring" as const, stiffness: 300, damping: 34, mass: 0.8, restDelta: 0.4 };
+export const COVER_SPRING = {
+  type: "tween" as const,
+  duration: 0.38,
+  ease: [0.32, 0.72, 0, 1] as const,
+};
 const CONTENT_TRANSITION = { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
 
 const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseComplete, onDismissStart }: { book: Book; coverLayoutId: string; originEl?: HTMLElement; requestClose?: boolean; onCloseComplete: () => void; onDismissStart: () => void }) => {
@@ -192,7 +196,7 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
               ref={coverRef}
               layoutId={coverLayoutId}
               transition={COVER_SPRING}
-              style={{ borderRadius: 16 }}
+              style={{ borderRadius: 16, willChange: "transform", backfaceVisibility: "hidden" }}
               className="w-48 aspect-[2/3] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
             >
               <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="w-full h-full object-cover" loading="eager" decoding="async" fetchPriority="high" />
@@ -295,8 +299,16 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
             {similar.map((b) => (
               <button key={b.id} onClick={() => (window as any).__openBook?.(b)}
                 className="shrink-0 w-28 snap-start text-left active:scale-[0.97] transition-transform">
-                <div className="w-28 aspect-[2/3] rounded-xl overflow-hidden bg-secondary">
-                  <img src={getCoverUrl(b.cover_url, THUMB_WIDTH, 70)} alt={b.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                <div className="relative w-28 aspect-[2/3] rounded-xl overflow-hidden bg-secondary">
+                  <img src={sharedCoverUrl(b.cover_url)} alt={b.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
+                  <motion.div
+                    layoutId={`similar-book-cover-${b.id}`}
+                    transition={COVER_SPRING}
+                    style={{ borderRadius: 12, willChange: "transform", backfaceVisibility: "hidden" }}
+                    className="absolute inset-0 overflow-hidden bg-secondary"
+                  >
+                    <img src={sharedCoverUrl(b.cover_url)} alt="" aria-hidden="true" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                  </motion.div>
                 </div>
                 <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2">{b.title}</p>
                 <p className="text-muted-foreground text-[10px] line-clamp-1">{b.author}</p>
