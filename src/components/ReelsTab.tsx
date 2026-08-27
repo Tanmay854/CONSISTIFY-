@@ -176,7 +176,28 @@ const attachHls = (
       try { hls.destroy(); } catch { /* empty */ }
     };
   }
-  // Last-resort: let the browser try
+  // No MSE and no native HLS (old Android WebViews): walk Bunny's progressive
+  // MP4 renditions so every reel plays, not just the odd progressive upload.
+  const fallbacks = getMp4Fallbacks(url);
+  if (fallbacks.length) {
+    let i = 0;
+    let fired = false;
+    const fire = () => { if (!fired) { fired = true; onReady?.(); } };
+    const next = () => {
+      if (i >= fallbacks.length) { onFail?.("no playable mp4 rendition"); return; }
+      video.src = fallbacks[i++];
+      try { video.load(); } catch { /* empty */ }
+    };
+    video.addEventListener("loadeddata", fire);
+    video.addEventListener("canplay", fire);
+    video.addEventListener("error", next);
+    next();
+    return () => {
+      video.removeEventListener("loadeddata", fire);
+      video.removeEventListener("canplay", fire);
+      video.removeEventListener("error", next);
+    };
+  }
   video.src = url;
   return () => {};
 };
