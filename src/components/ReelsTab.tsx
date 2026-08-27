@@ -7,6 +7,7 @@ import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
 import UploaderProfileSheet from "@/components/UploaderProfileSheet";
 import { fetchProfiles, getCachedProfile, type UploaderProfile } from "@/lib/uploaderProfiles";
+import { getMp4Fallbacks } from "@/lib/videoFeeds";
 
 // Attach an HLS (.m3u8) or progressive source to a <video>. Returns a cleanup fn.
 // onReady fires when the stream is parsed and a play() can be attempted.
