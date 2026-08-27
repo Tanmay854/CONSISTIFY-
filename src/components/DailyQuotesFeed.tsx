@@ -230,11 +230,11 @@ const DailyQuotesFeed = () => {
             </p>
           </div>
 
-          {/* Notification topic — pinned above the topic list */}
+          <div className="mx-4 mb-4 rounded-[14px] overflow-hidden" style={{ background: "#1c1c1e" }}>
           <button
             onClick={() => setStep("notif")}
             style={rowIn(0)}
-            className="w-full mb-4 flex items-center gap-3 px-4 py-3 text-left rounded-[14px] active:bg-white/5"
+            className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-white/5"
           >
             <span className="w-[29px] h-[29px] rounded-[7px] flex items-center justify-center shrink-0" style={{ background: "#2c2c2e" }}>
               <Bell size={16} className="text-foreground" />
