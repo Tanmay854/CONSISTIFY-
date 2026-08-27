@@ -247,6 +247,9 @@ const DailyQuotesFeed = () => {
             </span>
             <ChevronRight size={16} style={{ color: "#48484a" }} className="shrink-0" />
           </button>
+          </div>
+
+
 
           <div className="mx-4 mb-7 rounded-[14px] overflow-hidden" style={{ background: "#1c1c1e" }}>
             {QUOTE_CATEGORIES.map((c, i) => (
