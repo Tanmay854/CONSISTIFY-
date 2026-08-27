@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronRight, ChevronUp, Plus, Trash2, Type } from "lucide-react";
+import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronRight, ChevronUp, Plus, Trash2, Type, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareQuote } from "@/lib/shareQuote";
-import { QUOTE_CATEGORIES, TOTAL_SUBTOPICS, TOTAL_TOPICS, findCategory } from "@/lib/quoteTopics";
+import { QUOTE_CATEGORIES, TOTAL_SUBTOPICS, TOTAL_TOPICS, findCategory, subLabel } from "@/lib/quoteTopics";
 import QuoteIcon from "@/components/QuoteIcon";
 import FittedQuote from "@/components/FittedQuote";
 import FontPicker from "@/components/FontPicker";
 import { DEFAULT_QUOTE_FONT_ID, findQuoteFont } from "@/lib/quoteFonts";
 import "@/styles/quoteFonts.css";
-import { refreshQuoteNotifications } from "@/lib/quoteNotifications";
+import { refreshQuoteNotifications, getNotificationTopic, setNotificationTopic } from "@/lib/quoteNotifications";
+import { useBackHandler } from "@/lib/backHandler";
 
 import {
   LocalWallpaper,
@@ -36,7 +37,7 @@ const SUB_KEY = "daily_quote_sub";
 const SCALE_KEY = "daily_quote_font_scale";
 const FONT_KEY = "daily_quote_font";
 
-type Step = "category" | "sub" | "wallpaper" | "feed";
+type Step = "category" | "sub" | "wallpaper" | "feed" | "notif";
 
 /** Staggered slide-up entrance for list items. */
 const stagger = (i: number) => ({
@@ -155,6 +156,24 @@ const DailyQuotesFeed = () => {
     setStep(bgId ? "feed" : "wallpaper");
   }, [bgId]);
 
+  // Subtopic whose quotes are delivered as notifications.
+  const [notifTopic, setNotifTopic] = useState(() => getNotificationTopic());
+  const chooseNotifSub = useCallback((c: string, s: string) => {
+    setNotifTopic({ cat: c, sub: s });
+    setNotificationTopic(c, s);
+  }, []);
+
+  // Phone back button walks the flow back one page at a time; only the topic
+  // list (the root of the tab) lets the app close.
+  const goBack = useCallback(() => {
+    setStep((s) => {
+      if (s === "sub" || s === "notif") return "category";
+      if (s === "wallpaper") return sub ? "sub" : "category";
+      return "sub";
+    });
+  }, [sub]);
+  useBackHandler(step !== "category", goBack);
+
 
   const onUpload = useCallback(async (files: FileList | null) => {
     if (!files?.length) return;
@@ -211,6 +230,27 @@ const DailyQuotesFeed = () => {
             </p>
           </div>
 
+          <div className="mx-4 mb-4 rounded-[14px] overflow-hidden" style={{ background: "#1c1c1e" }}>
+          <button
+            onClick={() => setStep("notif")}
+            style={rowIn(0)}
+            className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-white/5"
+          >
+            <span className="w-[29px] h-[29px] rounded-[7px] flex items-center justify-center shrink-0" style={{ background: "#2c2c2e" }}>
+              <Bell size={16} className="text-foreground" />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-foreground text-[16.5px] font-medium tracking-[-0.01em] leading-[1.25]">Notification</span>
+              <span className="block text-[13px] text-muted-foreground truncate">
+                {notifTopic ? subLabel(notifTopic.cat, notifTopic.sub) : "Choose a subtopic to receive"}
+              </span>
+            </span>
+            <ChevronRight size={16} style={{ color: "#48484a" }} className="shrink-0" />
+          </button>
+          </div>
+
+
+
           <div className="mx-4 mb-7 rounded-[14px] overflow-hidden" style={{ background: "#1c1c1e" }}>
             {QUOTE_CATEGORIES.map((c, i) => (
               <button
@@ -229,6 +269,65 @@ const DailyQuotesFeed = () => {
               </button>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === "notif") {
+    return (
+      <div
+        className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans"
+        style={{ animation: "quote-page-in .38s cubic-bezier(.25,.9,.35,1) both" }}
+      >
+        <div className="max-w-[430px] mx-auto">
+          <div className="pt-[calc(env(safe-area-inset-top,0px)+48px)] pl-2.5 pr-4">
+            <button
+              onClick={() => setStep("category")}
+              className="flex items-center gap-0.5 text-foreground text-[17px] py-1.5 pl-1 pr-2"
+            >
+              <ChevronLeft size={22} /> Topics
+            </button>
+          </div>
+
+          <div className="px-5 pt-3.5 pb-4">
+            <h2 className="text-foreground text-[26px] font-bold tracking-[-0.015em] leading-[1.15]">Notification</h2>
+            <p className="text-[14px] text-muted-foreground mt-1">
+              Pick one subtopic — its quotes arrive every 3 hours through the day.
+            </p>
+          </div>
+
+          {QUOTE_CATEGORIES.map((c) => (
+            <div key={c.id} className="mb-5">
+              <p className="px-5 pb-2 text-[12px] font-semibold uppercase tracking-[0.06em]" style={{ color: "#636366" }}>
+                {c.label}
+              </p>
+              <div className="mx-4 rounded-[14px] overflow-hidden py-1" style={{ background: "#1c1c1e" }}>
+                {c.subs.map((sb) => {
+                  const selected = notifTopic?.cat === c.id && notifTopic?.sub === sb.id;
+                  return (
+                    <button
+                      key={sb.id}
+                      onClick={() => chooseNotifSub(c.id, sb.id)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left border-b-[0.5px] border-[#29292b] last:border-b-0 active:bg-white/5"
+                    >
+                      <span className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: "#232325" }}>
+                        {sb.glyph ? (
+                          <span className="text-[13px] text-foreground/85 leading-none">{sb.glyph}</span>
+                        ) : (
+                          <QuoteIcon name={sb.icon} size={12} />
+                        )}
+                      </span>
+                      <span className="flex-1 min-w-0 text-[15px] tracking-[-0.01em]" style={{ color: "#d1d1d3" }}>
+                        {sb.label}
+                      </span>
+                      {selected && <Check size={16} className="text-foreground shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );

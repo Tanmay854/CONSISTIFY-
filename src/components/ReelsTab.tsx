@@ -7,6 +7,7 @@ import { trackView } from "@/lib/trackView";
 import ReportDialog from "@/components/ReportDialog";
 import UploaderProfileSheet from "@/components/UploaderProfileSheet";
 import { fetchProfiles, getCachedProfile, type UploaderProfile } from "@/lib/uploaderProfiles";
+import { getMp4Fallbacks } from "@/lib/videoFeeds";
 
 // Attach an HLS (.m3u8) or progressive source to a <video>. Returns a cleanup fn.
 // onReady fires when the stream is parsed and a play() can be attempted.
@@ -176,7 +177,28 @@ const attachHls = (
       try { hls.destroy(); } catch { /* empty */ }
     };
   }
-  // Last-resort: let the browser try
+  // No MSE and no native HLS (old Android WebViews): walk Bunny's progressive
+  // MP4 renditions so every reel plays, not just the odd progressive upload.
+  const fallbacks = getMp4Fallbacks(url);
+  if (fallbacks.length) {
+    let i = 0;
+    let fired = false;
+    const fire = () => { if (!fired) { fired = true; onReady?.(); } };
+    const next = () => {
+      if (i >= fallbacks.length) { onFail?.("no playable mp4 rendition"); return; }
+      video.src = fallbacks[i++];
+      try { video.load(); } catch { /* empty */ }
+    };
+    video.addEventListener("loadeddata", fire);
+    video.addEventListener("canplay", fire);
+    video.addEventListener("error", next);
+    next();
+    return () => {
+      video.removeEventListener("loadeddata", fire);
+      video.removeEventListener("canplay", fire);
+      video.removeEventListener("error", next);
+    };
+  }
   video.src = url;
   return () => {};
 };
@@ -301,7 +323,9 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderPr
   // current fully buffered). Capable devices keep the wider 2-neighbor window.
   // Keeping many hls.js instances alive at once starves the network and makes
   // the 3rd/4th reel spin forever. Mount current + 1 neighbour only.
-  const mountRadius = 1;
+  // Older / low-end Androids only have a couple of media decoders — mounting a
+  // neighbour there means the next reel never gets one and stays frozen.
+  const mountRadius = isSlowDevice ? 0 : 1;
   const autoPreloadRadius = 0;
   const shouldMount = hasVideo && distance <= mountRadius;
   const preload = distance <= autoPreloadRadius ? "auto" : "metadata";

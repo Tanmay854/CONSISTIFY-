@@ -3,7 +3,7 @@ import { ChevronLeft, Play, Plus, Check, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBackHandler } from "@/lib/backHandler";
 import VideoPlayer from "@/components/VideoPlayer";
-import { getVideoThumbnail } from "@/lib/thumbUrl";
+import { getVideoThumbnail, getVideoThumbnailFallbacks } from "@/lib/thumbUrl";
 import { getPlayableVideoUrl } from "@/lib/videoFeeds";
 import { trackView } from "@/lib/trackView";
 import { fetchProfiles, displayHandle } from "@/lib/uploaderProfiles";
@@ -54,8 +54,18 @@ const PosterArt = memo(({
           src={thumb}
           alt=""
           loading="eager"
-          decoding="sync"
+          decoding="async"
           draggable={false}
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            // Old Android WebViews sometimes drop the first still request.
+            const img = e.currentTarget;
+            const alt = getVideoThumbnailFallbacks(item.video_url).find((u) => u !== img.src);
+            if (alt && !img.dataset.retried) {
+              img.dataset.retried = "1";
+              img.src = alt;
+            }
+          }}
           className={`absolute inset-0 w-full h-full ${contain ? "object-contain" : "object-cover"}`}
         />
       )}

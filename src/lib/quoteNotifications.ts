@@ -13,6 +13,9 @@ import { findCategory, subLabel } from "@/lib/quoteTopics";
 
 const CAT_KEY = "daily_quote_cat";
 const SUB_KEY = "daily_quote_sub";
+/** Explicit notification topic chosen in Quotes → Notification (wins over the browsing topic). */
+const NOTIF_CAT_KEY = "notif_quote_cat";
+const NOTIF_SUB_KEY = "notif_quote_sub";
 export const NOTIF_ENABLED_KEY = "quote_notifications_enabled";
 const CURSOR_KEY = "quote_notifications_cursor";
 
@@ -41,13 +44,38 @@ export const setNotificationsEnabled = (on: boolean) => {
   }
 };
 
-const readTopic = () => {
+const validTopic = (cat: string | null, sub: string | null) => {
+  if (!cat || !sub) return null;
+  if (!findCategory(cat)?.subs.some((s) => s.id === sub)) return null;
+  return { cat, sub };
+};
+
+/** The subtopic explicitly chosen for notifications, if any. */
+export const getNotificationTopic = () => {
   try {
-    const cat = localStorage.getItem(CAT_KEY);
-    const sub = localStorage.getItem(SUB_KEY);
-    if (!cat || !sub) return null;
-    if (!findCategory(cat)?.subs.some((s) => s.id === sub)) return null;
-    return { cat, sub };
+    return validTopic(localStorage.getItem(NOTIF_CAT_KEY), localStorage.getItem(NOTIF_SUB_KEY));
+  } catch {
+    return null;
+  }
+};
+
+/** Pick the subtopic notifications should pull quotes from. */
+export const setNotificationTopic = (cat: string, sub: string) => {
+  try {
+    localStorage.setItem(NOTIF_CAT_KEY, cat);
+    localStorage.setItem(NOTIF_SUB_KEY, sub);
+  } catch {
+    /* empty */
+  }
+  void scheduleQuoteNotifications();
+};
+
+/** Notification topic falls back to whatever the user is browsing. */
+const readTopic = () => {
+  const explicit = getNotificationTopic();
+  if (explicit) return explicit;
+  try {
+    return validTopic(localStorage.getItem(CAT_KEY), localStorage.getItem(SUB_KEY));
   } catch {
     return null;
   }
