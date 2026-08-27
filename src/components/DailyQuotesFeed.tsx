@@ -230,6 +230,24 @@ const DailyQuotesFeed = () => {
             </p>
           </div>
 
+          {/* Notification topic — pinned above the topic list */}
+          <button
+            onClick={() => setStep("notif")}
+            style={rowIn(0)}
+            className="w-full mb-4 flex items-center gap-3 px-4 py-3 text-left rounded-[14px] active:bg-white/5"
+          >
+            <span className="w-[29px] h-[29px] rounded-[7px] flex items-center justify-center shrink-0" style={{ background: "#2c2c2e" }}>
+              <Bell size={16} className="text-foreground" />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-foreground text-[16.5px] font-medium tracking-[-0.01em] leading-[1.25]">Notification</span>
+              <span className="block text-[13px] text-muted-foreground truncate">
+                {notifTopic ? subLabel(notifTopic.cat, notifTopic.sub) : "Choose a subtopic to receive"}
+              </span>
+            </span>
+            <ChevronRight size={16} style={{ color: "#48484a" }} className="shrink-0" />
+          </button>
+
           <div className="mx-4 mb-7 rounded-[14px] overflow-hidden" style={{ background: "#1c1c1e" }}>
             {QUOTE_CATEGORIES.map((c, i) => (
               <button
