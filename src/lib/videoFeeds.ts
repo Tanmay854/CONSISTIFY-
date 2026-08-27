@@ -30,12 +30,28 @@ export const feedLabel = (id: string) =>
   VIDEO_FEEDS.find((f) => f.id === id)?.label ?? "Quick Clips";
 
 
-// Turn a Bunny Stream URL into a playable HLS manifest URL.
-export const getPlayableVideoUrl = (url: string): string => {
+/** `https://vz-123.b-cdn.net/<guid>` for any Bunny Stream URL, else null. */
+export const getBunnyBase = (url: string): string | null => {
   const trimmed = (url || "").trim();
   const streamCdn = trimmed.match(/^(https?:\/\/[^/]+\.b-cdn\.net)\/([0-9a-fA-F-]{36})(?:\/|$)/);
-  if (streamCdn) return `${streamCdn[1]}/${streamCdn[2]}/playlist.m3u8`;
+  if (streamCdn) return `${streamCdn[1]}/${streamCdn[2]}`;
   const md = trimmed.match(/mediadelivery\.net\/(?:embed|play)\/(\d+)\/([0-9a-fA-F-]{36})/i);
-  if (md) return `https://vz-${md[1]}.b-cdn.net/${md[2]}/playlist.m3u8`;
-  return trimmed;
+  if (md) return `https://vz-${md[1]}.b-cdn.net/${md[2]}`;
+  return null;
+};
+
+// Turn a Bunny Stream URL into a playable HLS manifest URL.
+export const getPlayableVideoUrl = (url: string): string => {
+  const base = getBunnyBase(url);
+  return base ? `${base}/playlist.m3u8` : (url || "").trim();
+};
+
+/**
+ * Progressive MP4 renditions to fall back to when HLS playback is impossible —
+ * older Android WebViews have no usable MSE, so hls.js cannot run there.
+ */
+export const getMp4Fallbacks = (url: string): string[] => {
+  const base = getBunnyBase(url);
+  if (!base) return [];
+  return [`${base}/play_720p.mp4`, `${base}/play_480p.mp4`, `${base}/play_360p.mp4`, `${base}/original`];
 };
