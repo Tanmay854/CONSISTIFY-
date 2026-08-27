@@ -37,7 +37,7 @@ const SUB_KEY = "daily_quote_sub";
 const SCALE_KEY = "daily_quote_font_scale";
 const FONT_KEY = "daily_quote_font";
 
-type Step = "category" | "sub" | "wallpaper" | "feed";
+type Step = "category" | "sub" | "wallpaper" | "feed" | "notif";
 
 /** Staggered slide-up entrance for list items. */
 const stagger = (i: number) => ({
