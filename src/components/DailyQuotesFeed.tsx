@@ -156,6 +156,24 @@ const DailyQuotesFeed = () => {
     setStep(bgId ? "feed" : "wallpaper");
   }, [bgId]);
 
+  // Subtopic whose quotes are delivered as notifications.
+  const [notifTopic, setNotifTopic] = useState(() => getNotificationTopic());
+  const chooseNotifSub = useCallback((c: string, s: string) => {
+    setNotifTopic({ cat: c, sub: s });
+    setNotificationTopic(c, s);
+  }, []);
+
+  // Phone back button walks the flow back one page at a time; only the topic
+  // list (the root of the tab) lets the app close.
+  const goBack = useCallback(() => {
+    setStep((s) => {
+      if (s === "sub" || s === "notif") return "category";
+      if (s === "wallpaper") return sub ? "sub" : "category";
+      return "sub";
+    });
+  }, [sub]);
+  useBackHandler(step !== "category", goBack);
+
 
   const onUpload = useCallback(async (files: FileList | null) => {
     if (!files?.length) return;
