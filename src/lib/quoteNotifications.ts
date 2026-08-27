@@ -13,6 +13,9 @@ import { findCategory, subLabel } from "@/lib/quoteTopics";
 
 const CAT_KEY = "daily_quote_cat";
 const SUB_KEY = "daily_quote_sub";
+/** Explicit notification topic chosen in Quotes → Notification (wins over the browsing topic). */
+const NOTIF_CAT_KEY = "notif_quote_cat";
+const NOTIF_SUB_KEY = "notif_quote_sub";
 export const NOTIF_ENABLED_KEY = "quote_notifications_enabled";
 const CURSOR_KEY = "quote_notifications_cursor";
 
