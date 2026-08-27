@@ -274,6 +274,65 @@ const DailyQuotesFeed = () => {
     );
   }
 
+  if (step === "notif") {
+    return (
+      <div
+        className="h-[100dvh] overflow-y-auto scrollbar-hide bg-background pb-28 font-sans"
+        style={{ animation: "quote-page-in .38s cubic-bezier(.25,.9,.35,1) both" }}
+      >
+        <div className="max-w-[430px] mx-auto">
+          <div className="pt-[calc(env(safe-area-inset-top,0px)+48px)] pl-2.5 pr-4">
+            <button
+              onClick={() => setStep("category")}
+              className="flex items-center gap-0.5 text-foreground text-[17px] py-1.5 pl-1 pr-2"
+            >
+              <ChevronLeft size={22} /> Topics
+            </button>
+          </div>
+
+          <div className="px-5 pt-3.5 pb-4">
+            <h2 className="text-foreground text-[26px] font-bold tracking-[-0.015em] leading-[1.15]">Notification</h2>
+            <p className="text-[14px] text-muted-foreground mt-1">
+              Pick one subtopic — its quotes arrive every 3 hours through the day.
+            </p>
+          </div>
+
+          {QUOTE_CATEGORIES.map((c) => (
+            <div key={c.id} className="mb-5">
+              <p className="px-5 pb-2 text-[12px] font-semibold uppercase tracking-[0.06em]" style={{ color: "#636366" }}>
+                {c.label}
+              </p>
+              <div className="mx-4 rounded-[14px] overflow-hidden py-1" style={{ background: "#1c1c1e" }}>
+                {c.subs.map((sb) => {
+                  const selected = notifTopic?.cat === c.id && notifTopic?.sub === sb.id;
+                  return (
+                    <button
+                      key={sb.id}
+                      onClick={() => chooseNotifSub(c.id, sb.id)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left border-b-[0.5px] border-[#29292b] last:border-b-0 active:bg-white/5"
+                    >
+                      <span className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: "#232325" }}>
+                        {sb.glyph ? (
+                          <span className="text-[13px] text-foreground/85 leading-none">{sb.glyph}</span>
+                        ) : (
+                          <QuoteIcon name={sb.icon} size={12} />
+                        )}
+                      </span>
+                      <span className="flex-1 min-w-0 text-[15px] tracking-[-0.01em]" style={{ color: "#d1d1d3" }}>
+                        {sb.label}
+                      </span>
+                      {selected && <Check size={16} className="text-foreground shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (step === "sub" && category) {
     return (
       <div
