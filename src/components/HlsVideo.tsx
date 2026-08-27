@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import Hls from "hls.js";
+import { getMp4Fallbacks } from "@/lib/videoFeeds";
 
 type Props = React.VideoHTMLAttributes<HTMLVideoElement> & { src: string };
 
@@ -30,6 +31,26 @@ const HlsVideo = forwardRef<HTMLVideoElement, Props>(({ src, ...rest }, forwarde
 
     const isHls = /\.m3u8(\?|$)/i.test(src);
     let hls: Hls | null = null;
+    let disposed = false;
+
+    // Older Android WebViews have no usable MSE (or fail mid-stream). Walk the
+    // progressive MP4 renditions so a different video always plays.
+    const fallbacks = getMp4Fallbacks(src);
+    let fbIndex = 0;
+    const onFallbackError = () => {
+      if (disposed) return;
+      playFallback();
+    };
+    const playFallback = () => {
+      if (disposed) return;
+      if (fbIndex >= fallbacks.length) return;
+      const url = fallbacks[fbIndex++];
+      video.removeEventListener("error", onFallbackError);
+      video.src = url;
+      video.addEventListener("error", onFallbackError, { once: true });
+      try { video.load(); } catch { /* empty */ }
+      video.play?.().catch(() => { /* awaiting gesture */ });
+    };
 
     if (!isHls) {
       video.src = src;
@@ -46,16 +67,25 @@ const HlsVideo = forwardRef<HTMLVideoElement, Props>(({ src, ...rest }, forwarde
         if (!data.fatal || !hls) return;
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
         else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+        else if (fallbacks.length) {
+          try { hls.destroy(); } catch { /* empty */ }
+          hls = null;
+          playFallback();
+        }
       });
     } else if (hasNativeHls(video)) {
       // iOS Safari / WKWebView
       video.src = src;
+    } else if (fallbacks.length) {
+      // No MSE, no native HLS (old Android WebView) → progressive MP4.
+      playFallback();
     } else {
-      // Last-resort: let the platform try.
       video.src = src;
     }
 
     return () => {
+      disposed = true;
+      video.removeEventListener("error", onFallbackError);
       if (hls) { try { hls.destroy(); } catch { /* empty */ } }
     };
   }, [src]);
@@ -65,7 +95,6 @@ const HlsVideo = forwardRef<HTMLVideoElement, Props>(({ src, ...rest }, forwarde
       ref={ref}
       playsInline
       preload="auto"
-      crossOrigin="anonymous"
       {...rest}
     />
   );
