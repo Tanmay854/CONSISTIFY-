@@ -54,8 +54,18 @@ const PosterArt = memo(({
           src={thumb}
           alt=""
           loading="eager"
-          decoding="sync"
+          decoding="async"
           draggable={false}
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            // Old Android WebViews sometimes drop the first still request.
+            const img = e.currentTarget;
+            const alt = getVideoThumbnailFallbacks(item.video_url).find((u) => u !== img.src);
+            if (alt && !img.dataset.retried) {
+              img.dataset.retried = "1";
+              img.src = alt;
+            }
+          }}
           className={`absolute inset-0 w-full h-full ${contain ? "object-contain" : "object-cover"}`}
         />
       )}
