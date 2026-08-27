@@ -323,7 +323,9 @@ const ReelCard = ({ reel, isActive, distance, index, muted, onReport, uploaderPr
   // current fully buffered). Capable devices keep the wider 2-neighbor window.
   // Keeping many hls.js instances alive at once starves the network and makes
   // the 3rd/4th reel spin forever. Mount current + 1 neighbour only.
-  const mountRadius = 1;
+  // Older / low-end Androids only have a couple of media decoders — mounting a
+  // neighbour there means the next reel never gets one and stays frozen.
+  const mountRadius = isSlowDevice ? 0 : 1;
   const autoPreloadRadius = 0;
   const shouldMount = hasVideo && distance <= mountRadius;
   const preload = distance <= autoPreloadRadius ? "auto" : "metadata";
