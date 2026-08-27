@@ -3,7 +3,7 @@ import { ChevronLeft, Play, Plus, Check, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBackHandler } from "@/lib/backHandler";
 import VideoPlayer from "@/components/VideoPlayer";
-import { getVideoThumbnail } from "@/lib/thumbUrl";
+import { getVideoThumbnail, getVideoThumbnailFallbacks } from "@/lib/thumbUrl";
 import { getPlayableVideoUrl } from "@/lib/videoFeeds";
 import { trackView } from "@/lib/trackView";
 import { fetchProfiles, displayHandle } from "@/lib/uploaderProfiles";

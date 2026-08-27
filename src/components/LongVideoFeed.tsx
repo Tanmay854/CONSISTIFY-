@@ -35,7 +35,7 @@ const VideoCard = ({ v, onOpen, compact = false }: { v: LongVideo; onOpen: () =>
     return (
       <button onClick={onOpen} className="w-full flex gap-2.5 text-left active:opacity-70 transition-opacity">
         <div className="w-40 aspect-video rounded-lg overflow-hidden bg-secondary flex-shrink-0">
-          {thumb && <img src={thumb} alt="" loading="lazy" className="w-full h-full object-cover" />}
+          {thumb && <img src={thumb} alt="" decoding="async" referrerPolicy="no-referrer" className="w-full h-full object-cover" />}
         </div>
         <div className="min-w-0 flex-1 pr-1">
           <p className="text-foreground text-[13px] font-medium leading-snug line-clamp-2">{v.title || "Untitled"}</p>
@@ -47,7 +47,7 @@ const VideoCard = ({ v, onOpen, compact = false }: { v: LongVideo; onOpen: () =>
   return (
     <button onClick={onOpen} className="w-full text-left active:opacity-70 transition-opacity">
       <div className="w-full aspect-video overflow-hidden bg-secondary sm:rounded-xl">
-        {thumb && <img src={thumb} alt="" loading="lazy" className="w-full h-full object-cover" />}
+        {thumb && <img src={thumb} alt="" decoding="async" referrerPolicy="no-referrer" className="w-full h-full object-cover" />}
       </div>
       <div className="px-3 py-2.5">
         <p className="text-foreground text-[15px] font-medium leading-snug line-clamp-2">{v.title || "Untitled"}</p>
