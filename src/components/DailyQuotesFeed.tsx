@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronRight, ChevronUp, Plus, Trash2, Type } from "lucide-react";
+import { Share2, ImageIcon, Check, LayoutGrid, ChevronLeft, ChevronRight, ChevronUp, Plus, Trash2, Type, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareQuote } from "@/lib/shareQuote";
-import { QUOTE_CATEGORIES, TOTAL_SUBTOPICS, TOTAL_TOPICS, findCategory } from "@/lib/quoteTopics";
+import { QUOTE_CATEGORIES, TOTAL_SUBTOPICS, TOTAL_TOPICS, findCategory, subLabel } from "@/lib/quoteTopics";
 import QuoteIcon from "@/components/QuoteIcon";
 import FittedQuote from "@/components/FittedQuote";
 import FontPicker from "@/components/FontPicker";
 import { DEFAULT_QUOTE_FONT_ID, findQuoteFont } from "@/lib/quoteFonts";
 import "@/styles/quoteFonts.css";
-import { refreshQuoteNotifications } from "@/lib/quoteNotifications";
+import { refreshQuoteNotifications, getNotificationTopic, setNotificationTopic } from "@/lib/quoteNotifications";
+import { useBackHandler } from "@/lib/backHandler";
 
 import {
   LocalWallpaper,
