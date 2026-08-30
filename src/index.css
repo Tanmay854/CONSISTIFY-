@@ -293,8 +293,8 @@ body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   transform: translateZ(0);
-  content-visibility: auto;
 }
+
 
 /* Prevent iOS zoom-on-focus for form fields */
 input, textarea, select {
