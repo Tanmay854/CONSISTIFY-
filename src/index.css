@@ -283,9 +283,19 @@ body {
   -webkit-touch-callout: none;
   touch-action: manipulation;
 }
-* {
+/* Momentum scrolling only on real scroll containers (applying it to `*`
+   promoted every node and starved the compositor on Android). */
+.overflow-y-auto,
+.overflow-y-scroll,
+.overflow-auto,
+.overflow-scroll,
+.overflow-x-auto {
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  transform: translateZ(0);
 }
+
+
 /* Prevent iOS zoom-on-focus for form fields */
 input, textarea, select {
   font-size: 16px;
