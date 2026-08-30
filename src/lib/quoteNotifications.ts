@@ -210,17 +210,25 @@ export async function scheduleQuoteNotifications(): Promise<void> {
         summaryText: title,
         channelId: CHANNEL_ID,
         schedule: { at, allowWhileIdle: true },
-        extra: { category: topic.cat, subcategory: topic.sub },
+        extra: { category: topic?.cat ?? null, subcategory: topic?.sub ?? null },
       };
     });
 
-    await LocalNotifications.schedule({ notifications });
+    try {
+      await LocalNotifications.schedule({ notifications });
+    } catch {
+      // Android 12+ can refuse exact alarms -> retry inexact.
+      await LocalNotifications.schedule({
+        notifications: notifications.map((n) => ({ ...n, schedule: { at: n.schedule.at } })),
+      });
+    }
 
     try {
       localStorage.setItem(CURSOR_KEY, String((cursor + slots.length) % quotes.length));
     } catch {
       /* empty */
     }
+
   } catch {
     /* plugin unavailable */
   }
