@@ -146,24 +146,25 @@ export async function scheduleQuoteNotifications(): Promise<void> {
     return;
   }
 
-  const topic = readTopic();
-  if (!topic) {
-    await cancelQuoteNotifications();
-    return;
-  }
-
   const granted = await requestNotificationPermission();
   if (!granted) return;
 
-  const { data, error } = await supabase
-    .from("daily_quotes")
-    .select("text,author")
-    .eq("category", topic.cat)
-    .eq("subcategory", topic.sub)
-    .limit(500);
+  const topic = readTopic();
 
-  const quotes = (data || []).filter((q) => !!q.text);
-  if (error || !quotes.length) return;
+  // No topic picked yet -> still notify, just pull from all quotes.
+  let query = supabase.from("daily_quotes").select("text,author").limit(500);
+  if (topic) query = query.eq("category", topic.cat).eq("subcategory", topic.sub);
+  let { data, error } = await query;
+
+  let quotes = (data || []).filter((q) => !!q.text);
+  if (topic && (error || !quotes.length)) {
+    // Selected subtopic has no quotes -> fall back to the whole library.
+    const res = await supabase.from("daily_quotes").select("text,author").limit(500);
+    data = res.data;
+    error = res.error;
+    quotes = (data || []).filter((q) => !!q.text);
+  }
+  if (!quotes.length) return;
 
   let cursor = 0;
   try {
@@ -173,7 +174,8 @@ export async function scheduleQuoteNotifications(): Promise<void> {
   }
 
   const slots = upcomingSlots(QUEUE_SIZE);
-  const title = subLabel(topic.cat, topic.sub);
+  const title = topic ? subLabel(topic.cat, topic.sub) : "Daily Motivation";
+
 
   try {
     const { LocalNotifications } = await import("@capacitor/local-notifications");
