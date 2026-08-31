@@ -285,7 +285,8 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
       {book.why_read && (
         <Section title="Why read this book">
           <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">{book.why_read}</p>
-          <p className="text-muted-foreground text-sm leading-relaxed mt-4">
+          <h3 className="text-foreground text-sm font-bold uppercase tracking-wider mt-6 mb-3">Disclaimer</h3>
+          <p className="text-muted-foreground text-sm leading-relaxed">
             This story is an independent, story-style summary created for informational, educational, and entertainment purposes. It is not affiliated with, endorsed, or sponsored by the original author, publisher, or copyright holder. All rights belong to their respective owners.
           </p>
           <p className="text-muted-foreground text-sm leading-relaxed mt-3">
