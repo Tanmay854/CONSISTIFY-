@@ -281,10 +281,10 @@ html, body {
 body {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
-  touch-action: manipulation;
 }
-/* Momentum scrolling only on real scroll containers (applying it to `*`
-   promoted every node and starved the compositor on Android). */
+/* Keep native momentum scrolling without forcing every scroller into a
+   separate GPU layer. Too many promoted layers can starve Android WebView's
+   compositor and delay touch dispatch, especially while video is decoded. */
 .overflow-y-auto,
 .overflow-y-scroll,
 .overflow-auto,
@@ -292,7 +292,6 @@ body {
 .overflow-x-auto {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  transform: translateZ(0);
 }
 
 

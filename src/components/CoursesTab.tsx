@@ -82,7 +82,7 @@ const CoursesTab = () => {
   if (showSearch) {
     return (
       <div className="fixed inset-0 z-40 bg-black overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-black/85 backdrop-blur-xl px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 border-b border-white/5">
+        <div className="sticky top-0 z-10 bg-black px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 border-b border-white/5">
           <div className="flex items-center gap-2">
             <button onClick={() => { setShowSearch(false); setQuery(""); }} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
               <X size={18} className="text-white" />
