@@ -285,17 +285,15 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
       {book.why_read && (
         <Section title="Why read this book">
           <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">{book.why_read}</p>
-          <div className="mt-4 rounded-2xl bg-secondary/40 border border-border/40 p-4">
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              This story is an independent, story-style summary created for informational, educational, and entertainment purposes. It is not affiliated with, endorsed, or sponsored by the original author, publisher, or copyright holder. All rights belong to their respective owners.
-            </p>
-            <p className="text-muted-foreground text-xs leading-relaxed mt-2">
-              This summary is transformative and does not replace the original book. We encourage readers to purchase and enjoy the complete original work.
-            </p>
-            <p className="text-muted-foreground text-xs leading-relaxed mt-2">
-              Amazon Affiliate Disclosure: Book purchase links may be Amazon affiliate links, through which we may earn a commission from qualifying purchases at no extra cost to you.
-            </p>
-          </div>
+          <p className="text-muted-foreground text-sm leading-relaxed mt-4">
+            This story is an independent, story-style summary created for informational, educational, and entertainment purposes. It is not affiliated with, endorsed, or sponsored by the original author, publisher, or copyright holder. All rights belong to their respective owners.
+          </p>
+          <p className="text-muted-foreground text-sm leading-relaxed mt-3">
+            This summary is transformative and does not replace the original book. We encourage readers to purchase and enjoy the complete original work.
+          </p>
+          <p className="text-muted-foreground text-sm leading-relaxed mt-3">
+            Amazon Affiliate Disclosure: Book purchase links may be Amazon affiliate links, through which we may earn a commission from qualifying purchases at no extra cost to you.
+          </p>
         </Section>
       )}
       {similar.length > 0 && (
