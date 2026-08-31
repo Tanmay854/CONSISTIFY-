@@ -742,12 +742,21 @@ const ReelsTab = ({ muted = false, feed: feedId = "quick_spark", active: paneAct
     snapTimerRef.current = window.setTimeout(enforceSingleSnap, 90);
   };
 
+  const handleTouchEnd = () => {
+    if (snapTimerRef.current) window.clearTimeout(snapTimerRef.current);
+    snapTimerRef.current = window.setTimeout(enforceSingleSnap, 90);
+  };
+
+  useEffect(() => () => {
+    if (snapTimerRef.current) window.clearTimeout(snapTimerRef.current);
+  }, []);
+
   return (
     <>
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        onTouchEnd={() => { window.setTimeout(enforceSingleSnap, 60); }}
+        onTouchEnd={handleTouchEnd}
         className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-y-contain [scroll-snap-stop:always] [-webkit-overflow-scrolling:touch]"
       >
 

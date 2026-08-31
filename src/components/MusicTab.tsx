@@ -237,7 +237,7 @@ const MusicTab = () => {
       style={{ backgroundColor: "#000", color: "#fff" }}
     >
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-black/85 backdrop-blur-xl pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 px-5 border-b border-white/10">
+      <header className="sticky top-0 z-20 bg-black pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 px-5 border-b border-white/10">
         <div className="pl-11 flex items-baseline justify-between">
           <h2 className="font-extrabold text-2xl text-white tracking-tight">Music</h2>
           <SpotifyBadge />
