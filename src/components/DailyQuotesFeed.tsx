@@ -500,7 +500,7 @@ const DailyQuotesFeed = () => {
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-contain [scroll-snap-stop:always]"
+          className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-contain touch-pan-y"
         >
           {quotes.map((q, i) => (
             <div key={q.id} className="h-[100dvh] w-full snap-start snap-always">

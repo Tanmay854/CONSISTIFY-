@@ -520,7 +520,7 @@ const SummaryReader = ({ book, onBuy, startPage = 0 }: { book: Book; onBuy: () =
         key={p}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="flex-1 overflow-y-auto px-7 pt-4 pb-8 animate-fade-in select-none"
+        className="flex-1 overflow-y-auto px-7 pt-4 pb-8 animate-fade-in select-none touch-pan-y"
       >
         {!atEnd ? (
           <p
