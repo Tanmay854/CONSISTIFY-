@@ -140,6 +140,8 @@ const LongGameSection = ({
   const [scrollY, setScrollY] = useState(0);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [playing, setPlaying] = useState<Item | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
