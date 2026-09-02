@@ -148,14 +148,19 @@ const MyUploads = () => {
   };
 
   const handleSaveEdit = async (table: "reels" | "quotes", id: string) => {
-    if (!editTitle.trim()) return;
+    // Titles are optional — uploaders can save a description without a title.
     setBusy(true);
-    const payload: { title: string; description: string | null; category?: string } = {
-      title: editTitle.trim(),
+    const payload: { title: string | null; description: string | null; category?: string } = {
+      title: editTitle.trim() || null,
       description: editDescription.trim() || null,
     };
     if (editCategory) payload.category = table === "quotes" ? editCategory.toUpperCase() : editCategory;
-    await supabase.from(table).update(payload).eq("id", id);
+    const { error } = await supabase.from(table).update(payload).eq("id", id);
+    if (error) {
+      alert(error.message || "Could not save changes");
+      setBusy(false);
+      return;
+    }
     setEditingId(null);
     await fetchAll();
     setBusy(false);

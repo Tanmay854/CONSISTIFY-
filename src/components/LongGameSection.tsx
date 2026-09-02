@@ -140,6 +140,8 @@ const LongGameSection = ({
   const [scrollY, setScrollY] = useState(0);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [playing, setPlaying] = useState<Item | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -258,6 +260,18 @@ const LongGameSection = ({
 
   useBackHandler(!!open, close);
 
+  const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(""); }, []);
+  useBackHandler(searchOpen && !open, closeSearch);
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((i) =>
+      (i.title || "").toLowerCase().includes(q) ||
+      (i.description || "").toLowerCase().includes(q),
+    );
+  }, [items, searchQuery]);
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const top = e.currentTarget.scrollTop;
     if (tickingRef.current) return;
@@ -301,6 +315,7 @@ const LongGameSection = ({
       <button
         type="button"
         aria-label="Search"
+        onClick={() => setSearchOpen(true)}
         className="absolute top-safe-4 right-4 z-40 w-9 h-9 rounded-full bg-black/35 backdrop-blur-md flex items-center justify-center text-foreground"
       >
         <Search size={17} />
@@ -401,6 +416,54 @@ const LongGameSection = ({
         </div>
       </div>
 
+      {/* Search overlay — matches by title/description but shows thumbnails only */}
+      {searchOpen && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col animate-fade-in">
+          <div
+            className="flex items-center gap-2 px-4 pb-3"
+            style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
+          >
+            <div className="flex-1 h-10 rounded-full bg-secondary flex items-center gap-2 px-3.5">
+              <Search size={15} className="text-muted-foreground flex-shrink-0" />
+              <input
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search videos"
+                className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
+              />
+            </div>
+            <button
+              onClick={closeSearch}
+              aria-label="Close search"
+              className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-foreground flex-shrink-0"
+            >
+              <X size={17} />
+            </button>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-4 pb-24">
+            {searchResults.length === 0 ? (
+              <p className="text-muted-foreground text-sm py-16 text-center">No videos found.</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2.5 pt-1">
+                {searchResults.map((m) => (
+                  <div
+                    key={m.id}
+                    onClick={(e) => {
+                      closeSearch();
+                      openItem(m, e.currentTarget);
+                    }}
+                    className="relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer"
+                  >
+                    <PosterArt item={m} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {open && (
         <div
