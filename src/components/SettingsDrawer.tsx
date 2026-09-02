@@ -238,7 +238,19 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
                 />
               </span>
             </button>
+
+            <button
+              onClick={async () => {
+                setNotifMsg("Checking…");
+                setNotifMsg(await sendTestNotification());
+              }}
+              className="mt-2 w-full text-left px-3 py-2 rounded-xl text-xs text-muted-foreground bg-secondary/60 hover:bg-secondary"
+            >
+              Send test notification
+            </button>
+            {notifMsg && <p className="mt-2 px-1 text-[11px] text-muted-foreground leading-snug">{notifMsg}</p>}
           </div>
+
 
 
           {/* Public profile editor (uploaders / admins) */}
