@@ -288,11 +288,31 @@ body {
 .overflow-y-auto,
 .overflow-y-scroll,
 .overflow-auto,
-.overflow-scroll,
-.overflow-x-auto {
+.overflow-scroll {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
+
+/* Horizontal carousels must never swallow vertical gestures: allow both axes
+   so the WebView can hand vertical pans to the page, and only contain
+   horizontal overscroll chaining. */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+}
+
+/* Images (book covers, video thumbnails) must not capture the gesture with a
+   native drag / long-press callout — that is what blocked scrolling over them
+   inside the Android WebView. */
+img {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: inherit;
+}
+
 
 
 /* Prevent iOS zoom-on-focus for form fields */
