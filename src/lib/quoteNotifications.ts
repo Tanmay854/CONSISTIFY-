@@ -238,3 +238,53 @@ export async function scheduleQuoteNotifications(): Promise<void> {
 export function refreshQuoteNotifications() {
   void scheduleQuoteNotifications();
 }
+
+/**
+ * Diagnostics: fires one notification ~5s from now and reports exactly what
+ * happened, so a device that receives nothing can tell us why.
+ */
+export async function sendTestNotification(): Promise<string> {
+  if (!isNative()) return "Notifications only work in the installed app (not in the browser preview).";
+  let LocalNotifications;
+  try {
+    ({ LocalNotifications } = await import("@capacitor/local-notifications"));
+  } catch {
+    return "Notification plugin missing from this build.";
+  }
+  try {
+    let perm = await LocalNotifications.checkPermissions();
+    if (perm.display !== "granted") perm = await LocalNotifications.requestPermissions();
+    if (perm.display !== "granted") {
+      return "Permission denied. Enable notifications for Consistify in Android Settings → Apps → Notifications.";
+    }
+
+    try {
+      await LocalNotifications.createChannel({
+        id: CHANNEL_ID,
+        name: "Daily Quotes",
+        description: "Motivational quotes through the day",
+        importance: 4,
+        visibility: 1,
+      });
+    } catch { /* iOS */ }
+
+    const at = new Date(Date.now() + 5000);
+    const base = {
+      id: 9999,
+      title: "Consistify",
+      body: "Test notification — your quotes will arrive like this.",
+      channelId: CHANNEL_ID,
+    };
+    try {
+      await LocalNotifications.schedule({ notifications: [{ ...base, schedule: { at, allowWhileIdle: true } }] });
+    } catch {
+      await LocalNotifications.schedule({ notifications: [{ ...base, schedule: { at } }] });
+    }
+
+    await scheduleQuoteNotifications();
+    const pending = await LocalNotifications.getPending();
+    return `Test sent — it should appear in ~5s. ${pending.notifications.length} notifications queued.`;
+  } catch (e) {
+    return `Failed: ${e instanceof Error ? e.message : String(e)}`;
+  }
+}
