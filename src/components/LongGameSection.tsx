@@ -260,6 +260,18 @@ const LongGameSection = ({
 
   useBackHandler(!!open, close);
 
+  const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(""); }, []);
+  useBackHandler(searchOpen && !open, closeSearch);
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((i) =>
+      (i.title || "").toLowerCase().includes(q) ||
+      (i.description || "").toLowerCase().includes(q),
+    );
+  }, [items, searchQuery]);
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const top = e.currentTarget.scrollTop;
     if (tickingRef.current) return;
@@ -303,6 +315,7 @@ const LongGameSection = ({
       <button
         type="button"
         aria-label="Search"
+        onClick={() => setSearchOpen(true)}
         className="absolute top-safe-4 right-4 z-40 w-9 h-9 rounded-full bg-black/35 backdrop-blur-md flex items-center justify-center text-foreground"
       >
         <Search size={17} />
