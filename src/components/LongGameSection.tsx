@@ -29,7 +29,23 @@ const FADE_IN_DELAY = 190;
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
+const WATCH_LATER_KEY = "lg_watch_later";
+const CONTINUE_KEY = "lg_continue_watching";
+
+function readJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function writeJson(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* empty */ }
+}
+
 const badgeFor = (iso: string) => (Date.now() - new Date(iso).getTime() < 7 * 86400000 ? "New" : "Trending");
+
 
 const portraitSrc = (item: Item) =>
   item.thumbnail_portrait_url || getVideoThumbnail(item.video_url, item.thumbnail_url);
@@ -90,13 +106,16 @@ const ContinueCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => 
   >
     <PosterArt item={item} orientation="landscape" />
     <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/80 to-transparent" />
-    <div className="absolute left-3 bottom-3 flex items-center gap-1.5 rounded-full bg-white/90 pl-2 pr-3 py-1 backdrop-blur-sm">
-      <Play size={11} className="fill-black text-black" />
-      <span className="text-[11px] font-bold text-black tracking-tight">Play Now</span>
-    </div>
+    <span
+      className="absolute left-3 bottom-3 text-[13px] font-medium text-white/90 tracking-tight"
+      style={{ fontFamily: "Inter, system-ui, sans-serif" }}
+    >
+      Play Now
+    </span>
   </div>
 ));
 ContinueCard.displayName = "ContinueCard";
+
 
 
 const PosterCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
@@ -138,10 +157,29 @@ const LongGameSection = ({
   const [showDetail, setShowDetail] = useState(false);
   const [closing, setClosing] = useState(false);
   const [scrollY, setScrollY] = useState(0);
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
+  const [saved, setSaved] = useState<Record<string, boolean>>(() => readJson<Record<string, boolean>>(WATCH_LATER_KEY, {}));
+  const [watched, setWatched] = useState<string[]>(() => readJson<string[]>(CONTINUE_KEY, []));
   const [playing, setPlaying] = useState<Item | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const toggleSaved = useCallback((id: string) => {
+    setSaved((s) => {
+      const next = { ...s, [id]: !s[id] };
+      if (!next[id]) delete next[id];
+      writeJson(WATCH_LATER_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const markWatched = useCallback((id: string) => {
+    setWatched((w) => {
+      const next = [id, ...w.filter((x) => x !== id)].slice(0, 20);
+      writeJson(CONTINUE_KEY, next);
+      return next;
+    });
+  }, []);
+
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -284,14 +322,19 @@ const LongGameSection = ({
 
   const rows = useMemo(() => {
     const rotate = (n: number) => items.slice(n).concat(items.slice(0, n));
+    const byId = new Map(items.map((i) => [i.id, i]));
+    const continueWatching = watched.map((id) => byId.get(id)).filter(Boolean) as Item[];
     return {
-      continueWatching: items.slice(0, 3),
+      continueWatching: continueWatching.length ? continueWatching : items.slice(0, 3),
+      watchLater: items.filter((i) => saved[i.id]),
       originals: items,
       trending: [...items].reverse(),
       mostWatched: rotate(2),
       official: rotate(4),
+
     };
-  }, [items]);
+  }, [items, watched, saved]);
+
 
   const titleOpacity = clamp((scrollY - 170) / 60, 0, 1);
   const titleY = 8 - 8 * titleOpacity;
@@ -363,7 +406,7 @@ const LongGameSection = ({
                         <Play size={15} className="fill-current" /> Play
                       </button>
                       <button
-                        onClick={() => setSaved((s) => ({ ...s, [m.id]: !s[m.id] }))}
+                        onClick={() => toggleSaved(m.id)}
                         aria-label="Add to Watchlist"
                         className="absolute left-1/2 ml-[68px] w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white"
                       >
@@ -407,7 +450,11 @@ const LongGameSection = ({
                   ))}
                 </div>
               </SectionRow>
+              {rows.watchLater.length > 0 && (
+                <SectionRow title="Watch Later"><RankRow items={rows.watchLater} onOpen={openItem} /></SectionRow>
+              )}
               <SectionRow title="Originals"><RankRow items={rows.originals} onOpen={openItem} /></SectionRow>
+
               <SectionRow title="Trending"><RankRow items={rows.trending} onOpen={openItem} /></SectionRow>
               <SectionRow title="Most Watched"><RankRow items={rows.mostWatched} onOpen={openItem} /></SectionRow>
               <SectionRow title="Official"><RankRow items={rows.official} onOpen={openItem} /></SectionRow>
@@ -513,13 +560,14 @@ const LongGameSection = ({
 
               <div className="flex items-center gap-3 mb-5">
                 <button
-                  onClick={() => setPlaying(open)}
+                  onClick={() => { markWatched(open.id); setPlaying(open); }}
                   className="flex-1 h-11 rounded-full bg-foreground text-background font-semibold text-[15px] flex items-center justify-center gap-2"
                 >
                   <Play size={16} className="fill-current" /> Play
                 </button>
                 <button
-                  onClick={() => setSaved((s) => ({ ...s, [open.id]: !s[open.id] }))}
+                  onClick={() => toggleSaved(open.id)}
+
                   aria-label="Add to Watchlist"
                   className="w-11 h-11 rounded-full bg-foreground/10 flex items-center justify-center"
                 >
