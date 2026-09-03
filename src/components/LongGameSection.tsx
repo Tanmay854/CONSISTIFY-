@@ -333,7 +333,8 @@ const LongGameSection = ({
       official: rotate(4),
 
     };
-  }, [items]);
+  }, [items, watched, saved]);
+
 
   const titleOpacity = clamp((scrollY - 170) / 60, 0, 1);
   const titleY = 8 - 8 * titleOpacity;
