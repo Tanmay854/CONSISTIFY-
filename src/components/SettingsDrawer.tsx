@@ -11,6 +11,7 @@ import {
   notificationsEnabled,
   scheduleQuoteNotifications,
   setNotificationsEnabled,
+  sendTestNotification,
 } from "@/lib/quoteNotifications";
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
@@ -29,6 +30,7 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwInfo, setPwInfo] = useState<string | null>(null);
   const [notifOn, setNotifOn] = useState(() => notificationsEnabled());
+  const [notifMsg, setNotifMsg] = useState<string | null>(null);
 
   const toggleNotifications = async () => {
     const next = !notifOn;
