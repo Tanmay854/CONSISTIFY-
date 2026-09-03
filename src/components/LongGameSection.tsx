@@ -560,13 +560,14 @@ const LongGameSection = ({
 
               <div className="flex items-center gap-3 mb-5">
                 <button
-                  onClick={() => setPlaying(open)}
+                  onClick={() => { markWatched(open.id); setPlaying(open); }}
                   className="flex-1 h-11 rounded-full bg-foreground text-background font-semibold text-[15px] flex items-center justify-center gap-2"
                 >
                   <Play size={16} className="fill-current" /> Play
                 </button>
                 <button
-                  onClick={() => setSaved((s) => ({ ...s, [open.id]: !s[open.id] }))}
+                  onClick={() => toggleSaved(open.id)}
+
                   aria-label="Add to Watchlist"
                   className="w-11 h-11 rounded-full bg-foreground/10 flex items-center justify-center"
                 >
