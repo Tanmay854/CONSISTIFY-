@@ -322,12 +322,16 @@ const LongGameSection = ({
 
   const rows = useMemo(() => {
     const rotate = (n: number) => items.slice(n).concat(items.slice(0, n));
+    const byId = new Map(items.map((i) => [i.id, i]));
+    const continueWatching = watched.map((id) => byId.get(id)).filter(Boolean) as Item[];
     return {
-      continueWatching: items.slice(0, 3),
+      continueWatching: continueWatching.length ? continueWatching : items.slice(0, 3),
+      watchLater: items.filter((i) => saved[i.id]),
       originals: items,
       trending: [...items].reverse(),
       mostWatched: rotate(2),
       official: rotate(4),
+
     };
   }, [items]);
 
