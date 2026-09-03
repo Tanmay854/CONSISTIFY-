@@ -141,10 +141,29 @@ const LongGameSection = ({
   const [showDetail, setShowDetail] = useState(false);
   const [closing, setClosing] = useState(false);
   const [scrollY, setScrollY] = useState(0);
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
+  const [saved, setSaved] = useState<Record<string, boolean>>(() => readJson<Record<string, boolean>>(WATCH_LATER_KEY, {}));
+  const [watched, setWatched] = useState<string[]>(() => readJson<string[]>(CONTINUE_KEY, []));
   const [playing, setPlaying] = useState<Item | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const toggleSaved = useCallback((id: string) => {
+    setSaved((s) => {
+      const next = { ...s, [id]: !s[id] };
+      if (!next[id]) delete next[id];
+      writeJson(WATCH_LATER_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const markWatched = useCallback((id: string) => {
+    setWatched((w) => {
+      const next = [id, ...w.filter((x) => x !== id)].slice(0, 20);
+      writeJson(CONTINUE_KEY, next);
+      return next;
+    });
+  }, []);
+
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
