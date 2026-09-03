@@ -29,7 +29,23 @@ const FADE_IN_DELAY = 190;
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
+const WATCH_LATER_KEY = "lg_watch_later";
+const CONTINUE_KEY = "lg_continue_watching";
+
+function readJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function writeJson(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* empty */ }
+}
+
 const badgeFor = (iso: string) => (Date.now() - new Date(iso).getTime() < 7 * 86400000 ? "New" : "Trending");
+
 
 const portraitSrc = (item: Item) =>
   item.thumbnail_portrait_url || getVideoThumbnail(item.video_url, item.thumbnail_url);
