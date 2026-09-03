@@ -90,13 +90,16 @@ const ContinueCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => 
   >
     <PosterArt item={item} orientation="landscape" />
     <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/80 to-transparent" />
-    <div className="absolute left-3 bottom-3 flex items-center gap-1.5 rounded-full bg-white/90 pl-2 pr-3 py-1 backdrop-blur-sm">
-      <Play size={11} className="fill-black text-black" />
-      <span className="text-[11px] font-bold text-black tracking-tight">Play Now</span>
-    </div>
+    <span
+      className="absolute left-3 bottom-3 text-[13px] font-medium text-white/90 tracking-tight"
+      style={{ fontFamily: "Inter, system-ui, sans-serif" }}
+    >
+      Play Now
+    </span>
   </div>
 ));
 ContinueCard.displayName = "ContinueCard";
+
 
 
 const PosterCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => (
