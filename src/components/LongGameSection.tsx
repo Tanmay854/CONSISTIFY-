@@ -406,7 +406,7 @@ const LongGameSection = ({
                         <Play size={15} className="fill-current" /> Play
                       </button>
                       <button
-                        onClick={() => setSaved((s) => ({ ...s, [m.id]: !s[m.id] }))}
+                        onClick={() => toggleSaved(m.id)}
                         aria-label="Add to Watchlist"
                         className="absolute left-1/2 ml-[68px] w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white"
                       >
