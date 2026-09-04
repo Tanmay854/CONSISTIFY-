@@ -25,6 +25,8 @@ const SLOT_HOURS = [6, 9, 12, 15, 18, 21];
 const QUEUE_SIZE = 48;
 
 const CHANNEL_ID = "daily_quotes";
+const QUOTE_NOTIFICATION_ID_START = 10_000;
+const QUOTE_NOTIFICATION_ID_END = QUOTE_NOTIFICATION_ID_START + QUEUE_SIZE - 1;
 
 const isNative = () => Capacitor.isNativePlatform();
 
@@ -127,8 +129,11 @@ export async function cancelQuoteNotifications() {
   try {
     const { LocalNotifications } = await import("@capacitor/local-notifications");
     const pending = await LocalNotifications.getPending();
-    if (pending.notifications.length) {
-      await LocalNotifications.cancel({ notifications: pending.notifications });
+    const quoteNotifications = pending.notifications.filter(
+      ({ id }) => id >= QUOTE_NOTIFICATION_ID_START && id <= QUOTE_NOTIFICATION_ID_END,
+    );
+    if (quoteNotifications.length) {
+      await LocalNotifications.cancel({ notifications: quoteNotifications });
     }
   } catch {
     /* empty */
@@ -203,7 +208,7 @@ export async function scheduleQuoteNotifications(): Promise<void> {
       const q = deck[(cursor + i) % quotes.length];
       const body = q.author ? `${q.text}\n— ${q.author}` : q.text;
       return {
-        id: 10_000 + i,
+        id: QUOTE_NOTIFICATION_ID_START + i,
         title,
         body,
         largeBody: body,
@@ -281,9 +286,11 @@ export async function sendTestNotification(): Promise<string> {
       await LocalNotifications.schedule({ notifications: [{ ...base, schedule: { at } }] });
     }
 
-    await scheduleQuoteNotifications();
     const pending = await LocalNotifications.getPending();
-    return `Test sent — it should appear in ~5s. ${pending.notifications.length} notifications queued.`;
+    const testQueued = pending.notifications.some(({ id }) => id === base.id);
+    return testQueued
+      ? "Test sent — it should appear in ~5s."
+      : "The phone did not keep the test notification scheduled. Check Consistify notification and alarm permissions in Android Settings.";
   } catch (e) {
     return `Failed: ${e instanceof Error ? e.message : String(e)}`;
   }

@@ -11,6 +11,7 @@ import { normalizeSummaryText } from "@/lib/textNormalize";
 import { getCoverUrl, THUMB_WIDTH, DETAIL_WIDTH, sharedCoverUrl } from "@/lib/coverUrl";
 
 type Mode = "overview" | "quiz" | "summary" | "audio";
+type SimilarBook = Pick<Book, "id" | "title" | "author" | "cover_url" | "category">;
 
 const openAmazon = (url: string) => {
   try { window.open(url, "_blank", "noopener,noreferrer"); }
@@ -43,7 +44,7 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
   const [dismissDown, setDismissDown] = useState(false);
-  const [similar, setSimilar] = useState<Book[]>([]);
+  const [similar, setSimilar] = useState<SimilarBook[]>([]);
   const [contentVisible, setContentVisible] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
   const overviewScrollRef = useRef<HTMLDivElement | null>(null);
@@ -63,10 +64,10 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
     let cancelled = false;
     (async () => {
       const { data } = await supabase
-        .from("books").select("*")
+        .from("books").select("id,title,author,cover_url,category")
         .neq("id", book.id).eq("category", book.category)
         .eq("is_published", true).limit(10);
-      if (!cancelled) setSimilar(((data as unknown) as Book[]) ?? []);
+      if (!cancelled) setSimilar(((data as unknown) as SimilarBook[]) ?? []);
     })();
     return () => { cancelled = true; };
   }, [book.id, book.category, settled]);
@@ -157,7 +158,7 @@ const CONTENT_MOTION = {
 } as const;
 
 
-const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, coverRef, showBackdrop = true }: { book: Book; coverLayoutId?: string; similar: Book[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; coverRef?: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
+const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, coverRef, showBackdrop = true }: { book: Book; coverLayoutId?: string; similar: SimilarBook[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; coverRef?: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
   const contentMotion = CONTENT_MOTION;
@@ -303,7 +304,10 @@ const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, 
           <h3 className="px-6 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Similar books</h3>
           <div className="flex gap-3 overflow-x-auto scrollbar-hide px-6 pb-2 snap-x">
             {similar.map((b) => (
-              <button key={b.id} onClick={() => (window as any).__openBook?.(b)}
+              <button key={b.id} onClick={async () => {
+                const { data } = await supabase.from("books").select("*").eq("id", b.id).maybeSingle();
+                if (data) (window as any).__openBook?.(data as unknown as Book);
+              }}
                 className="shrink-0 w-28 snap-start text-left active:scale-[0.97] transition-transform">
                 <div className="relative w-28 aspect-[2/3] rounded-xl overflow-hidden bg-secondary">
                   <img src={sharedCoverUrl(b.cover_url)} alt={b.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
@@ -568,6 +572,7 @@ const SummaryReader = ({ book, onBuy, startPage = 0 }: { book: Book; onBuy: () =
 
 const AudioPlayer = ({ book }: { book: Book }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const scrubbingRef = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(0);
   const [dur, setDur] = useState(0);
@@ -579,7 +584,7 @@ const AudioPlayer = ({ book }: { book: Book }) => {
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onTime = () => { if (!scrubbing) setCur(a.currentTime); };
+    const onTime = () => { if (!scrubbingRef.current) setCur(a.currentTime); };
     const onMeta = () => setDur(a.duration || 0);
     const onEnd = () => setPlaying(false);
     const onWait = () => setLoading(true);
@@ -602,8 +607,11 @@ const AudioPlayer = ({ book }: { book: Book }) => {
       a.removeEventListener("canplay", onCan);
       a.removeEventListener("playing", onCan);
       a.removeEventListener("progress", onProg);
+      a.pause();
+      a.removeAttribute("src");
+      a.load();
     };
-  }, [scrubbing]);
+  }, []);
 
   useEffect(() => {
     if (!("mediaSession" in navigator)) return;
@@ -619,6 +627,12 @@ const AudioPlayer = ({ book }: { book: Book }) => {
     try {
       navigator.mediaSession.setActionHandler("seekto", (d: any) => { if (a && typeof d.seekTime === "number") a.currentTime = d.seekTime; });
     } catch { /* empty */ }
+    return () => {
+      navigator.mediaSession.metadata = null;
+      for (const action of ["play", "pause", "seekbackward", "seekforward", "seekto"] as MediaSessionAction[]) {
+        try { navigator.mediaSession.setActionHandler(action, null); } catch { /* unsupported */ }
+      }
+    };
   }, [book]);
 
   const toggle = async () => {
@@ -676,12 +690,13 @@ const AudioPlayer = ({ book }: { book: Book }) => {
           className="relative h-6 flex items-center touch-none cursor-pointer"
           onPointerDown={(e) => {
             (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+            scrubbingRef.current = true;
             setScrubbing(true);
             onBarPointer(e);
           }}
           onPointerMove={(e) => { if (scrubbing) onBarPointer(e); }}
-          onPointerUp={() => setScrubbing(false)}
-          onPointerCancel={() => setScrubbing(false)}
+          onPointerUp={() => { scrubbingRef.current = false; setScrubbing(false); }}
+          onPointerCancel={() => { scrubbingRef.current = false; setScrubbing(false); }}
         >
           <div className="relative w-full h-1 rounded-full bg-foreground/20 overflow-hidden">
             <div className="absolute inset-y-0 left-0 bg-foreground/35" style={{ width: `${bpct}%` }} />
