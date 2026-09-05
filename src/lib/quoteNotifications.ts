@@ -18,6 +18,7 @@ const NOTIF_CAT_KEY = "notif_quote_cat";
 const NOTIF_SUB_KEY = "notif_quote_sub";
 export const NOTIF_ENABLED_KEY = "quote_notifications_enabled";
 const CURSOR_KEY = "quote_notifications_cursor";
+const QUOTE_CACHE_KEY = "quote_notifications_quote_cache";
 
 /** Every 3 hours from 6am through 9pm (inside the 6am-11pm window). */
 const SLOT_HOURS = [6, 9, 12, 15, 18, 21];
@@ -27,6 +28,18 @@ const QUEUE_SIZE = 48;
 const CHANNEL_ID = "daily_quotes";
 const QUOTE_NOTIFICATION_ID_START = 10_000;
 const QUOTE_NOTIFICATION_ID_END = QUOTE_NOTIFICATION_ID_START + QUEUE_SIZE - 1;
+const SCHEDULE_BATCH_SIZE = 6;
+
+type NotificationQuote = { text: string; author: string | null };
+
+const FALLBACK_QUOTES: NotificationQuote[] = [
+  { text: "Small disciplines repeated with consistency lead to great achievements.", author: null },
+  { text: "The next step matters more than the perfect plan.", author: null },
+  { text: "You do not need more time. You need a clear priority.", author: null },
+  { text: "Keep the promise you made to yourself today.", author: null },
+  { text: "Progress is built on the days you choose not to quit.", author: null },
+  { text: "Focus on what you can do now, then do it well.", author: null },
+];
 
 const isNative = () => Capacitor.isNativePlatform();
 
@@ -111,6 +124,30 @@ const upcomingSlots = (count: number) => {
   return out;
 };
 
+const readCachedQuotes = (): NotificationQuote[] => {
+  try {
+    const cached: unknown = JSON.parse(localStorage.getItem(QUOTE_CACHE_KEY) || "[]");
+    if (!Array.isArray(cached)) return [];
+    return cached.filter(
+      (quote): quote is NotificationQuote =>
+        typeof quote === "object" &&
+        quote !== null &&
+        typeof (quote as NotificationQuote).text === "string" &&
+        (quote as NotificationQuote).text.trim().length > 0,
+    );
+  } catch {
+    return [];
+  }
+};
+
+const cacheQuotes = (quotes: NotificationQuote[]) => {
+  try {
+    localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify(quotes.slice(0, 200)));
+  } catch {
+    /* empty */
+  }
+};
+
 /** Ask for permission once (native only). Returns true when granted. */
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!isNative()) return false;
@@ -161,15 +198,17 @@ export async function scheduleQuoteNotifications(): Promise<void> {
   if (topic) query = query.eq("category", topic.cat).eq("subcategory", topic.sub);
   let { data, error } = await query;
 
-  let quotes = (data || []).filter((q) => !!q.text);
+  let quotes = (data || []).filter((q): q is NotificationQuote => !!q.text);
   if (topic && (error || !quotes.length)) {
     // Selected subtopic has no quotes -> fall back to the whole library.
     const res = await supabase.from("daily_quotes").select("text,author").limit(500);
     data = res.data;
     error = res.error;
-    quotes = (data || []).filter((q) => !!q.text);
+    quotes = (data || []).filter((q): q is NotificationQuote => !!q.text);
   }
-  if (!quotes.length) return;
+  if (quotes.length) cacheQuotes(quotes);
+  else quotes = readCachedQuotes();
+  if (!quotes.length) quotes = FALLBACK_QUOTES;
 
   let cursor = 0;
   try {
@@ -219,13 +258,18 @@ export async function scheduleQuoteNotifications(): Promise<void> {
       };
     });
 
-    try {
-      await LocalNotifications.schedule({ notifications });
-    } catch {
-      // Android 12+ can refuse exact alarms -> retry inexact.
-      await LocalNotifications.schedule({
-        notifications: notifications.map((n) => ({ ...n, schedule: { at: n.schedule.at } })),
-      });
+    // Some Android WebViews cannot reliably pass a large notification array
+    // through the native bridge. Queue one day's six alerts at a time instead.
+    for (let i = 0; i < notifications.length; i += SCHEDULE_BATCH_SIZE) {
+      const batch = notifications.slice(i, i + SCHEDULE_BATCH_SIZE);
+      try {
+        await LocalNotifications.schedule({ notifications: batch });
+      } catch {
+        // Android 12+ can refuse exact alarms -> retry this batch inexactly.
+        await LocalNotifications.schedule({
+          notifications: batch.map((n) => ({ ...n, schedule: { at: n.schedule.at } })),
+        });
+      }
     }
 
     try {
