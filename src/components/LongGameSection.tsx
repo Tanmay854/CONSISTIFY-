@@ -348,7 +348,14 @@ const LongGameSection = ({
   const [heroIndex, setHeroIndex] = useState(0);
   const onHeroScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
-    setHeroIndex(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
+    const w = el.clientWidth || 1;
+    const raw = Math.round(el.scrollLeft / w);
+    if (raw >= featured.length) {
+      setHeroIndex(0);
+      el.scrollLeft = 0;
+    } else {
+      setHeroIndex(raw);
+    }
   };
 
   // Auto-advance the hero banner every 10s; pauses briefly after a manual swipe.
