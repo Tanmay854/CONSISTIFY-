@@ -351,7 +351,8 @@ const LongGameSection = ({
     setHeroIndex(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   };
 
-  // Auto-advance the hero banner every 6s; pauses briefly after a manual swipe.
+  // Auto-advance the hero banner every 10s; pauses briefly after a manual swipe.
+  // A clone of the first slide is appended so the loop from last -> first scrolls forward.
   const heroTouchedAt = useRef(0);
   useEffect(() => {
     if (featured.length < 2) return;
@@ -360,7 +361,8 @@ const LongGameSection = ({
       if (!el || open || searchOpen) return;
       if (Date.now() - heroTouchedAt.current < 4000) return;
       const w = el.clientWidth || 1;
-      const next = (Math.round(el.scrollLeft / w) + 1) % featured.length;
+      const current = Math.round(el.scrollLeft / w);
+      const next = current + 1;
       const target = next * w;
       const start = el.scrollLeft;
       const dist = target - start;
@@ -371,11 +373,16 @@ const LongGameSection = ({
       const step = (now: number) => {
         const p = Math.min((now - startTime) / duration, 1);
         el.scrollLeft = start + dist * ease(p);
-        if (p < 1) raf = requestAnimationFrame(step);
+        if (p < 1) {
+          raf = requestAnimationFrame(step);
+        } else if (next >= featured.length) {
+          // Reached the cloned first slide; snap back to the real first slide instantly.
+          el.scrollLeft = 0;
+        }
       };
       raf = requestAnimationFrame(step);
       return () => cancelAnimationFrame(raf);
-    }, 6000);
+    }, 10000);
     return () => clearInterval(id);
   }, [featured.length, open, searchOpen]);
 
