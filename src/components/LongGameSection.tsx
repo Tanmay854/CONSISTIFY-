@@ -461,6 +461,43 @@ const LongGameSection = ({
                   </div>
                 </div>
               ))}
+              {/* Cloned first slide so the carousel loops forward instead of scrolling backwards. */}
+              {featured[0] && (
+                <div key={`${featured[0].id}-clone`} className="relative flex-shrink-0 w-full h-[82vh] snap-center">
+                  <PosterArt item={featured[0]} />
+                  <div
+                    className="absolute inset-x-0 top-0 h-56 pointer-events-none"
+                    style={{
+                      background:
+                        "linear-gradient(to bottom, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.44) 18%, rgba(0,0,0,0.26) 38%, rgba(0,0,0,0.12) 60%, rgba(0,0,0,0.04) 80%, rgba(0,0,0,0) 100%)",
+                    }}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/80 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 px-5 pb-6 text-center" style={{ textShadow: "0 2px 20px rgba(0,0,0,0.9)" }}>
+                    <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-black/40 text-white mb-2.5">
+                      {badgeFor(featured[0].created_at) === "New" ? "New" : "Continue Watching"}
+                    </span>
+                    <p className="text-[12px] font-normal text-white/90 mb-4 truncate">
+                      Long Game · {featured[0].sharedBy}
+                    </p>
+                    <div className="relative flex items-center justify-center">
+                      <button
+                        onClick={(e) => openItem(featured[0], e.currentTarget.closest("div[class*='snap-center']") as HTMLElement)}
+                        className="h-10 px-6 rounded-full bg-white text-black font-semibold text-[14px] flex items-center gap-2"
+                      >
+                        <Play size={15} className="fill-current" /> Play
+                      </button>
+                      <button
+                        onClick={() => toggleSaved(featured[0].id)}
+                        aria-label="Add to Watchlist"
+                        className="absolute left-1/2 ml-[68px] w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white"
+                      >
+                        {saved[featured[0].id] ? <Check size={17} /> : <Plus size={17} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             {featured.length > 1 && (
               <div className="flex justify-center gap-1.5 pt-3">
