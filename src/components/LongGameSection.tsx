@@ -351,18 +351,31 @@ const LongGameSection = ({
     setHeroIndex(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   };
 
-  // Auto-advance the hero banner every 4s; pauses briefly after a manual swipe.
+  // Auto-advance the hero banner every 6s; pauses briefly after a manual swipe.
   const heroTouchedAt = useRef(0);
   useEffect(() => {
     if (featured.length < 2) return;
     const id = setInterval(() => {
       const el = heroRef.current;
       if (!el || open || searchOpen) return;
-      if (Date.now() - heroTouchedAt.current < 6000) return;
+      if (Date.now() - heroTouchedAt.current < 4000) return;
       const w = el.clientWidth || 1;
       const next = (Math.round(el.scrollLeft / w) + 1) % featured.length;
-      el.scrollTo({ left: next * w, behavior: "smooth" });
-    }, 4000);
+      const target = next * w;
+      const start = el.scrollLeft;
+      const dist = target - start;
+      const duration = 1000;
+      const startTime = performance.now();
+      let raf = 0;
+      const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const step = (now: number) => {
+        const p = Math.min((now - startTime) / duration, 1);
+        el.scrollLeft = start + dist * ease(p);
+        if (p < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(raf);
+    }, 6000);
     return () => clearInterval(id);
   }, [featured.length, open, searchOpen]);
 
