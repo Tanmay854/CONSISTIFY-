@@ -107,9 +107,10 @@ const ContinueCard = memo(({ item, onOpen }: { item: Item; onOpen: OpenFn }) => 
     <PosterArt item={item} orientation="landscape" />
     <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/80 to-transparent" />
     <span
-      className="absolute left-3 bottom-3 text-[13px] font-medium text-white/90 tracking-tight"
+      className="absolute left-3 bottom-3 flex items-center gap-1.5 text-[13px] font-medium text-white/90 tracking-tight"
       style={{ fontFamily: "Inter, system-ui, sans-serif" }}
     >
+      <Play size={11} className="fill-current" />
       Play Now
     </span>
   </div>
@@ -350,6 +351,21 @@ const LongGameSection = ({
     setHeroIndex(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   };
 
+  // Auto-advance the hero banner every 4s; pauses briefly after a manual swipe.
+  const heroTouchedAt = useRef(0);
+  useEffect(() => {
+    if (featured.length < 2) return;
+    const id = setInterval(() => {
+      const el = heroRef.current;
+      if (!el || open || searchOpen) return;
+      if (Date.now() - heroTouchedAt.current < 6000) return;
+      const w = el.clientWidth || 1;
+      const next = (Math.round(el.scrollLeft / w) + 1) % featured.length;
+      el.scrollTo({ left: next * w, behavior: "smooth" });
+    }, 4000);
+    return () => clearInterval(id);
+  }, [featured.length, open, searchOpen]);
+
   const heroStripSrc = featured.length ? portraitSrc(featured[Math.min(heroIndex, featured.length - 1)]) : null;
 
   return (
@@ -374,6 +390,8 @@ const LongGameSection = ({
             <div
               ref={heroRef}
               onScroll={onHeroScroll}
+              onTouchStart={() => { heroTouchedAt.current = Date.now(); }}
+              onTouchEnd={() => { heroTouchedAt.current = Date.now(); }}
               className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory"
             >
               {featured.map((m) => (
