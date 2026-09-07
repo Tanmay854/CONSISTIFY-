@@ -123,7 +123,7 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
           transform: "translateZ(0)",
           // While sliding away the sheet is a static texture: freeze paints and
           // isolate it so Android composites one layer at full refresh rate.
-          contain: dismissDown ? "strict" : undefined,
+          contain: dismissDown ? "layout paint" : undefined,
           isolation: "isolate",
         }}
       >
