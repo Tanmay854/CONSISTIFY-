@@ -116,7 +116,16 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
         exit={{ opacity: 0, transition: { duration: dismissDown ? 0 : 0.16, ease: "easeOut" } }}
         transition={{ y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] }, opacity: { duration: 0.22, ease: "easeOut" } }}
         onAnimationComplete={() => { if (dismissDown) onCloseComplete(); }}
-        style={{ pointerEvents: dismissDown ? "none" : "auto", willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
+        style={{
+          pointerEvents: dismissDown ? "none" : "auto",
+          willChange: "transform",
+          backfaceVisibility: "hidden",
+          transform: "translateZ(0)",
+          // While sliding away the sheet is a static texture: freeze paints and
+          // isolate it so Android composites one layer at full refresh rate.
+          contain: dismissDown ? "strict" : undefined,
+          isolation: "isolate",
+        }}
       >
         <motion.button
           onClick={handleClose}
@@ -131,7 +140,7 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
         </motion.button>
 
         {mode === "overview" && (
-          <Overview coverRef={coverRef} scrollRef={overviewScrollRef} book={book} coverLayoutId={dismissDown ? undefined : coverLayoutId} similar={similar} showBackdrop={settled} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
+          <Overview coverRef={coverRef} scrollRef={overviewScrollRef} book={book} coverLayoutId={dismissDown ? undefined : coverLayoutId} similar={similar} showBackdrop={settled && !dismissDown} onQuiz={() => goMode("quiz")} onListen={() => goMode("audio")} onOpenPage={openSummaryAt} onBuy={() => openAmazon(book.amazon_url)} />
         )}
 
 
