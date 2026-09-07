@@ -348,10 +348,18 @@ const LongGameSection = ({
   const [heroIndex, setHeroIndex] = useState(0);
   const onHeroScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
-    setHeroIndex(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
+    const w = el.clientWidth || 1;
+    const raw = Math.round(el.scrollLeft / w);
+    if (raw >= featured.length) {
+      setHeroIndex(0);
+      el.scrollLeft = 0;
+    } else {
+      setHeroIndex(raw);
+    }
   };
 
-  // Auto-advance the hero banner every 6s; pauses briefly after a manual swipe.
+  // Auto-advance the hero banner every 10s; pauses briefly after a manual swipe.
+  // A clone of the first slide is appended so the loop from last -> first scrolls forward.
   const heroTouchedAt = useRef(0);
   useEffect(() => {
     if (featured.length < 2) return;
@@ -360,7 +368,8 @@ const LongGameSection = ({
       if (!el || open || searchOpen) return;
       if (Date.now() - heroTouchedAt.current < 4000) return;
       const w = el.clientWidth || 1;
-      const next = (Math.round(el.scrollLeft / w) + 1) % featured.length;
+      const current = Math.round(el.scrollLeft / w);
+      const next = current + 1;
       const target = next * w;
       const start = el.scrollLeft;
       const dist = target - start;
@@ -371,11 +380,16 @@ const LongGameSection = ({
       const step = (now: number) => {
         const p = Math.min((now - startTime) / duration, 1);
         el.scrollLeft = start + dist * ease(p);
-        if (p < 1) raf = requestAnimationFrame(step);
+        if (p < 1) {
+          raf = requestAnimationFrame(step);
+        } else if (next >= featured.length) {
+          // Reached the cloned first slide; snap back to the real first slide instantly.
+          el.scrollLeft = 0;
+        }
       };
       raf = requestAnimationFrame(step);
       return () => cancelAnimationFrame(raf);
-    }, 6000);
+    }, 10000);
     return () => clearInterval(id);
   }, [featured.length, open, searchOpen]);
 
@@ -447,6 +461,43 @@ const LongGameSection = ({
                   </div>
                 </div>
               ))}
+              {/* Cloned first slide so the carousel loops forward instead of scrolling backwards. */}
+              {featured[0] && (
+                <div key={`${featured[0].id}-clone`} className="relative flex-shrink-0 w-full h-[82vh] snap-center">
+                  <PosterArt item={featured[0]} />
+                  <div
+                    className="absolute inset-x-0 top-0 h-56 pointer-events-none"
+                    style={{
+                      background:
+                        "linear-gradient(to bottom, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.44) 18%, rgba(0,0,0,0.26) 38%, rgba(0,0,0,0.12) 60%, rgba(0,0,0,0.04) 80%, rgba(0,0,0,0) 100%)",
+                    }}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/80 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 px-5 pb-6 text-center" style={{ textShadow: "0 2px 20px rgba(0,0,0,0.9)" }}>
+                    <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-black/40 text-white mb-2.5">
+                      {badgeFor(featured[0].created_at) === "New" ? "New" : "Continue Watching"}
+                    </span>
+                    <p className="text-[12px] font-normal text-white/90 mb-4 truncate">
+                      Long Game · {featured[0].sharedBy}
+                    </p>
+                    <div className="relative flex items-center justify-center">
+                      <button
+                        onClick={(e) => openItem(featured[0], e.currentTarget.closest("div[class*='snap-center']") as HTMLElement)}
+                        className="h-10 px-6 rounded-full bg-white text-black font-semibold text-[14px] flex items-center gap-2"
+                      >
+                        <Play size={15} className="fill-current" /> Play
+                      </button>
+                      <button
+                        onClick={() => toggleSaved(featured[0].id)}
+                        aria-label="Add to Watchlist"
+                        className="absolute left-1/2 ml-[68px] w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white"
+                      >
+                        {saved[featured[0].id] ? <Check size={17} /> : <Plus size={17} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             {featured.length > 1 && (
               <div className="flex justify-center gap-1.5 pt-3">
