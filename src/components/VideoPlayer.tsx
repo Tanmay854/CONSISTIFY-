@@ -333,16 +333,15 @@ const VideoPlayer = ({
               {allowRotate && !isFs && (
                 <button
                   aria-label="Watch in landscape"
-                  onClick={toggleFs}
+                  onClick={() => { void toggleFs(true); }}
                   className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
                 >
                   <RectangleHorizontal size={16} />
                 </button>
               )}
               <button
-
                 aria-label={isFs ? "Exit fullscreen" : "Enter fullscreen"}
-                onClick={toggleFs}
+                onClick={() => { void toggleFs(false); }}
                 className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
               >
                 {isFs ? <Minimize size={16} /> : <Maximize size={16} />}
