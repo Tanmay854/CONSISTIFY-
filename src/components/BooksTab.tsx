@@ -279,7 +279,10 @@ const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => v
 const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; onOpen: OpenHandler; sharedCoverVisible: boolean }) => (
   <section>
     <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
-    <div className="flex gap-4 items-stretch overflow-x-auto scrollbar-hide px-5 pb-2 [touch-action:pan-x_pan-y]">
+    <div
+      className="flex gap-4 items-stretch overflow-x-auto scrollbar-hide px-5 pb-2 [touch-action:pan-x_pan-y]"
+      style={{ transform: "translateZ(0)", WebkitOverflowScrolling: "touch" }}
+    >
       {books.map((b) => (
         <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} eager />
       ))}
@@ -297,7 +300,10 @@ const Row = ({
         <button onClick={onSeeAll} className="text-muted-foreground text-[11px] uppercase tracking-wider">See all</button>
       )}
     </div>
-    <div className="flex gap-3 overflow-x-auto scrollbar-hide px-5 pb-2 items-stretch [touch-action:pan-x_pan-y]">
+    <div
+      className="flex gap-3 overflow-x-auto scrollbar-hide px-5 pb-2 items-stretch [touch-action:pan-x_pan-y]"
+      style={{ transform: "translateZ(0)", WebkitOverflowScrolling: "touch" }}
+    >
       {books.map((b) => (
         <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} />
       ))}
@@ -316,18 +322,30 @@ const BookCard = ({ book, onOpen, sharedCoverVisible = true, eager = false }: { 
     onClick={() => onOpen(book, coverLayoutId, buttonRef.current!)}
     className="shrink-0 w-36 text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
-    <div data-cover-id={coverLayoutId} className="relative w-36 aspect-[2/3] overflow-hidden rounded-2xl bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
+    <div
+      data-cover-id={coverLayoutId}
+      className="relative w-36 aspect-[2/3] overflow-hidden rounded-2xl bg-secondary shadow-[0_10px_24px_-16px_rgba(0,0,0,0.9)]"
+      style={{ contain: "paint" }}
+    >
       {/* This base image never participates in layout projection, so it remains
           fixed when a scrolled detail page dismisses downward. */}
       <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="absolute inset-0 w-full h-full object-cover" loading={eager ? "eager" : "lazy"} decoding="async" />
       <motion.div
         layoutId={coverLayoutId}
         transition={COVER_SPRING}
-        style={{ borderRadius: 16, display: sharedCoverVisible ? "block" : "none", backfaceVisibility: "hidden" }}
+        style={{
+          borderRadius: 16,
+          display: sharedCoverVisible ? "block" : "none",
+          backfaceVisibility: "hidden",
+          pointerEvents: "none",
+          // The morph target is a plain background layer while idle: no second
+          // <img> element to raster on every horizontal scroll frame.
+          backgroundImage: `url(${sharedCoverUrl(book.cover_url)})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
         className="absolute inset-0 overflow-hidden bg-secondary"
-      >
-        <img src={sharedCoverUrl(book.cover_url)} alt="" aria-hidden="true" className="w-full h-full object-cover" loading={eager ? "eager" : "lazy"} decoding="async" />
-      </motion.div>
+      />
     </div>
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
     <p className="text-muted-foreground text-[10px] mt-1 line-clamp-1 min-h-[0.9rem]">{book.author}</p>
