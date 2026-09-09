@@ -278,65 +278,90 @@ const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => v
 
 const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; onOpen: OpenHandler; sharedCoverVisible: boolean }) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const pausedUntil = useRef(0);
-  const rafRef = useRef<number | null>(null);
-  const hasReachedEnd = useRef(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<Animation | null>(null);
+  const resumeTimerRef = useRef<number | null>(null);
 
-  // Slow, continuous featured glide. It drifts gently to the right and stops
-  // once the last featured book is reached instead of looping back.
+  // Animate the inner track on the compositor instead of changing scrollLeft
+  // every frame. This keeps the 0.06 px/ms glide fluid on high-refresh Android
+  // screens while retaining native touch scrolling whenever the user swipes.
   useEffect(() => {
     if (books.length < 2) return;
     const el = scrollerRef.current;
-    if (!el) return;
+    const track = trackRef.current;
+    if (!el || !track) return;
 
-    hasReachedEnd.current = false;
-    let last = performance.now();
-    const SPEED = 0.06; // px per ms — very slow, smooth drift
+    const SPEED = 0.06;
 
-    const step = (now: number) => {
-      const dt = Math.min(50, now - last);
-      last = now;
-      const max = el.scrollWidth - el.clientWidth;
-      if (
-        max > 0 &&
-        !document.hidden &&
-        performance.now() >= pausedUntil.current &&
-        !hasReachedEnd.current
-      ) {
-        const next = el.scrollLeft + SPEED * dt;
-        if (next >= max - 1) {
-          el.scrollLeft = max;
-          hasReachedEnd.current = true;
-        } else {
-          el.scrollLeft = next;
-        }
+    const settle = () => {
+      const animation = animationRef.current;
+      if (!animation) return;
+      let shifted = 0;
+      try {
+        shifted = Math.max(0, -new DOMMatrixReadOnly(getComputedStyle(track).transform).m41);
+      } catch {
+        shifted = 0;
       }
-      rafRef.current = requestAnimationFrame(step);
+      animation.cancel();
+      animationRef.current = null;
+      el.scrollLeft = Math.min(el.scrollWidth - el.clientWidth, el.scrollLeft + shifted);
     };
-    rafRef.current = requestAnimationFrame(step);
+
+    const start = () => {
+      if (document.hidden || animationRef.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const remaining = el.scrollWidth - el.clientWidth - el.scrollLeft;
+      if (remaining <= 1) return;
+      const animation = track.animate(
+        [{ transform: "translate3d(0,0,0)" }, { transform: `translate3d(${-remaining}px,0,0)` }],
+        { duration: remaining / SPEED, easing: "linear", fill: "forwards" },
+      );
+      animationRef.current = animation;
+      animation.onfinish = () => {
+        el.scrollLeft = el.scrollWidth - el.clientWidth;
+        animation.cancel();
+        animationRef.current = null;
+      };
+    };
+
+    const pause = () => {
+      settle();
+      if (resumeTimerRef.current !== null) window.clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = window.setTimeout(start, 4000);
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) settle();
+      else pause();
+    };
+
+    el.addEventListener("pointerdown", pause, { passive: true });
+    el.addEventListener("touchstart", pause, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibility);
+    const initialTimer = window.setTimeout(start, 300);
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.clearTimeout(initialTimer);
+      if (resumeTimerRef.current !== null) window.clearTimeout(resumeTimerRef.current);
+      settle();
+      el.removeEventListener("pointerdown", pause);
+      el.removeEventListener("touchstart", pause);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [books.length]);
-
-  const pause = () => {
-    pausedUntil.current = performance.now() + 4000;
-  };
 
   return (
     <section>
       <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
       <div
         ref={scrollerRef}
-        onTouchStart={pause}
-        onPointerDown={pause}
-        className="flex gap-4 items-stretch overflow-x-auto scrollbar-hide px-5 pb-2 [touch-action:pan-x_pan-y]"
-        style={{ transform: "translateZ(0)", WebkitOverflowScrolling: "touch" }}
+        className="overflow-x-auto scrollbar-hide [touch-action:pan-x_pan-y]"
+        style={{ WebkitOverflowScrolling: "touch" }}
       >
-        {books.map((b) => (
-          <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} eager />
-        ))}
+        <div ref={trackRef} className="flex w-max min-w-full gap-4 items-stretch px-5 pb-2 will-change-transform">
+          {books.map((b) => (
+            <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} eager />
+          ))}
+        </div>
       </div>
     </section>
   );
