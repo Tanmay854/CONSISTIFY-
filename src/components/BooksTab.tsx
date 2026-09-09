@@ -296,12 +296,8 @@ const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; on
     const settle = () => {
       const animation = animationRef.current;
       if (!animation) return;
-      let shifted = 0;
-      try {
-        shifted = Math.max(0, -new DOMMatrixReadOnly(getComputedStyle(track).transform).m41);
-      } catch {
-        shifted = 0;
-      }
+      const elapsed = typeof animation.currentTime === "number" ? animation.currentTime : 0;
+      const shifted = Math.max(0, elapsed * SPEED);
       animation.cancel();
       animationRef.current = null;
       el.scrollLeft = Math.min(el.scrollWidth - el.clientWidth, el.scrollLeft + shifted);
