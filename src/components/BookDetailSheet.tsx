@@ -170,7 +170,12 @@ const CONTENT_MOTION = {
 const Overview = ({ book, coverLayoutId, similar, onQuiz, onListen, onOpenPage, onBuy, scrollRef, coverRef, showBackdrop = true }: { book: Book; coverLayoutId?: string; similar: SimilarBook[]; onQuiz: () => void; onListen: () => void; onOpenPage: (idx: number) => void; onBuy: () => void; scrollRef: React.MutableRefObject<HTMLDivElement | null>; coverRef?: React.MutableRefObject<HTMLDivElement | null>; showBackdrop?: boolean }) => {
   const { user } = useAuth();
   const lt = book.listening_time_minutes ? `${book.listening_time_minutes} min` : "—";
-  const contentMotion = CONTENT_MOTION;
+  // When opened from the "Similar books" row, let the cover morph lead and
+  // fade the text/buttons in slightly after it so the zoom reads cleanly.
+  const fromSimilar = coverLayoutId?.startsWith("similar-book-cover-") ?? false;
+  const contentMotion = fromSimilar
+    ? { ...CONTENT_MOTION, transition: { ...CONTENT_MOTION.transition, delay: 0.14 } }
+    : CONTENT_MOTION;
 
   return (
     <div ref={scrollRef} className="h-full overflow-y-auto pb-24">
