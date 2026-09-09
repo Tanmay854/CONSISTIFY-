@@ -131,6 +131,9 @@ const VideoPlayer = ({
     revealControls();
   };
 
+  // True while the user explicitly asked for landscape (orientation is locked).
+  const forcedLandscapeRef = useRef(false);
+
   const toggleFs = async () => {
     const el = wrapperRef.current;
     if (!el) return;
@@ -143,8 +146,9 @@ const VideoPlayer = ({
         /* fullscreen unavailable */
       }
       if (!document.fullscreenElement) setCssFs(true);
-      if (allowRotate) await lockLandscape();
+      if (allowRotate) { forcedLandscapeRef.current = true; await lockLandscape(); }
     } else {
+      forcedLandscapeRef.current = false;
       await unlockOrientation();
       setCssFs(false);
       try { await document.exitFullscreen?.(); } catch { /* empty */ }
@@ -153,6 +157,7 @@ const VideoPlayer = ({
   };
 
   const exitFs = useCallback(() => {
+    forcedLandscapeRef.current = false;
     void unlockOrientation();
     setCssFs(false);
     try { void document.exitFullscreen?.(); } catch { /* empty */ }
@@ -161,6 +166,24 @@ const VideoPlayer = ({
   useBackHandler(cssFs, exitFs);
 
   useEffect(() => () => { void unlockOrientation(); }, []);
+
+  // Auto-rotate like YouTube: turning the phone sideways goes fullscreen,
+  // turning it back returns to the normal player (unless locked by the button).
+  useEffect(() => {
+    if (!allowRotate) return;
+    const sync = () => {
+      if (forcedLandscapeRef.current) return;
+      const landscape = window.innerWidth > window.innerHeight;
+      setCssFs((prev) => (prev === landscape ? prev : landscape));
+    };
+    sync();
+    window.addEventListener("resize", sync);
+    window.addEventListener("orientationchange", sync);
+    return () => {
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("orientationchange", sync);
+    };
+  }, [allowRotate]);
 
   useEffect(() => {
     const onFs = () => {

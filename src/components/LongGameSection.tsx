@@ -299,6 +299,10 @@ const LongGameSection = ({
 
   useBackHandler(!!open, close);
 
+  // Back closes the player first (page-wise), then the detail page.
+  const closePlayer = useCallback(() => setPlaying(null), []);
+  useBackHandler(!!playing, closePlayer);
+
   const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(""); }, []);
   useBackHandler(searchOpen && !open, closeSearch);
 
