@@ -276,115 +276,16 @@ const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => v
   </button>
 );
 
-const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; onOpen: OpenHandler; sharedCoverVisible: boolean }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const slideWidthRef = useRef(0);
-  const isSlidingRef = useRef(false);
-  
-
-  const stopAndSync = useCallback(() => {
-    const el = scrollRef.current;
-    const track = trackRef.current;
-    if (!el || !track || !isSlidingRef.current) return;
-
-    const style = window.getComputedStyle(track).transform;
-    let currentX = 0;
-    if (style && style !== 'none') {
-      const match = style.match(/matrix\([^,]+,[^,]+,[^,]+,[^,]+,([^,]+)/);
-      if (match) currentX = Math.abs(parseFloat(match[1]));
-    }
-
-    track.style.transition = 'none';
-    track.style.transform = 'translate3d(0, 0, 0)';
-    track.style.willChange = '';
-    el.scrollLeft = Math.round(currentX);
-    // Clear inline transform after committing scrollLeft to avoid any flash
-    requestAnimationFrame(() => {
-      if (trackRef.current) trackRef.current.style.transform = '';
-    });
-    isSlidingRef.current = false;
-  }, []);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    const track = trackRef.current;
-    if (!el || !track || books.length <= 1) return;
-
-    const firstCard = track.firstElementChild as HTMLElement | null;
-    const gap = 16;
-    const slideWidth = firstCard ? firstCard.offsetWidth + gap : el.clientWidth * 0.78 + gap;
-    slideWidthRef.current = slideWidth;
-
-    const duration = slideWidth / 0.015; // ms
-
-    // Reset scroll and transform in one frame to avoid initial jump
-    el.scrollLeft = 0;
-    track.style.transition = 'none';
-    track.style.transform = 'translate3d(0, 0, 0)';
-    track.style.willChange = 'transform';
-
-    // Force layout so the starting transform is committed
-    void track.offsetWidth;
-
-    let started = false;
-    const startId = requestAnimationFrame(() => {
-      if (!trackRef.current) return;
-      isSlidingRef.current = true;
-      started = true;
-      trackRef.current.style.transition = `transform ${duration}ms linear`;
-      trackRef.current.style.transform = `translate3d(-${slideWidth}px, 0, 0)`;
-    });
-
-    const onTransitionEnd = () => {
-      if (!isSlidingRef.current) return;
-      track.style.transition = 'none';
-      el.scrollLeft = slideWidth;
-      track.style.transform = 'translate3d(0, 0, 0)';
-      track.style.willChange = '';
-      requestAnimationFrame(() => {
-        if (trackRef.current) trackRef.current.style.transform = '';
-      });
-      isSlidingRef.current = false;
-    };
-
-    track.addEventListener('transitionend', onTransitionEnd);
-
-    // Stop animation on ANY page scroll (vertical) or interaction outside the carousel
-    const onWindowScroll = () => stopAndSync();
-    window.addEventListener('scroll', onWindowScroll, { passive: true, capture: true });
-
-    return () => {
-      cancelAnimationFrame(startId);
-      track.removeEventListener('transitionend', onTransitionEnd);
-      window.removeEventListener('scroll', onWindowScroll, { capture: true } as any);
-      track.style.transition = 'none';
-      track.style.transform = '';
-      track.style.willChange = '';
-      isSlidingRef.current = false;
-      void started;
-    };
-  }, [books.length, stopAndSync]);
-
-  return (
-    <section>
-      <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
-      <div
-        ref={scrollRef}
-        onPointerDown={stopAndSync}
-        onWheel={stopAndSync}
-        onTouchStart={stopAndSync}
-        className="overflow-x-auto scrollbar-hide px-5 pb-2"
-      >
-        <div ref={trackRef} className="flex gap-4 items-stretch">
-          {books.map((b) => (
-            <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
+const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; onOpen: OpenHandler; sharedCoverVisible: boolean }) => (
+  <section>
+    <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
+    <div className="flex gap-4 items-stretch overflow-x-auto scrollbar-hide px-5 pb-2 [touch-action:pan-x_pan-y]">
+      {books.map((b) => (
+        <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} eager />
+      ))}
+    </div>
+  </section>
+);
 
 const Row = ({
   title, books, onOpen, onSeeAll, sharedCoverVisible,
@@ -396,7 +297,7 @@ const Row = ({
         <button onClick={onSeeAll} className="text-muted-foreground text-[11px] uppercase tracking-wider">See all</button>
       )}
     </div>
-    <div className="flex gap-3 overflow-x-auto scrollbar-hide px-5 pb-2 snap-x items-stretch">
+    <div className="flex gap-3 overflow-x-auto scrollbar-hide px-5 pb-2 items-stretch [touch-action:pan-x_pan-y]">
       {books.map((b) => (
         <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} />
       ))}
@@ -404,7 +305,7 @@ const Row = ({
   </section>
 );
 
-const BookCard = ({ book, onOpen, sharedCoverVisible = true }: { book: Book; onOpen: OpenHandler; sharedCoverVisible?: boolean }) => {
+const BookCard = ({ book, onOpen, sharedCoverVisible = true, eager = false }: { book: Book; onOpen: OpenHandler; sharedCoverVisible?: boolean; eager?: boolean }) => {
   const instanceId = useId();
   const coverLayoutId = `book-cover-${book.id}-${instanceId}`;
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -413,19 +314,19 @@ const BookCard = ({ book, onOpen, sharedCoverVisible = true }: { book: Book; onO
   <button
     ref={buttonRef}
     onClick={() => onOpen(book, coverLayoutId, buttonRef.current!)}
-    className="shrink-0 w-36 snap-start text-left active:scale-[0.97] transition-transform flex flex-col h-full"
+    className="shrink-0 w-36 text-left active:scale-[0.97] transition-transform flex flex-col h-full"
   >
     <div data-cover-id={coverLayoutId} className="relative w-36 aspect-[2/3] overflow-hidden rounded-2xl bg-secondary shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]">
       {/* This base image never participates in layout projection, so it remains
           fixed when a scrolled detail page dismisses downward. */}
-      <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="absolute inset-0 w-full h-full object-cover" loading="eager" decoding="async" />
+      <img src={sharedCoverUrl(book.cover_url)} alt={book.title} className="absolute inset-0 w-full h-full object-cover" loading={eager ? "eager" : "lazy"} decoding="async" />
       <motion.div
         layoutId={coverLayoutId}
         transition={COVER_SPRING}
-        style={{ borderRadius: 16, display: sharedCoverVisible ? "block" : "none", willChange: "transform", backfaceVisibility: "hidden" }}
+        style={{ borderRadius: 16, display: sharedCoverVisible ? "block" : "none", backfaceVisibility: "hidden" }}
         className="absolute inset-0 overflow-hidden bg-secondary"
       >
-        <img src={sharedCoverUrl(book.cover_url)} alt="" aria-hidden="true" className="w-full h-full object-cover" loading="eager" decoding="async" />
+        <img src={sharedCoverUrl(book.cover_url)} alt="" aria-hidden="true" className="w-full h-full object-cover" loading={eager ? "eager" : "lazy"} decoding="async" />
       </motion.div>
     </div>
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
