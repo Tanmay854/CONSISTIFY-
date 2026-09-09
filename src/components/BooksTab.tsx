@@ -281,44 +281,37 @@ const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; on
   const pausedUntil = useRef(0);
   const rafRef = useRef<number | null>(null);
 
+  // Continuous slow glide — the original Featured animation. The row drifts
+  // right at a steady, gentle speed, loops back to the start at the end, and
+  // pauses briefly whenever the user touches or swipes it.
   useEffect(() => {
     if (books.length < 2) return;
+    const el = scrollerRef.current;
+    if (!el) return;
 
-    const animateTo = (el: HTMLDivElement, to: number) => {
-      const from = el.scrollLeft;
-      const dist = to - from;
-      if (Math.abs(dist) < 1) return;
-      const start = performance.now();
-      const dur = 900;
-      const step = (now: number) => {
-        const t = Math.min(1, (now - start) / dur);
-        const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-        el.scrollLeft = from + dist * e;
-        if (t < 1) rafRef.current = requestAnimationFrame(step);
-      };
+    let last = performance.now();
+    const SPEED = 0.35; // px per ms — slow, smooth drift
+
+    const step = (now: number) => {
+      const dt = Math.min(50, now - last);
+      last = now;
+      if (!document.hidden && performance.now() >= pausedUntil.current) {
+        const max = el.scrollWidth - el.clientWidth;
+        if (max > 0) {
+          el.scrollLeft = el.scrollLeft + SPEED * dt >= max - 1 ? 0 : el.scrollLeft + SPEED * dt;
+        }
+      }
       rafRef.current = requestAnimationFrame(step);
     };
-
-    const id = setInterval(() => {
-      const el = scrollerRef.current;
-      if (!el || performance.now() < pausedUntil.current) return;
-      if (document.hidden) return;
-      const card = el.firstElementChild as HTMLElement | null;
-      const stepW = card ? card.offsetWidth + 16 : 160;
-      const max = el.scrollWidth - el.clientWidth;
-      const next = el.scrollLeft + stepW >= max - 4 ? 0 : el.scrollLeft + stepW;
-      animateTo(el, next);
-    }, 4000);
+    rafRef.current = requestAnimationFrame(step);
 
     return () => {
-      clearInterval(id);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [books.length]);
 
   const pause = () => {
-    pausedUntil.current = performance.now() + 6000;
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    pausedUntil.current = performance.now() + 4000;
   };
 
   return (
