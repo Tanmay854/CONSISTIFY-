@@ -35,7 +35,7 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
 /** Shared-element spring used by both the grid card and this sheet. */
 export const COVER_SPRING = {
   type: "tween" as const,
-  duration: 0.38,
+  duration: 0.5,
   ease: [0.32, 0.72, 0, 1] as const,
 };
 const CONTENT_TRANSITION = { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
