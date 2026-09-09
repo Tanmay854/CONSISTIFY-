@@ -291,7 +291,7 @@ const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; on
 
     hasReachedEnd.current = false;
     let last = performance.now();
-    const SPEED = 0.04; // px per ms — very slow, cinematic drift
+    const SPEED = 0.08; // px per ms — very slow, smooth drift
 
     const step = (now: number) => {
       const dt = Math.min(50, now - last);
