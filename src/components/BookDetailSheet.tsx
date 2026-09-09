@@ -35,7 +35,7 @@ const Stat = ({ label, value }: { label: string; value: string }) => (
 /** Shared-element spring used by both the grid card and this sheet. */
 export const COVER_SPRING = {
   type: "tween" as const,
-  duration: 0.38,
+  duration: 0.5,
   ease: [0.32, 0.72, 0, 1] as const,
 };
 const CONTENT_TRANSITION = { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
@@ -114,7 +114,7 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
         initial={{ opacity: 0 }}
         animate={{ y: dismissDown ? "100%" : 0, opacity: contentVisible ? 1 : 0 }}
         exit={{ opacity: 0, transition: { duration: dismissDown ? 0 : 0.16, ease: "easeOut" } }}
-        transition={{ y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] }, opacity: { duration: 0.22, ease: "easeOut" } }}
+        transition={{ y: { duration: 0.6, ease: [0.32, 0.72, 0, 1] }, opacity: { duration: 0.22, ease: "easeOut" } }}
         onAnimationComplete={() => { if (dismissDown) onCloseComplete(); }}
         style={{
           pointerEvents: dismissDown ? "none" : "auto",
