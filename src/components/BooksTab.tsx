@@ -279,7 +279,10 @@ const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => v
 const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; onOpen: OpenHandler; sharedCoverVisible: boolean }) => (
   <section>
     <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
-    <div className="flex gap-4 items-stretch overflow-x-auto scrollbar-hide px-5 pb-2 [touch-action:pan-x_pan-y]">
+    <div
+      className="flex gap-4 items-stretch overflow-x-auto scrollbar-hide px-5 pb-2 [touch-action:pan-x_pan-y]"
+      style={{ transform: "translateZ(0)", WebkitOverflowScrolling: "touch" }}
+    >
       {books.map((b) => (
         <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} eager />
       ))}
@@ -297,7 +300,10 @@ const Row = ({
         <button onClick={onSeeAll} className="text-muted-foreground text-[11px] uppercase tracking-wider">See all</button>
       )}
     </div>
-    <div className="flex gap-3 overflow-x-auto scrollbar-hide px-5 pb-2 items-stretch [touch-action:pan-x_pan-y]">
+    <div
+      className="flex gap-3 overflow-x-auto scrollbar-hide px-5 pb-2 items-stretch [touch-action:pan-x_pan-y]"
+      style={{ transform: "translateZ(0)", WebkitOverflowScrolling: "touch" }}
+    >
       {books.map((b) => (
         <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} />
       ))}
