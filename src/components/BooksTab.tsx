@@ -276,19 +276,69 @@ const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => v
   </button>
 );
 
-const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; onOpen: OpenHandler; sharedCoverVisible: boolean }) => (
-  <section>
-    <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
-    <div
-      className="flex gap-4 items-stretch overflow-x-auto scrollbar-hide px-5 pb-2 [touch-action:pan-x_pan-y]"
-      style={{ transform: "translateZ(0)", WebkitOverflowScrolling: "touch" }}
-    >
-      {books.map((b) => (
-        <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} eager />
-      ))}
-    </div>
-  </section>
-);
+const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; onOpen: OpenHandler; sharedCoverVisible: boolean }) => {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const pausedUntil = useRef(0);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (books.length < 2) return;
+
+    const animateTo = (el: HTMLDivElement, to: number) => {
+      const from = el.scrollLeft;
+      const dist = to - from;
+      if (Math.abs(dist) < 1) return;
+      const start = performance.now();
+      const dur = 900;
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / dur);
+        const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        el.scrollLeft = from + dist * e;
+        if (t < 1) rafRef.current = requestAnimationFrame(step);
+      };
+      rafRef.current = requestAnimationFrame(step);
+    };
+
+    const id = setInterval(() => {
+      const el = scrollerRef.current;
+      if (!el || performance.now() < pausedUntil.current) return;
+      if (document.hidden) return;
+      const card = el.firstElementChild as HTMLElement | null;
+      const stepW = card ? card.offsetWidth + 16 : 160;
+      const max = el.scrollWidth - el.clientWidth;
+      const next = el.scrollLeft + stepW >= max - 4 ? 0 : el.scrollLeft + stepW;
+      animateTo(el, next);
+    }, 4000);
+
+    return () => {
+      clearInterval(id);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [books.length]);
+
+  const pause = () => {
+    pausedUntil.current = performance.now() + 6000;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+  };
+
+  return (
+    <section>
+      <h2 className="px-5 text-foreground text-sm font-bold uppercase tracking-wider mb-3">Featured</h2>
+      <div
+        ref={scrollerRef}
+        onTouchStart={pause}
+        onPointerDown={pause}
+        className="flex gap-4 items-stretch overflow-x-auto scrollbar-hide px-5 pb-2 [touch-action:pan-x_pan-y]"
+        style={{ transform: "translateZ(0)", WebkitOverflowScrolling: "touch" }}
+      >
+        {books.map((b) => (
+          <BookCard key={b.id} book={b} onOpen={onOpen} sharedCoverVisible={sharedCoverVisible} eager />
+        ))}
+      </div>
+    </section>
+  );
+};
+
 
 const Row = ({
   title, books, onOpen, onSeeAll, sharedCoverVisible,
