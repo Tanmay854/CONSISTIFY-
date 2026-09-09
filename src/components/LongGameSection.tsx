@@ -326,7 +326,7 @@ const LongGameSection = ({
     const byId = new Map(items.map((i) => [i.id, i]));
     const continueWatching = watched.map((id) => byId.get(id)).filter(Boolean) as Item[];
     return {
-      continueWatching: continueWatching.length ? continueWatching : items.slice(0, 3),
+      continueWatching,
       watchLater: items.filter((i) => saved[i.id]),
       originals: items,
       trending: [...items].reverse(),
@@ -525,6 +525,7 @@ const LongGameSection = ({
             <p className="text-muted-foreground text-sm py-16 text-center">Nothing here yet.</p>
           ) : (
             <>
+              {rows.continueWatching.length > 0 && (
               <SectionRow title="Continue Watching">
                 <div className="flex gap-3.5 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
                   {rows.continueWatching.map((m) => (
@@ -532,6 +533,7 @@ const LongGameSection = ({
                   ))}
                 </div>
               </SectionRow>
+              )}
               {rows.watchLater.length > 0 && (
                 <SectionRow title="Watch Later"><RankRow items={rows.watchLater} onOpen={openItem} /></SectionRow>
               )}
