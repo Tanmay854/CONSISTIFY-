@@ -280,25 +280,35 @@ const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; on
   const scrollerRef = useRef<HTMLDivElement>(null);
   const pausedUntil = useRef(0);
   const rafRef = useRef<number | null>(null);
+  const hasReachedEnd = useRef(false);
 
-  // Continuous slow glide — the original Featured animation. The row drifts
-  // right at a steady, gentle speed, loops back to the start at the end, and
-  // pauses briefly whenever the user touches or swipes it.
+  // Slow, continuous featured glide. It drifts gently to the right and stops
+  // once the last featured book is reached instead of looping back.
   useEffect(() => {
     if (books.length < 2) return;
     const el = scrollerRef.current;
     if (!el) return;
 
+    hasReachedEnd.current = false;
     let last = performance.now();
-    const SPEED = 0.35; // px per ms — slow, smooth drift
+    const SPEED = 0.18; // px per ms — slower, smoother drift
 
     const step = (now: number) => {
       const dt = Math.min(50, now - last);
       last = now;
-      if (!document.hidden && performance.now() >= pausedUntil.current) {
-        const max = el.scrollWidth - el.clientWidth;
-        if (max > 0) {
-          el.scrollLeft = el.scrollLeft + SPEED * dt >= max - 1 ? 0 : el.scrollLeft + SPEED * dt;
+      const max = el.scrollWidth - el.clientWidth;
+      if (
+        max > 0 &&
+        !document.hidden &&
+        performance.now() >= pausedUntil.current &&
+        !hasReachedEnd.current
+      ) {
+        const next = el.scrollLeft + SPEED * dt;
+        if (next >= max - 1) {
+          el.scrollLeft = max;
+          hasReachedEnd.current = true;
+        } else {
+          el.scrollLeft = next;
         }
       }
       rafRef.current = requestAnimationFrame(step);
