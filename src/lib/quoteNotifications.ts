@@ -218,7 +218,6 @@ export async function scheduleQuoteNotifications(): Promise<void> {
   }
 
   const slots = upcomingSlots(QUEUE_SIZE);
-  const title = topic ? subLabel(topic.cat, topic.sub) : "Daily Motivation";
 
 
   try {
@@ -245,13 +244,15 @@ export async function scheduleQuoteNotifications(): Promise<void> {
       const pass = Math.floor((cursor + i) / quotes.length);
       const deck = shuffle(quotes, pass + 1);
       const q = deck[(cursor + i) % quotes.length];
-      const body = q.author ? `${q.text}\n— ${q.author}` : q.text;
+      // The quote itself is the title so Android renders it bold, with no
+      // category / topic label anywhere in the notification.
+      const body = q.author ? `— ${q.author}` : " ";
       return {
         id: QUOTE_NOTIFICATION_ID_START + i,
-        title,
+        title: q.text,
         body,
-        largeBody: body,
-        summaryText: title,
+        largeBody: q.text,
+        summaryText: q.author ?? " ",
         channelId: CHANNEL_ID,
         schedule: { at, allowWhileIdle: true },
         extra: { category: topic?.cat ?? null, subcategory: topic?.sub ?? null },
