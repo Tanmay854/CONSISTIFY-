@@ -1,6 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
-import { findCategory, subLabel } from "@/lib/quoteTopics";
+import { findCategory } from "@/lib/quoteTopics";
 
 /**
  * Daily quote notifications (native only).

@@ -134,7 +134,12 @@ const VideoPlayer = ({
   // True while the user explicitly asked for landscape (orientation is locked).
   const forcedLandscapeRef = useRef(false);
 
-  const toggleFs = async () => {
+  /**
+   * `rotate` = the landscape button (expands AND locks the phone sideways).
+   * Without it the expand button just fills the screen in the current
+   * orientation, like YouTube's expand control.
+   */
+  const toggleFs = async (rotate = false) => {
     const el = wrapperRef.current;
     if (!el) return;
     if (!isFs) {
@@ -146,7 +151,7 @@ const VideoPlayer = ({
         /* fullscreen unavailable */
       }
       if (!document.fullscreenElement) setCssFs(true);
-      if (allowRotate) { forcedLandscapeRef.current = true; await lockLandscape(); }
+      if (rotate && allowRotate) { forcedLandscapeRef.current = true; await lockLandscape(); }
     } else {
       forcedLandscapeRef.current = false;
       await unlockOrientation();
