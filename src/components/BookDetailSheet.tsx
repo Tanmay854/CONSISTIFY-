@@ -114,7 +114,7 @@ const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseC
         initial={{ opacity: 0 }}
         animate={{ y: dismissDown ? "100%" : 0, opacity: contentVisible ? 1 : 0 }}
         exit={{ opacity: 0, transition: { duration: dismissDown ? 0 : 0.16, ease: "easeOut" } }}
-        transition={{ y: { duration: 0.34, ease: [0.32, 0.72, 0, 1] }, opacity: { duration: 0.22, ease: "easeOut" } }}
+        transition={{ y: { duration: 0.6, ease: [0.32, 0.72, 0, 1] }, opacity: { duration: 0.22, ease: "easeOut" } }}
         onAnimationComplete={() => { if (dismissDown) onCloseComplete(); }}
         style={{
           pointerEvents: dismissDown ? "none" : "auto",
