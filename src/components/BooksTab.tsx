@@ -57,10 +57,11 @@ const BooksTab = () => {
   const [requestClose, setRequestClose] = useState(false);
 
   const openBook = useCallback((b: Book, coverLayoutId: string, el: HTMLElement) => {
+    if (b.is_premium && !premium) { openPaywall(); return; }
     setRequestClose(false);
     setStaticDismiss(false);
     setSelected({ book: b, coverLayoutId, originEl: el });
-  }, []);
+  }, [premium, openPaywall]);
   const closeBook = useCallback(() => {
     setRequestClose(true);
   }, []);
