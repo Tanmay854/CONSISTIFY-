@@ -280,11 +280,12 @@ const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; on
   const scrollerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<Animation | null>(null);
-  const resumeTimerRef = useRef<number | null>(null);
+  const stoppedByUserRef = useRef(false);
 
   // Animate the inner track on the compositor instead of changing scrollLeft
   // every frame. A slower 0.04 px/ms glide keeps the row ultra-smooth on
-  // high-refresh Android screens while retaining native touch scrolling.
+  // high-refresh Android screens. Once the user touches/scrolls the row the
+  // animation stops for good and native scrolling takes over.
   useEffect(() => {
     if (books.length < 2) return;
     const el = scrollerRef.current;
