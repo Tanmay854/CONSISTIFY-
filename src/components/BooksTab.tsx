@@ -74,13 +74,13 @@ const BooksTab = () => {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("books")
-      .select("*")
-      .eq("is_published", true)
-      .order("created_at", { ascending: false })
-      .limit(1000);
-    setBooks((data as unknown as Book[]) ?? []);
+    // Teaser only: covers, titles and descriptions. Locked summaries, audio and
+    // quizzes never leave the server for a book the viewer is not entitled to.
+    const { data } = await supabase.rpc("books_teaser" as never);
+    const rows = ((data as unknown as Book[]) ?? []).slice().sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+    setBooks(rows);
     setLoading(false);
   }, []);
 
