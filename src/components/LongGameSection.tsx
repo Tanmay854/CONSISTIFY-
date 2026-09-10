@@ -241,7 +241,7 @@ const LongGameSection = ({
     setClosing(false);
     setOpen(item);
     trackView("reel", item.id);
-  }, []);
+  }, [premium, openPaywall]);
 
   useLayoutEffect(() => {
     if (!open || !overlayRef.current || !rectRef.current) return;
