@@ -87,6 +87,11 @@ const PosterArt = memo(({
           className={`absolute inset-0 w-full h-full ${contain ? "object-contain" : "object-cover"}`}
         />
       )}
+      {item.is_premium && (
+        <span className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
+          <Lock size={12} className="text-primary" />
+        </span>
+      )}
     </div>
   );
 });
