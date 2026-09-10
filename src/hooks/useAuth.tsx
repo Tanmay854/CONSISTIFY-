@@ -41,7 +41,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // No role and not super-admin → not authorised. Check application for a tailored message.
+    // Regular members (no uploader/admin role) stay signed in — they need an
+    // account for Premium. Only uploading stays restricted.
     const { data: apps } = await supabase
       .from("uploader_applications")
       .select("status")
@@ -49,14 +50,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .order("created_at", { ascending: false })
       .limit(1);
     const app = apps?.[0];
-    let msg = "You are not authorised to log in. Submit an uploader application and wait for admin approval.";
+    let msg: string | null = null;
     if (app?.status === "pending") {
-      msg = "You are not authorised yet — your application is awaiting admin approval.";
+      msg = "Your uploader application is awaiting admin approval.";
     } else if (app?.status === "rejected") {
-      msg = "You are not authorised — your application was rejected by an admin.";
+      msg = "Your uploader application was rejected by an admin.";
     }
     setPendingApplicationMessage(msg);
-    await supabase.auth.signOut();
   }, []);
 
   useEffect(() => {
