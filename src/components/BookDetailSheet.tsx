@@ -65,6 +65,15 @@ const BookDetailSheet = ({ book: bookProp, coverLayoutId, originEl, requestClose
 
 
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from("books").select("*").eq("id", bookProp.id).maybeSingle();
+      if (!cancelled && data) setBook((prev) => ({ ...prev, ...(data as unknown as Book) }));
+    })();
+    return () => { cancelled = true; };
+  }, [bookProp.id]);
+
+  useEffect(() => {
     if (!settled) return;
     let cancelled = false;
     (async () => {
