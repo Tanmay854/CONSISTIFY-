@@ -9,6 +9,8 @@ import BooksTab from "@/components/BooksTab";
 import CoursesTab from "@/components/CoursesTab";
 import SettingsDrawer from "@/components/SettingsDrawer";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { PremiumProvider, usePremium } from "@/hooks/usePremium";
+import PremiumSheet from "@/components/PremiumSheet";
 import { MoreVertical } from "lucide-react";
 
 type Tab = "reels" | "books" | "music" | "quotes" | "courses" | "upload";
