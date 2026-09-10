@@ -20,6 +20,7 @@ const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", 
 const SettingsDrawer = ({ open, onClose, onOpenUpload, onOpenPremium }: { open: boolean; onClose: () => void; onOpenUpload?: () => void; onOpenPremium?: () => void }) => {
   useBackHandler(open, onClose);
   const { user, canUpload, signOut, loading: authLoading } = useAuth();
+  const { premium } = usePremium();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);
   const [showApply, setShowApply] = useState(false);
