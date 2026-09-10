@@ -65,7 +65,9 @@ const AppContent = () => {
         open={showSettings}
         onClose={() => setShowSettings(false)}
         onOpenUpload={canUpload ? () => { setActiveTab("upload"); setShowSettings(false); } : undefined}
+        onOpenPremium={() => { setShowSettings(false); openPaywall(); }}
       />
+      <PremiumSheet open={paywallOpen} onClose={closePaywall} />
     </div>
   );
 };
@@ -76,7 +78,9 @@ const Index = () => {
   if (showSplash) return <SplashScreen onFinish={handleSplashFinish} />;
   return (
     <AuthProvider>
-      <AppContent />
+      <PremiumProvider>
+        <AppContent />
+      </PremiumProvider>
     </AuthProvider>
   );
 };
