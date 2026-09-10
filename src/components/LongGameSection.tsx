@@ -233,6 +233,7 @@ const LongGameSection = ({
   });
 
   const openItem = useCallback<OpenFn>((item, node) => {
+    if (item.is_premium && !premium) { openPaywall(); return; }
     const rect = node.getBoundingClientRect();
     rectRef.current = rect;
     setScrollY(0);
