@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useBackHandler } from "@/lib/backHandler";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, Camera, Bell } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, Camera, Bell, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePremium } from "@/hooks/usePremium";
 import AuthSheet from "./AuthSheet";
 import ApplyUploaderSheet from "./ApplyUploaderSheet";
 import { fetchProfile, updateProfileCache, type UploaderProfile } from "@/lib/uploaderProfiles";
