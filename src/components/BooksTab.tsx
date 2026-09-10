@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useId } from "react";
-import { Search, X, Star } from "lucide-react";
+import { Search, X, Star, Lock } from "lucide-react";
+import { usePremium } from "@/hooks/usePremium";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
@@ -52,6 +53,7 @@ const BooksTab = () => {
   const [selected, setSelected] = useState<SelectedBook | null>(null);
   const [staticDismiss, setStaticDismiss] = useState(false);
   const { recent, push, clear } = useRecent();
+  const { premium, openPaywall } = usePremium();
   const canSearchById = false;
 
   const [requestClose, setRequestClose] = useState(false);
