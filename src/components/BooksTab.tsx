@@ -425,6 +425,11 @@ const BookCard = ({ book, onOpen, sharedCoverVisible = true, eager = false }: { 
         }}
         className="absolute inset-0 overflow-hidden bg-secondary"
       />
+      {book.is_premium && (
+        <span className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
+          <Lock size={12} className="text-primary" />
+        </span>
+      )}
     </div>
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
     <p className="text-muted-foreground text-[10px] mt-1 line-clamp-1 min-h-[0.9rem]">{book.author}</p>
