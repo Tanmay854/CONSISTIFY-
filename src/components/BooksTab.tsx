@@ -283,15 +283,15 @@ const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; on
   const resumeTimerRef = useRef<number | null>(null);
 
   // Animate the inner track on the compositor instead of changing scrollLeft
-  // every frame. This keeps the 0.06 px/ms glide fluid on high-refresh Android
-  // screens while retaining native touch scrolling whenever the user swipes.
+  // every frame. A slower 0.04 px/ms glide keeps the row ultra-smooth on
+  // high-refresh Android screens while retaining native touch scrolling.
   useEffect(() => {
     if (books.length < 2) return;
     const el = scrollerRef.current;
     const track = trackRef.current;
     if (!el || !track) return;
 
-    const SPEED = 0.06;
+    const SPEED = 0.04;
 
     const settle = () => {
       const animation = animationRef.current;
@@ -333,7 +333,7 @@ const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; on
     el.addEventListener("pointerdown", pause, { passive: true });
     el.addEventListener("touchstart", pause, { passive: true });
     document.addEventListener("visibilitychange", handleVisibility);
-    const initialTimer = window.setTimeout(start, 300);
+    const initialTimer = window.setTimeout(start, 600);
 
     return () => {
       window.clearTimeout(initialTimer);
