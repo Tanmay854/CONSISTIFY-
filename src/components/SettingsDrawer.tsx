@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useBackHandler } from "@/lib/backHandler";
-import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, Camera, Bell } from "lucide-react";
+import { X, LogIn, LogOut, Shield, User, Check, Send, KeyRound, Upload, Camera, Bell, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePremium } from "@/hooks/usePremium";
 import AuthSheet from "./AuthSheet";
 import ApplyUploaderSheet from "./ApplyUploaderSheet";
 import { fetchProfile, updateProfileCache, type UploaderProfile } from "@/lib/uploaderProfiles";
@@ -16,9 +17,10 @@ import {
 
 const CATEGORIES = ["Workout", "Study", "Motivation", "Mindfulness", "Finance", "Relationships"] as const;
 
-const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClose: () => void; onOpenUpload?: () => void }) => {
+const SettingsDrawer = ({ open, onClose, onOpenUpload, onOpenPremium }: { open: boolean; onClose: () => void; onOpenUpload?: () => void; onOpenPremium?: () => void }) => {
   useBackHandler(open, onClose);
   const { user, canUpload, signOut, loading: authLoading } = useAuth();
+  const { premium } = usePremium();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);
   const [showApply, setShowApply] = useState(false);
@@ -318,6 +320,20 @@ const SettingsDrawer = ({ open, onClose, onOpenUpload }: { open: boolean; onClos
             </div>
           )}
 
+
+          {onOpenPremium && (
+            <div className="px-5 py-4 border-t border-border">
+              <button
+                onClick={onOpenPremium}
+                className="w-full flex items-center gap-3 py-2 px-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+              >
+                <Crown size={18} className="text-primary" />
+                <span className="text-foreground text-sm font-medium">
+                  {premium ? "Manage Premium" : "Consistify Premium"}
+                </span>
+              </button>
+            </div>
+          )}
 
           {user && canUpload && onOpenUpload && (
             <div className="px-5 py-4 border-t border-border">

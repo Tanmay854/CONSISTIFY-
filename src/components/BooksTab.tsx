@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useId } from "react";
-import { Search, X, Star } from "lucide-react";
+import { Search, X, Star, Lock } from "lucide-react";
+import { usePremium } from "@/hooks/usePremium";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
@@ -52,15 +53,17 @@ const BooksTab = () => {
   const [selected, setSelected] = useState<SelectedBook | null>(null);
   const [staticDismiss, setStaticDismiss] = useState(false);
   const { recent, push, clear } = useRecent();
+  const { premium, openPaywall } = usePremium();
   const canSearchById = false;
 
   const [requestClose, setRequestClose] = useState(false);
 
   const openBook = useCallback((b: Book, coverLayoutId: string, el: HTMLElement) => {
+    if (b.is_premium && !premium) { openPaywall(); return; }
     setRequestClose(false);
     setStaticDismiss(false);
     setSelected({ book: b, coverLayoutId, originEl: el });
-  }, []);
+  }, [premium, openPaywall]);
   const closeBook = useCallback(() => {
     setRequestClose(true);
   }, []);
@@ -74,13 +77,13 @@ const BooksTab = () => {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("books")
-      .select("*")
-      .eq("is_published", true)
-      .order("created_at", { ascending: false })
-      .limit(1000);
-    setBooks((data as unknown as Book[]) ?? []);
+    // Teaser only: covers, titles and descriptions. Locked summaries, audio and
+    // quizzes never leave the server for a book the viewer is not entitled to.
+    const { data } = await supabase.rpc("books_teaser" as never);
+    const rows = ((data as unknown as Book[]) ?? []).slice().sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+    setBooks(rows);
     setLoading(false);
   }, []);
 
@@ -422,6 +425,11 @@ const BookCard = ({ book, onOpen, sharedCoverVisible = true, eager = false }: { 
         }}
         className="absolute inset-0 overflow-hidden bg-secondary"
       />
+      {book.is_premium && (
+        <span className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
+          <Lock size={12} className="text-primary" />
+        </span>
+      )}
     </div>
     <p className="text-foreground text-xs font-semibold mt-2 line-clamp-2 leading-snug">{book.title}</p>
     <p className="text-muted-foreground text-[10px] mt-1 line-clamp-1 min-h-[0.9rem]">{book.author}</p>

@@ -52,4 +52,5 @@ export type Book = {
   quiz_questions: QuizQuestion[];
   audio_url: string | null;
   is_published: boolean;
+  is_premium?: boolean;
 };

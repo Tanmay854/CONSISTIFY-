@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_settings: {
+        Row: {
+          ads_enabled: boolean
+          audio_ad_frequency: number
+          book_ad_frequency: number
+          feed_ad_frequency: number
+          id: boolean
+          interstitial_enabled: boolean
+          photo_ad_frequency: number
+          quote_ad_frequency: number
+          updated_at: string
+          video_mid_roll_enabled: boolean
+          video_mid_roll_interval: number
+          video_pre_roll_enabled: boolean
+        }
+        Insert: {
+          ads_enabled?: boolean
+          audio_ad_frequency?: number
+          book_ad_frequency?: number
+          feed_ad_frequency?: number
+          id?: boolean
+          interstitial_enabled?: boolean
+          photo_ad_frequency?: number
+          quote_ad_frequency?: number
+          updated_at?: string
+          video_mid_roll_enabled?: boolean
+          video_mid_roll_interval?: number
+          video_pre_roll_enabled?: boolean
+        }
+        Update: {
+          ads_enabled?: boolean
+          audio_ad_frequency?: number
+          book_ad_frequency?: number
+          feed_ad_frequency?: number
+          id?: boolean
+          interstitial_enabled?: boolean
+          photo_ad_frequency?: number
+          quote_ad_frequency?: number
+          updated_at?: string
+          video_mid_roll_enabled?: boolean
+          video_mid_roll_interval?: number
+          video_pre_roll_enabled?: boolean
+        }
+        Relationships: []
+      }
       ads: {
         Row: {
           active: boolean
@@ -65,6 +110,7 @@ export type Database = {
           is_best_seller: boolean
           is_featured: boolean
           is_new_release: boolean
+          is_premium: boolean
           is_published: boolean
           is_trending: boolean
           key_takeaways: string | null
@@ -94,6 +140,7 @@ export type Database = {
           is_best_seller?: boolean
           is_featured?: boolean
           is_new_release?: boolean
+          is_premium?: boolean
           is_published?: boolean
           is_trending?: boolean
           key_takeaways?: string | null
@@ -123,6 +170,7 @@ export type Database = {
           is_best_seller?: boolean
           is_featured?: boolean
           is_new_release?: boolean
+          is_premium?: boolean
           is_published?: boolean
           is_trending?: boolean
           key_takeaways?: string | null
@@ -335,6 +383,39 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_grants: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          granted_by: string | null
+          id: string
+          reason: string | null
+          revoked: boolean
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          reason?: string | null
+          revoked?: boolean
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          reason?: string | null
+          revoked?: boolean
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -448,6 +529,7 @@ export type Database = {
           feed: string
           id: string
           is_featured: boolean
+          is_premium: boolean
           public_id: string
           thumbnail_landscape_url: string | null
           thumbnail_portrait_url: string | null
@@ -469,6 +551,7 @@ export type Database = {
           feed?: string
           id?: string
           is_featured?: boolean
+          is_premium?: boolean
           public_id?: string
           thumbnail_landscape_url?: string | null
           thumbnail_portrait_url?: string | null
@@ -490,6 +573,7 @@ export type Database = {
           feed?: string
           id?: string
           is_featured?: boolean
+          is_premium?: boolean
           public_id?: string
           thumbnail_landscape_url?: string | null
           thumbnail_portrait_url?: string | null
@@ -573,6 +657,51 @@ export type Database = {
           refresh_token?: string
           scope?: string
           spotify_user_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan: string
+          provider: string
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: string
+          provider?: string
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: string
+          provider?: string
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          started_at?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
         }
@@ -783,6 +912,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      books_teaser: {
+        Args: never
+        Returns: {
+          author: string
+          category: string
+          cover_url: string
+          cover_url_2: string
+          created_at: string
+          description: string
+          id: string
+          is_best_seller: boolean
+          is_featured: boolean
+          is_new_release: boolean
+          is_premium: boolean
+          is_trending: boolean
+          listening_time_minutes: number
+          price: number
+          public_id: string
+          rating: number
+          reading_time_minutes: number
+          title: string
+          why_read: string
+        }[]
+      }
       gen_public_id6: { Args: never; Returns: string }
       get_uploader_emails: {
         Args: { _user_ids: string[] }
@@ -791,6 +944,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -798,7 +952,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_premium_user: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      my_entitlement: { Args: never; Returns: Json }
+      reels_teaser: {
+        Args: never
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          feed: string
+          id: string
+          is_featured: boolean
+          is_premium: boolean
+          public_id: string
+          thumbnail_landscape_url: string
+          thumbnail_portrait_url: string
+          thumbnail_url: string
+          title: string
+          uploaded_by: string
+        }[]
+      }
       refresh_view_counts: { Args: never; Returns: undefined }
     }
     Enums: {

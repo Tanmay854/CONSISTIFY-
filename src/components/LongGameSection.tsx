@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, Play, Plus, Check, Search, X } from "lucide-react";
+import { ChevronLeft, Play, Plus, Check, Search, X, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBackHandler } from "@/lib/backHandler";
 import VideoPlayer from "@/components/VideoPlayer";
@@ -7,6 +7,7 @@ import { getVideoThumbnail, getVideoThumbnailFallbacks } from "@/lib/thumbUrl";
 import { getPlayableVideoUrl } from "@/lib/videoFeeds";
 import { trackView } from "@/lib/trackView";
 import { fetchProfiles, displayHandle } from "@/lib/uploaderProfiles";
+import { usePremium } from "@/hooks/usePremium";
 
 interface Item {
   id: string;
@@ -20,6 +21,7 @@ interface Item {
   created_at: string;
   uploaded_by: string | null;
   is_featured: boolean | null;
+  is_premium?: boolean | null;
   sharedBy: string;
 }
 
@@ -84,6 +86,11 @@ const PosterArt = memo(({
           }}
           className={`absolute inset-0 w-full h-full ${contain ? "object-contain" : "object-cover"}`}
         />
+      )}
+      {item.is_premium && (
+        <span className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
+          <Lock size={12} className="text-primary" />
+        </span>
       )}
     </div>
   );
@@ -163,6 +170,7 @@ const LongGameSection = ({
   const [playing, setPlaying] = useState<Item | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { premium, openPaywall } = usePremium();
 
   const toggleSaved = useCallback((id: string) => {
     setSaved((s) => {
@@ -194,15 +202,20 @@ const LongGameSection = ({
     let cancelled = false;
     (async () => {
       const list = feedKey.split(",");
-      const { data } = await supabase
-        .from("reels")
-        .select(
-          "id,title,description,video_url,thumbnail_url,thumbnail_portrait_url,thumbnail_landscape_url,category,created_at,uploaded_by,is_featured",
-        )
-        .in("feed", list)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      const rows = data || [];
+      // Teaser rows (thumbnails/titles only) for everyone; the playable file URL
+      // comes from the protected table, which only returns rows the viewer may play.
+      const [teaserRes, playableRes] = await Promise.all([
+        supabase.rpc("reels_teaser" as never),
+        supabase.from("reels").select("id,video_url").in("feed", list).limit(200),
+      ]);
+      const playable = new Map(
+        ((playableRes.data as unknown as { id: string; video_url: string }[]) || []).map((r) => [r.id, r.video_url]),
+      );
+      const rows = (((teaserRes.data as unknown) as (Omit<Item, "video_url" | "sharedBy"> & { feed: string; is_premium: boolean })[]) || [])
+        .filter((r) => list.includes(r.feed))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 100)
+        .map((r) => ({ ...r, video_url: playable.get(r.id) ?? "" }));
       const profiles = await fetchProfiles(
         Array.from(new Set(rows.map((r) => r.uploaded_by).filter(Boolean) as string[])),
       );
@@ -227,6 +240,7 @@ const LongGameSection = ({
   });
 
   const openItem = useCallback<OpenFn>((item, node) => {
+    if (item.is_premium && !premium) { openPaywall(); return; }
     const rect = node.getBoundingClientRect();
     rectRef.current = rect;
     setScrollY(0);
@@ -234,7 +248,7 @@ const LongGameSection = ({
     setClosing(false);
     setOpen(item);
     trackView("reel", item.id);
-  }, []);
+  }, [premium, openPaywall]);
 
   useLayoutEffect(() => {
     if (!open || !overlayRef.current || !rectRef.current) return;
