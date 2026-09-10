@@ -17,6 +17,7 @@ type Tab = "reels" | "books" | "music" | "quotes" | "courses" | "upload";
 
 const AppContent = () => {
   const { canUpload } = useAuth();
+  const { paywallOpen, openPaywall, closePaywall } = usePremium();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tab = new URLSearchParams(window.location.search).get("tab");
     return tab === "music" || tab === "quotes" || tab === "upload" || tab === "books" || tab === "courses"
