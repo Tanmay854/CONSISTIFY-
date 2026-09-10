@@ -194,15 +194,20 @@ const LongGameSection = ({
     let cancelled = false;
     (async () => {
       const list = feedKey.split(",");
-      const { data } = await supabase
-        .from("reels")
-        .select(
-          "id,title,description,video_url,thumbnail_url,thumbnail_portrait_url,thumbnail_landscape_url,category,created_at,uploaded_by,is_featured",
-        )
-        .in("feed", list)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      const rows = data || [];
+      // Teaser rows (thumbnails/titles only) for everyone; the playable file URL
+      // comes from the protected table, which only returns rows the viewer may play.
+      const [teaserRes, playableRes] = await Promise.all([
+        supabase.rpc("reels_teaser" as never),
+        supabase.from("reels").select("id,video_url").in("feed", list).limit(200),
+      ]);
+      const playable = new Map(
+        ((playableRes.data as unknown as { id: string; video_url: string }[]) || []).map((r) => [r.id, r.video_url]),
+      );
+      const rows = (((teaserRes.data as unknown) as (Omit<Item, "video_url" | "sharedBy"> & { feed: string; is_premium: boolean })[]) || [])
+        .filter((r) => list.includes(r.feed))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 100)
+        .map((r) => ({ ...r, video_url: playable.get(r.id) ?? "" }));
       const profiles = await fetchProfiles(
         Array.from(new Set(rows.map((r) => r.uploaded_by).filter(Boolean) as string[])),
       );
