@@ -40,7 +40,12 @@ export const COVER_SPRING = {
 };
 const CONTENT_TRANSITION = { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
 
-const BookDetailSheet = ({ book, coverLayoutId, originEl, requestClose, onCloseComplete, onDismissStart }: { book: Book; coverLayoutId: string; originEl?: HTMLElement; requestClose?: boolean; onCloseComplete: () => void; onDismissStart: () => void }) => {
+const BookDetailSheet = ({ book: bookProp, coverLayoutId, originEl, requestClose, onCloseComplete, onDismissStart }: { book: Book; coverLayoutId: string; originEl?: HTMLElement; requestClose?: boolean; onCloseComplete: () => void; onDismissStart: () => void }) => {
+  // The grid only holds the teaser (cover, title, description). The protected
+  // payload — summary, audio, quiz — is fetched here and the server only
+  // returns it when the viewer is entitled to this book.
+  const [book, setBook] = useState<Book>(bookProp);
+  useEffect(() => { setBook(bookProp); }, [bookProp]);
   const [mode, setMode] = useState<Mode>("overview");
   const [summaryStart, setSummaryStart] = useState(0);
   const [dismissDown, setDismissDown] = useState(false);
