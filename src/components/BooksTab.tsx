@@ -280,11 +280,12 @@ const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; on
   const scrollerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<Animation | null>(null);
-  const resumeTimerRef = useRef<number | null>(null);
+  const stoppedByUserRef = useRef(false);
 
   // Animate the inner track on the compositor instead of changing scrollLeft
   // every frame. A slower 0.04 px/ms glide keeps the row ultra-smooth on
-  // high-refresh Android screens while retaining native touch scrolling.
+  // high-refresh Android screens. Once the user touches/scrolls the row the
+  // animation stops for good and native scrolling takes over.
   useEffect(() => {
     if (books.length < 2) return;
     const el = scrollerRef.current;
@@ -304,7 +305,7 @@ const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; on
     };
 
     const start = () => {
-      if (document.hidden || animationRef.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (stoppedByUserRef.current || document.hidden || animationRef.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       const remaining = el.scrollWidth - el.clientWidth - el.scrollLeft;
       if (remaining <= 1) return;
       const animation = track.animate(
@@ -319,28 +320,29 @@ const FeaturedHero = ({ books, onOpen, sharedCoverVisible }: { books: Book[]; on
       };
     };
 
-    const pause = () => {
+    // First user touch/scroll permanently stops the auto-glide; after that
+    // the row is pure native scrolling (momentum handled by the compositor).
+    const stop = () => {
+      stoppedByUserRef.current = true;
       settle();
-      if (resumeTimerRef.current !== null) window.clearTimeout(resumeTimerRef.current);
-      resumeTimerRef.current = window.setTimeout(start, 4000);
     };
 
     const handleVisibility = () => {
       if (document.hidden) settle();
-      else pause();
     };
 
-    el.addEventListener("pointerdown", pause, { passive: true });
-    el.addEventListener("touchstart", pause, { passive: true });
+    el.addEventListener("pointerdown", stop, { passive: true });
+    el.addEventListener("touchstart", stop, { passive: true });
+    el.addEventListener("wheel", stop, { passive: true });
     document.addEventListener("visibilitychange", handleVisibility);
     const initialTimer = window.setTimeout(start, 600);
 
     return () => {
       window.clearTimeout(initialTimer);
-      if (resumeTimerRef.current !== null) window.clearTimeout(resumeTimerRef.current);
       settle();
-      el.removeEventListener("pointerdown", pause);
-      el.removeEventListener("touchstart", pause);
+      el.removeEventListener("pointerdown", stop);
+      el.removeEventListener("touchstart", stop);
+      el.removeEventListener("wheel", stop);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [books.length]);
