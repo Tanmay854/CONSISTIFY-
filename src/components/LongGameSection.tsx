@@ -7,6 +7,7 @@ import { getVideoThumbnail, getVideoThumbnailFallbacks } from "@/lib/thumbUrl";
 import { getPlayableVideoUrl } from "@/lib/videoFeeds";
 import { trackView } from "@/lib/trackView";
 import { fetchProfiles, displayHandle } from "@/lib/uploaderProfiles";
+import { usePremium } from "@/hooks/usePremium";
 
 interface Item {
   id: string;
@@ -164,6 +165,7 @@ const LongGameSection = ({
   const [playing, setPlaying] = useState<Item | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { premium, openPaywall } = usePremium();
 
   const toggleSaved = useCallback((id: string) => {
     setSaved((s) => {
