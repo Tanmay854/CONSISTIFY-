@@ -20,6 +20,7 @@ interface Item {
   created_at: string;
   uploaded_by: string | null;
   is_featured: boolean | null;
+  is_premium?: boolean | null;
   sharedBy: string;
 }
 
