@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, Play, Plus, Check, Search, X } from "lucide-react";
+import { ChevronLeft, Play, Plus, Check, Search, X, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBackHandler } from "@/lib/backHandler";
 import VideoPlayer from "@/components/VideoPlayer";
