@@ -909,125 +909,33 @@ export type Database = {
       }
     }
     Views: {
-      books_teaser: {
-        Row: {
-          author: string | null
-          category: string | null
-          cover_url: string | null
-          cover_url_2: string | null
-          created_at: string | null
-          description: string | null
-          id: string | null
-          is_best_seller: boolean | null
-          is_featured: boolean | null
-          is_new_release: boolean | null
-          is_premium: boolean | null
-          is_published: boolean | null
-          is_trending: boolean | null
-          listening_time_minutes: number | null
-          price: number | null
-          public_id: string | null
-          rating: number | null
-          reading_time_minutes: number | null
-          title: string | null
-          why_read: string | null
-        }
-        Insert: {
-          author?: string | null
-          category?: string | null
-          cover_url?: string | null
-          cover_url_2?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          is_best_seller?: boolean | null
-          is_featured?: boolean | null
-          is_new_release?: boolean | null
-          is_premium?: boolean | null
-          is_published?: boolean | null
-          is_trending?: boolean | null
-          listening_time_minutes?: number | null
-          price?: number | null
-          public_id?: string | null
-          rating?: number | null
-          reading_time_minutes?: number | null
-          title?: string | null
-          why_read?: string | null
-        }
-        Update: {
-          author?: string | null
-          category?: string | null
-          cover_url?: string | null
-          cover_url_2?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          is_best_seller?: boolean | null
-          is_featured?: boolean | null
-          is_new_release?: boolean | null
-          is_premium?: boolean | null
-          is_published?: boolean | null
-          is_trending?: boolean | null
-          listening_time_minutes?: number | null
-          price?: number | null
-          public_id?: string | null
-          rating?: number | null
-          reading_time_minutes?: number | null
-          title?: string | null
-          why_read?: string | null
-        }
-        Relationships: []
-      }
-      reels_teaser: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          description: string | null
-          feed: string | null
-          id: string | null
-          is_featured: boolean | null
-          is_premium: boolean | null
-          public_id: string | null
-          thumbnail_landscape_url: string | null
-          thumbnail_portrait_url: string | null
-          thumbnail_url: string | null
-          title: string | null
-          uploaded_by: string | null
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          feed?: string | null
-          id?: string | null
-          is_featured?: boolean | null
-          is_premium?: boolean | null
-          public_id?: string | null
-          thumbnail_landscape_url?: string | null
-          thumbnail_portrait_url?: string | null
-          thumbnail_url?: string | null
-          title?: string | null
-          uploaded_by?: string | null
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          feed?: string | null
-          id?: string | null
-          is_featured?: boolean | null
-          is_premium?: boolean | null
-          public_id?: string | null
-          thumbnail_landscape_url?: string | null
-          thumbnail_portrait_url?: string | null
-          thumbnail_url?: string | null
-          title?: string | null
-          uploaded_by?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      books_teaser: {
+        Args: never
+        Returns: {
+          author: string
+          category: string
+          cover_url: string
+          cover_url_2: string
+          created_at: string
+          description: string
+          id: string
+          is_best_seller: boolean
+          is_featured: boolean
+          is_new_release: boolean
+          is_premium: boolean
+          is_trending: boolean
+          listening_time_minutes: number
+          price: number
+          public_id: string
+          rating: number
+          reading_time_minutes: number
+          title: string
+          why_read: string
+        }[]
+      }
       gen_public_id6: { Args: never; Returns: string }
       get_uploader_emails: {
         Args: { _user_ids: string[] }
@@ -1047,6 +955,24 @@ export type Database = {
       is_premium_user: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       my_entitlement: { Args: never; Returns: Json }
+      reels_teaser: {
+        Args: never
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          feed: string
+          id: string
+          is_featured: boolean
+          is_premium: boolean
+          public_id: string
+          thumbnail_landscape_url: string
+          thumbnail_portrait_url: string
+          thumbnail_url: string
+          title: string
+          uploaded_by: string
+        }[]
+      }
       refresh_view_counts: { Args: never; Returns: undefined }
     }
     Enums: {
