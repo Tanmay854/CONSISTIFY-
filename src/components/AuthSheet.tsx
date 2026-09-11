@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { X, LogIn, Send } from "lucide-react";
 
-type Mode = "login" | "apply";
+type Mode = "login" | "signup" | "apply";
 
 const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { signIn, signUp, pendingApplicationMessage } = useAuth();
@@ -26,6 +26,18 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
     setLoading(false);
     if (error) { setError(error); return; }
     close();
+  };
+
+  const handleSignUp = async () => {
+    setError(null); setInfo(null);
+    if (!email || !password) { setError("Email and password required."); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    setLoading(true);
+    const { error: signUpError } = await signUp(email.trim(), password);
+    setLoading(false);
+    if (signUpError) { setError(signUpError); return; }
+    setInfo("Account created. Check your email if confirmation is required, then sign in.");
+    setMode("login");
   };
 
 
@@ -96,15 +108,19 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
       <div className="w-full max-w-lg bg-card border-t border-border rounded-t-2xl p-6 animate-float-up max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-foreground font-semibold text-lg">
-            {mode === "login" ? "Sign In" : "Become an Uploader"}
+            {mode === "login" ? "Sign In" : mode === "signup" ? "Create Account" : "Become an Uploader"}
           </h3>
           <button onClick={close}><X size={20} className="text-muted-foreground" /></button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mb-5">
+        <div className="grid grid-cols-3 gap-2 mb-5">
           <button onClick={() => { setMode("login"); setError(null); setInfo(null); }}
             className={`py-2 rounded-lg text-xs font-semibold ${mode === "login" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
             Login
+          </button>
+          <button onClick={() => { setMode("signup"); setError(null); setInfo(null); }}
+            className={`py-2 rounded-lg text-xs font-semibold ${mode === "signup" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+            Sign Up
           </button>
           <button onClick={() => { setMode("apply"); setError(null); setInfo(null); }}
             className={`py-2 rounded-lg text-xs font-semibold ${mode === "apply" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
@@ -113,7 +129,7 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
         </div>
 
         <p className="text-muted-foreground text-[11px] mb-3 bg-secondary/60 rounded-lg px-3 py-2 leading-relaxed">
-          Sign in is only for approved <span className="text-foreground font-medium">uploaders, creators and admins</span>. Regular users can enjoy the app without signing in.
+          Create an account to watch Long Game videos and access Premium books.
         </p>
 
         {pendingApplicationMessage && mode === "login" && (
@@ -150,6 +166,11 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
             <button onClick={handleLogin} disabled={loading || !email || !password}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2">
               <LogIn size={16} /> {loading ? "Signing in..." : "Sign In"}
+            </button>
+          ) : mode === "signup" ? (
+            <button onClick={handleSignUp} disabled={loading || !email || !password}
+              className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2">
+              <LogIn size={16} /> {loading ? "Creating account..." : "Create Account"}
             </button>
           ) : (
             <button onClick={handleApply} disabled={loading}

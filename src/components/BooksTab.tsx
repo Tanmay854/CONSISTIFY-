@@ -6,8 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { BOOK_CATEGORIES, type Book } from "@/lib/bookCategories";
 import { sharedCoverUrl } from "@/lib/coverUrl";
 import { useBackHandler } from "@/lib/backHandler";
+import { useAuth } from "@/hooks/useAuth";
 
 import BookDetailSheet, { COVER_SPRING } from "./BookDetailSheet";
+import AuthSheet from "./AuthSheet";
 
 type OpenHandler = (b: Book, coverLayoutId: string, el: HTMLElement) => void;
 type SelectedBook = { book: Book; coverLayoutId: string; originEl: HTMLElement };
@@ -52,18 +54,21 @@ const BooksTab = () => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [selected, setSelected] = useState<SelectedBook | null>(null);
   const [staticDismiss, setStaticDismiss] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const { recent, push, clear } = useRecent();
   const { premium, openPaywall } = usePremium();
+  const { user } = useAuth();
   const canSearchById = false;
 
   const [requestClose, setRequestClose] = useState(false);
 
   const openBook = useCallback((b: Book, coverLayoutId: string, el: HTMLElement) => {
-    if (b.is_premium && !premium) { openPaywall(); return; }
+    if (!user) { setAuthOpen(true); return; }
+    if (!premium) { openPaywall(); return; }
     setRequestClose(false);
     setStaticDismiss(false);
     setSelected({ book: b, coverLayoutId, originEl: el });
-  }, [premium, openPaywall]);
+  }, [user, premium, openPaywall]);
   const closeBook = useCallback(() => {
     setRequestClose(true);
   }, []);
@@ -83,9 +88,9 @@ const BooksTab = () => {
     const rows = ((data as unknown as Book[]) ?? []).slice().sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
-    setBooks(rows);
+    setBooks(rows.map((book) => ({ ...book, is_premium: !premium })));
     setLoading(false);
-  }, []);
+  }, [premium]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -252,7 +257,9 @@ const BooksTab = () => {
       {/* The grid stays mounted the whole time the sheet is open, so closing
           reveals it again with no black flash. */}
       <AnimatePresence>
-        {selected && (
+      <AuthSheet open={authOpen} onClose={() => setAuthOpen(false)} />
+
+      {selected && (
           <BookDetailSheet
             key={`${selected.book.id}-${selected.coverLayoutId}`}
             book={selected.book}

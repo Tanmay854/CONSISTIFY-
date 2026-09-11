@@ -8,6 +8,8 @@ import { getPlayableVideoUrl } from "@/lib/videoFeeds";
 import { trackView } from "@/lib/trackView";
 import { fetchProfiles, displayHandle } from "@/lib/uploaderProfiles";
 import { usePremium } from "@/hooks/usePremium";
+import { useAuth } from "@/hooks/useAuth";
+import AuthSheet from "@/components/AuthSheet";
 
 interface Item {
   id: string;
@@ -170,7 +172,9 @@ const LongGameSection = ({
   const [playing, setPlaying] = useState<Item | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [authOpen, setAuthOpen] = useState(false);
   const { premium, openPaywall } = usePremium();
+  const { user } = useAuth();
 
   const toggleSaved = useCallback((id: string) => {
     setSaved((s) => {
@@ -215,7 +219,10 @@ const LongGameSection = ({
         .filter((r) => list.includes(r.feed))
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 100)
-        .map((r) => ({ ...r, video_url: playable.get(r.id) ?? "" }));
+        .map((r) => {
+          const videoUrl = playable.get(r.id) ?? "";
+          return { ...r, video_url: videoUrl, is_premium: !videoUrl };
+        });
       const profiles = await fetchProfiles(
         Array.from(new Set(rows.map((r) => r.uploaded_by).filter(Boolean) as string[])),
       );
@@ -240,7 +247,8 @@ const LongGameSection = ({
   });
 
   const openItem = useCallback<OpenFn>((item, node) => {
-    if (item.is_premium && !premium) { openPaywall(); return; }
+    if (!user) { setAuthOpen(true); return; }
+    if (!item.video_url && !premium) { openPaywall(); return; }
     const rect = node.getBoundingClientRect();
     rectRef.current = rect;
     setScrollY(0);
@@ -248,7 +256,7 @@ const LongGameSection = ({
     setClosing(false);
     setOpen(item);
     trackView("reel", item.id);
-  }, [premium, openPaywall]);
+  }, [user, premium, openPaywall]);
 
   useLayoutEffect(() => {
     if (!open || !overlayRef.current || !rectRef.current) return;
@@ -709,6 +717,7 @@ const LongGameSection = ({
           )}
         </div>
       )}
+      <AuthSheet open={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   );
 };
