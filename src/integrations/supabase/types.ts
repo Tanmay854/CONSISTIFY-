@@ -529,6 +529,7 @@ export type Database = {
           feed: string
           id: string
           is_featured: boolean
+          is_free_preview: boolean
           is_premium: boolean
           public_id: string
           thumbnail_landscape_url: string | null
@@ -551,6 +552,7 @@ export type Database = {
           feed?: string
           id?: string
           is_featured?: boolean
+          is_free_preview?: boolean
           is_premium?: boolean
           public_id?: string
           thumbnail_landscape_url?: string | null
@@ -573,6 +575,7 @@ export type Database = {
           feed?: string
           id?: string
           is_featured?: boolean
+          is_free_preview?: boolean
           is_premium?: boolean
           public_id?: string
           thumbnail_landscape_url?: string | null
