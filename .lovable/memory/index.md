@@ -16,4 +16,5 @@
 - [Settings & categories](mem://features/settings-categories) — Settings drawer with 6 category preferences and user_preferences table
 - [Upload tab](mem://features/upload-tab) — Dedicated creator upload tab for videos, music, photos (admin/uploader only)
 - [Quote notifications](mem://features/quote-notifications) — Local push every 3h with a different quote from the user's chosen topic/subtopic
+- [Premium content access](mem://features/premium-content-access) — Account-required previews, premium-only books, and one admin-selected free Long Game video
 

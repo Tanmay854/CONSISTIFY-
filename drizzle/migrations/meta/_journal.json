@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789156544124,
+      "tag": "0000_enforce_premium_books_and_selected_free_long_game",
+      "breakpoints": true
+    }
+  ]
+}
