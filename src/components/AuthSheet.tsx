@@ -30,13 +30,22 @@ const AuthSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
 
   const handleSignUp = async () => {
     setError(null); setInfo(null);
-    if (!email || !password) { setError("Email and password required."); return; }
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !password) { setError("Email and password required."); return; }
+    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) { setError("Enter a valid email address."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
-    const { error: signUpError } = await signUp(email.trim(), password);
+    const result = await signUp(normalizedEmail, password);
     setLoading(false);
-    if (signUpError) { setError(signUpError); return; }
-    setInfo("Account created. Check your email if confirmation is required, then sign in.");
+    if (result.error) { setError(result.error); return; }
+    if (result.signedIn) {
+      close();
+      return;
+    }
+    setEmail(normalizedEmail);
+    setInfo(result.confirmationRequired
+      ? "Account created. Open the confirmation email, then return here and sign in."
+      : "Account created. You can now sign in.");
     setMode("login");
   };
 
