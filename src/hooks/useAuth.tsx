@@ -12,7 +12,11 @@ interface AuthContextType {
   canUpload: boolean;
   pendingApplicationMessage: string | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string) => Promise<{
+    error: string | null;
+    signedIn: boolean;
+    confirmationRequired: boolean;
+  }>;
   signOut: () => Promise<void>;
 }
 
@@ -82,17 +86,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [enforceAccess]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     return { error: error?.message ?? null };
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
+    const webOrigin = window.location.protocol === "http:" || window.location.protocol === "https:"
+      ? window.location.origin
+      : "https://discipline-x.lovable.app";
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
       password,
-      options: { emailRedirectTo: `${window.location.origin}/` },
+      options: { emailRedirectTo: `${webOrigin}/` },
     });
-    return { error: error?.message ?? null };
+    if (error) {
+      return { error: error.message, signedIn: false, confirmationRequired: false };
+    }
+    if (data.user?.identities?.length === 0) {
+      return {
+        error: "An account already exists for this email. Please sign in instead.",
+        signedIn: false,
+        confirmationRequired: false,
+      };
+    }
+    return {
+      error: null,
+      signedIn: Boolean(data.session),
+      confirmationRequired: !data.session,
+    };
   };
 
   const signOut = async () => {

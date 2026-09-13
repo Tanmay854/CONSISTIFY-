@@ -236,7 +236,7 @@ const LongGameSection = ({
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [feedKey]);
+  }, [feedKey, user?.id, premium]);
 
 
   const computeTransform = (r: DOMRect) => ({
