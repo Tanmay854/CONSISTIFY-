@@ -29,6 +29,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [pendingApplicationMessage, setPendingApplicationMessage] = useState<string | null>(null);
 
+  const isConfirmed = (u: User) => Boolean(u.email_confirmed_at || u.confirmed_at);
+
   const enforceAccess = useCallback(async (u: User) => {
     const { data: roleRows } = await supabase
       .from("user_roles")
@@ -65,6 +67,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user && !isConfirmed(session.user)) {
+        setSession(null);
+        setUser(null);
+        setRoles([]);
+        setLoading(false);
+        setTimeout(() => supabase.auth.signOut(), 0);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -76,6 +86,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && !isConfirmed(session.user)) {
+        setSession(null);
+        setUser(null);
+        setRoles([]);
+        setLoading(false);
+        void supabase.auth.signOut();
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) enforceAccess(session.user);
@@ -86,8 +104,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [enforceAccess]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-    return { error: error?.message ?? null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+    if (error) return { error: error.message };
+    if (!data.user || !isConfirmed(data.user)) {
+      await supabase.auth.signOut();
+      return { error: "Confirm your email before signing in." };
+    }
+    return { error: null };
   };
 
   const signUp = async (email: string, password: string) => {

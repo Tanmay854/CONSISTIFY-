@@ -13,4 +13,5 @@
 - [x] Clearly distinguish immediate sign-in, email confirmation, and existing accounts.
 - [x] Reload protected videos after sign-in or a Premium status change.
 - [x] Refresh Premium status when users return to the app.
+- [x] Require email confirmation in both account settings and the app session.
 - [ ] Verify account creation and premium entitlement behavior on an installed APK.
