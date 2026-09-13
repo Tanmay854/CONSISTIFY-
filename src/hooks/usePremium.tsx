@@ -88,6 +88,18 @@ export const PremiumProvider = ({ children }: { children: React.ReactNode }) => 
   useEffect(() => { refresh(); }, [refresh]);
 
   useEffect(() => {
+    const refreshWhenActive = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    window.addEventListener("focus", refreshWhenActive);
+    document.addEventListener("visibilitychange", refreshWhenActive);
+    return () => {
+      window.removeEventListener("focus", refreshWhenActive);
+      document.removeEventListener("visibilitychange", refreshWhenActive);
+    };
+  }, [refresh]);
+
+  useEffect(() => {
     (async () => {
       const { data } = await supabase.from("ad_settings" as never).select("*").maybeSingle();
       if (data) setAdSettings({ ...DEFAULT_ADS, ...(data as unknown as AdSettings) });
