@@ -8,6 +8,13 @@
       "when": 1789156544124,
       "tag": "0000_enforce_premium_books_and_selected_free_long_game",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789407592055,
+      "tag": "0001_archive_removed_staff_and_hold_videos",
+      "breakpoints": true
     }
   ]
 }
