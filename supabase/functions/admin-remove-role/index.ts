@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { z } from "npm:zod@3";
 
 
 
@@ -23,10 +24,12 @@ Deno.serve(async (req) => {
     const isCallerAdmin = !!callerRoles && callerRoles.length > 0;
     if (!isCallerAdmin) return new Response(JSON.stringify({ error: "Only admins can remove roles" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { user_id, role } = await req.json();
-    if (!user_id || !["admin", "uploader"].includes(role)) {
-      return new Response(JSON.stringify({ error: "Invalid input" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    const parsed = z.object({
+      user_id: z.string().uuid(),
+      role: z.enum(["admin", "uploader"]),
+    }).safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return new Response(JSON.stringify({ error: "Invalid input" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { user_id, role } = parsed.data;
 
     // Only super admin can remove admins
     const { data: callerSuper } = await admin.from("user_roles").select("role").eq("user_id", caller.id).eq("role", "super_admin");
@@ -43,9 +46,34 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Only remove the role row — keep the auth account and all their uploads intact.
-    // This way, if they are re-granted the role with the same email, they regain
-    // ownership of all their previous videos, music, quotes and view counts.
+    const { data: { user: target }, error: targetError } = await admin.auth.admin.getUserById(user_id);
+    if (targetError || !target?.email) {
+      return new Response(JSON.stringify({ error: "Staff account not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const removedAt = new Date().toISOString();
+    const { error: archiveError } = await admin.from("removed_staff_accounts").insert({
+      old_user_id: user_id,
+      email: target.email.trim().toLowerCase(),
+      former_role: role,
+      removed_by: caller.id,
+      removed_at: removedAt,
+    });
+    if (archiveError) {
+      const message = archiveError.code === "23505" ? "This staff account was already removed" : archiveError.message;
+      return new Response(JSON.stringify({ error: message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { error: holdError } = await admin
+      .from("reels")
+      .update({ is_on_hold: true, held_at: removedAt, held_reason: "staff_removed" })
+      .eq("uploaded_by", user_id)
+      .in("feed", ["long_game", "calm_state", "quick_spark"]);
+    if (holdError) {
+      await admin.from("removed_staff_accounts").delete().eq("old_user_id", user_id);
+      return new Response(JSON.stringify({ error: "Failed to place videos on hold: " + holdError.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const { error: roleDelErr } = await admin
       .from("user_roles")
       .delete()
@@ -55,10 +83,14 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Failed to remove role: " + roleDelErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Clear any pending/approved application so they can re-apply or be re-granted cleanly.
     await admin.from("uploader_applications").delete().eq("user_id", user_id);
 
-    return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { error: deleteError } = await admin.auth.admin.deleteUser(user_id, false);
+    if (deleteError) {
+      return new Response(JSON.stringify({ error: "Videos are on hold, but the old login could not be deleted: " + deleteError.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    return new Response(JSON.stringify({ success: true, held_at: removedAt }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return new Response(JSON.stringify({ error: message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
