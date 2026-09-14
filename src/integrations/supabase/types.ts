@@ -527,9 +527,12 @@ export type Database = {
           created_at: string
           description: string | null
           feed: string
+          held_at: string | null
+          held_reason: string | null
           id: string
           is_featured: boolean
           is_free_preview: boolean
+          is_on_hold: boolean
           is_premium: boolean
           public_id: string
           thumbnail_landscape_url: string | null
@@ -550,9 +553,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           feed?: string
+          held_at?: string | null
+          held_reason?: string | null
           id?: string
           is_featured?: boolean
           is_free_preview?: boolean
+          is_on_hold?: boolean
           is_premium?: boolean
           public_id?: string
           thumbnail_landscape_url?: string | null
@@ -573,9 +579,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           feed?: string
+          held_at?: string | null
+          held_reason?: string | null
           id?: string
           is_featured?: boolean
           is_free_preview?: boolean
+          is_on_hold?: boolean
           is_premium?: boolean
           public_id?: string
           thumbnail_landscape_url?: string | null
@@ -587,6 +596,33 @@ export type Database = {
           uploaded_by?: string | null
           video_fit?: string
           video_url?: string
+        }
+        Relationships: []
+      }
+      removed_staff_accounts: {
+        Row: {
+          email: string
+          former_role: Database["public"]["Enums"]["app_role"]
+          id: string
+          old_user_id: string
+          removed_at: string
+          removed_by: string
+        }
+        Insert: {
+          email: string
+          former_role: Database["public"]["Enums"]["app_role"]
+          id?: string
+          old_user_id: string
+          removed_at?: string
+          removed_by: string
+        }
+        Update: {
+          email?: string
+          former_role?: Database["public"]["Enums"]["app_role"]
+          id?: string
+          old_user_id?: string
+          removed_at?: string
+          removed_by?: string
         }
         Relationships: []
       }
