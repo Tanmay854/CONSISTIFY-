@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { HELD_VIDEO_FEEDS, removalPermission } from "../../supabase/functions/_shared/staffRemovalRules";
 
