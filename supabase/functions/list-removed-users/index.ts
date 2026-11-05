@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
 
     const videosByUser = new Map<string, typeof heldVideos>();
     for (const video of heldVideos ?? []) {
+      if (!video.uploaded_by) continue;
       const list = videosByUser.get(video.uploaded_by) ?? [];
       list.push(video);
       videosByUser.set(video.uploaded_by, list);

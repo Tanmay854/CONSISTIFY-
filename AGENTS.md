@@ -1,0 +1,2 @@
+Staff removal archives the old identity and holds video records before deleting its Auth account; retries reuse the archive so partial failures can finish safely.
+Held videos are excluded by both reels RLS and reels_teaser; administrator archive access is server-only to avoid exposing removed users' emails.

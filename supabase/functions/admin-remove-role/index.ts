@@ -1,28 +1,30 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
+import { HELD_VIDEO_FEEDS, removalPermission } from "../_shared/staffRemovalRules.ts";
 
 
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Missing authorization" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!supabaseUrl || !serviceKey || !anonKey) throw new Error("Server configuration missing");
 
     const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
     const { data: { user: caller } } = await userClient.auth.getUser();
     if (!caller) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const admin = createClient(supabaseUrl, serviceKey);
-    const { data: callerRoles } = await admin.from("user_roles").select("role").eq("user_id", caller.id).eq("role", "admin");
-    const isCallerAdmin = !!callerRoles && callerRoles.length > 0;
-    if (!isCallerAdmin) return new Response(JSON.stringify({ error: "Only admins can remove roles" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: callerRoles, error: callerRoleError } = await admin.from("user_roles").select("role").eq("user_id", caller.id);
+    if (callerRoleError) throw callerRoleError;
 
     const parsed = z.object({
       user_id: z.string().uuid(),
@@ -31,28 +33,25 @@ Deno.serve(async (req) => {
     if (!parsed.success) return new Response(JSON.stringify({ error: "Invalid input" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { user_id, role } = parsed.data;
 
-    // Only super admin can remove admins
-    const { data: callerSuper } = await admin.from("user_roles").select("role").eq("user_id", caller.id).eq("role", "super_admin");
-    const isCallerSuper = !!(callerSuper && callerSuper.length > 0);
-    if (role === "admin" && !isCallerSuper) {
-      return new Response(JSON.stringify({ error: "Only the super-admin can remove admins" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    const { data: targetRoles, error: targetRoleError } = await admin.from("user_roles").select("role").eq("user_id", user_id);
+    if (targetRoleError) throw targetRoleError;
+    const permissionError = removalPermission((callerRoles ?? []).map(r => r.role), (targetRoles ?? []).map(r => r.role), role);
+    if (permissionError) return new Response(JSON.stringify({ error: permissionError }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // Cannot remove super-admin
-    if (role === "admin") {
-      const { data: targetSuper } = await admin.from("user_roles").select("role").eq("user_id", user_id).eq("role", "super_admin");
-      if (targetSuper && targetSuper.length > 0) {
-        return new Response(JSON.stringify({ error: "Super-admin cannot be removed" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
+    const { data: priorRemoval, error: priorError } = await admin.from("removed_staff_accounts").select("old_user_id, removed_at, former_role").eq("old_user_id", user_id).maybeSingle();
+    if (priorError) throw priorError;
+    if (!priorRemoval && !(targetRoles ?? []).some(r => r.role === role)) {
+      return new Response(JSON.stringify({ error: "User does not have this staff role" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const { data: { user: target }, error: targetError } = await admin.auth.admin.getUserById(user_id);
     if (targetError || !target?.email) {
+      if (priorRemoval && targetError?.status === 404) return new Response(JSON.stringify({ success: true, held_at: priorRemoval.removed_at }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       return new Response(JSON.stringify({ error: "Staff account not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const removedAt = new Date().toISOString();
-    const { error: archiveError } = await admin.from("removed_staff_accounts").insert({
+    const removedAt = priorRemoval?.removed_at ?? new Date().toISOString();
+    const { error: archiveError } = priorRemoval ? { error: null } : await admin.from("removed_staff_accounts").insert({
       old_user_id: user_id,
       email: target.email.trim().toLowerCase(),
       former_role: role,
@@ -68,22 +67,21 @@ Deno.serve(async (req) => {
       .from("reels")
       .update({ is_on_hold: true, held_at: removedAt, held_reason: "staff_removed" })
       .eq("uploaded_by", user_id)
-      .in("feed", ["long_game", "calm_state", "quick_spark"]);
+      .in("feed", HELD_VIDEO_FEEDS);
     if (holdError) {
-      await admin.from("removed_staff_accounts").delete().eq("old_user_id", user_id);
       return new Response(JSON.stringify({ error: "Failed to place videos on hold: " + holdError.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const { error: roleDelErr } = await admin
       .from("user_roles")
       .delete()
-      .eq("user_id", user_id)
-      .eq("role", role);
+      .eq("user_id", user_id);
     if (roleDelErr) {
       return new Response(JSON.stringify({ error: "Failed to remove role: " + roleDelErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    await admin.from("uploader_applications").delete().eq("user_id", user_id);
+    const { error: applicationError } = await admin.from("uploader_applications").delete().eq("user_id", user_id);
+    if (applicationError) throw applicationError;
 
     const { error: deleteError } = await admin.auth.admin.deleteUser(user_id, false);
     if (deleteError) {
