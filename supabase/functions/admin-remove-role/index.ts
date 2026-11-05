@@ -40,6 +40,9 @@ Deno.serve(async (req) => {
 
     const { data: priorRemoval, error: priorError } = await admin.from("removed_staff_accounts").select("old_user_id, removed_at, former_role").eq("old_user_id", user_id).maybeSingle();
     if (priorError) throw priorError;
+    if (priorRemoval?.former_role === "admin" && !(callerRoles ?? []).some(r => r.role === "super_admin")) {
+      return new Response(JSON.stringify({ error: "Only the super-admin can remove admins" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     if (!priorRemoval && !(targetRoles ?? []).some(r => r.role === role)) {
       return new Response(JSON.stringify({ error: "User does not have this staff role" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
